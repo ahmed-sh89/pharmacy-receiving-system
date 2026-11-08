@@ -1,0 +1,4278 @@
+{
+  "scope": "Bounded exploratory comparison before preload optimization; initial candidate source only. Not a final full-suite PASS. Per-file wall limit 12s.",
+  "rows": [
+    {
+      "label": "baseline",
+      "file": "tests/active-orders-authority.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/active-orders-authority.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/add-item-save-followup.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 7,
+        "pass": 3,
+        "fail": 4,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "save succeeds even when optional item detail refresh fails; modal closes once",
+        "existing item retry never creates a duplicate item or mapping",
+        "scan resolver retains exact identifier and authoritative RPC contract",
+        "Receiving and Expiry call paths are unchanged by Add Item patch"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/add-item-save-followup.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 7,
+        "pass": 3,
+        "fail": 4,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "save succeeds even when optional item detail refresh fails; modal closes once",
+        "existing item retry never creates a duplicate item or mapping",
+        "scan resolver retains exact identifier and authoritative RPC contract",
+        "Receiving and Expiry call paths are unchanged by Add Item patch"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/auth-request-timeout.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/auth-request-timeout.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/auth-session-001.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 23,
+        "pass": 23,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/auth-session-001.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 23,
+        "pass": 23,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/auth-viewport.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/auth-viewport.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/close-order-safety.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/close-order-safety.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/consolidated-staging-performance.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/consolidated-staging-performance.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/consolidated-startup.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/consolidated-startup.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-all-export.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-all-export.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-controls.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-controls.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-database.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-database.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-download-regression.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-download-regression.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-final-acceptance.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-final-acceptance.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-final-regression.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-final-regression.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-foundation.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 15,
+        "pass": 14,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "build output uses exactly the intended environment and registers Duty after Expiry"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-foundation.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 15,
+        "pass": 15,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-permission-modal.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-permission-modal.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-polish.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-polish.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-presets-database.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-presets-database.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-presets-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-presets-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-readiness.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-readiness.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-release-isolation.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-release-isolation.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "release retains the verified Production operational and deployment files byte-for-byte"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-reports.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-reports.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-scheduling.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-scheduling.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-ux-corrections.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-ux-corrections.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-workflow-database.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-workflow-database.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/duty-workflow.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/duty-workflow.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-acceptance-hotfix.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 28,
+        "pass": 27,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "TC26 compact rules retain 44px controls and normal-flow save; shared scanner and Receiving files stay outside this fix"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-acceptance-hotfix.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 28,
+        "pass": 27,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "TC26 compact rules retain 44px controls and normal-flow save; shared scanner and Receiving files stay outside this fix"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-active-session.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 34,
+        "pass": 34,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-active-session.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 34,
+        "pass": 34,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-backend-postgres.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 35,
+        "pass": 34,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-backend-postgres.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 35,
+        "pass": 34,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-backend-static.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-backend-static.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-batch.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-batch.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-camera-workflow.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 25,
+        "pass": 24,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Worker selection persists once per user/pharmacy session and does not transfer across users"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-camera-workflow.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 25,
+        "pass": 24,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Worker selection persists once per user/pharmacy session and does not transfer across users"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-capture-review.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-capture-review.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-capture-store.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-capture-store.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-clear-session-ui.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Session table has no retired menu or dedicated placeholder; row Edit/Delete remain"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-clear-session-ui.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Session table has no retired menu or dedicated placeholder; row Edit/Delete remain"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-clear-session.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-clear-session.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-data-integrity.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 36,
+        "pass": 36,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-data-integrity.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 36,
+        "pass": 36,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-desktop-operational-ux.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 35,
+        "pass": 31,
+        "fail": 4,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Scan draft survives Inventory switching; independent table schemas remain aligned",
+        "Inventory KPIs display overlapping calendar ranges including operational current-month Expired",
+        "Menus support Escape focus restoration and keyboard movement",
+        "Excel and paper lists share one authoritative export RPC and retain only shelf columns"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-desktop-operational-ux.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 35,
+        "pass": 31,
+        "fail": 4,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Scan draft survives Inventory switching; independent table schemas remain aligned",
+        "Inventory KPIs display overlapping calendar ranges including operational current-month Expired",
+        "Menus support Escape focus restoration and keyboard movement",
+        "Excel and paper lists share one authoritative export RPC and retain only shelf columns"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-desktop-reconciliation.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-desktop-reconciliation.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-desktop-requests.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 12,
+        "pass": 10,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "SIMULATED canonical ten-minute sleep blocks native fetch; resume restores it without changing threshold",
+        "SIMULATED shared idle scheduler keeps eight metadata checks and two generation checks per two minutes"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-desktop-requests.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 12,
+        "pass": 10,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "SIMULATED canonical ten-minute sleep blocks native fetch; resume restores it without changing threshold",
+        "SIMULATED shared idle scheduler keeps eight metadata checks and two generation checks per two minutes"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-desktop-scanner.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 34,
+        "pass": 33,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Desktop save persists the original scanner frame and exact parsed serial"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-desktop-scanner.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 34,
+        "pass": 33,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Desktop save persists the original scanner frame and exact parsed serial"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-failed-scan-diagnostic.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-failed-scan-diagnostic.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-final-acceptance-hotfix.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 32,
+        "pass": 29,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "single KPI click replaces; double adds without an intermediate query; clear cancels queued clicks",
+        "KPI expired interval remains unbounded and keyboard selection replaces",
+        "Excel uses all active pharmacy rows, exact text identifiers, Operator and local dates"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-final-acceptance-hotfix.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 32,
+        "pass": 29,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "single KPI click replaces; double adds without an intermediate query; clear cancels queued clicks",
+        "KPI expired interval remains unbounded and keyboard selection replaces",
+        "Excel uses all active pharmacy rows, exact text identifiers, Operator and local dates"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-final-closure.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-final-closure.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-final-layout-filters.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Excel full active export ignores applied Operator and month selections"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-final-layout-filters.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Excel full active export ignores applied Operator and month selections"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-final-visual-feedback.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 1,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Success returns to READY after2500ms without hiding Active Item or fields",
+        "Old success timers cannot dismiss newer success or a persistent warning/error"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-final-visual-feedback.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 1,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Success returns to READY after2500ms without hiding Active Item or fields",
+        "Old success timers cannot dismiss newer success or a persistent warning/error"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-group-actions.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 5,
+        "pass": 4,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Delete confirmation removes only current session contribution and refreshes authority"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-group-actions.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 5,
+        "pass": 4,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Delete confirmation removes only current session contribution and refreshes authority"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-gs1-flutab.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 106,
+        "pass": 106,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-gs1-flutab.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 106,
+        "pass": 106,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-handheld-final-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-handheld-final-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-handheld-final-ux.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-handheld-final-ux.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-handheld-focus-hotfix.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-handheld-focus-hotfix.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-handheld-input.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 4,
+        "pass": 3,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Starting candidate reproduces the premature first-character lookup"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-handheld-input.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 4,
+        "pass": 3,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Starting candidate reproduces the premature first-character lookup"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-handheld-polish.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 31,
+        "pass": 31,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-handheld-polish.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 31,
+        "pass": 31,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-handheld-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-handheld-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-hardening.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Late token refresh cannot resurrect a signed-out session"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-hardening.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Late token refresh cannot resurrect a signed-out session"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-inventory-edit-recovery.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-inventory-edit-recovery.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-inventory-filter-reset.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-inventory-filter-reset.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-inventory-group.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 8,
+        "pass": 5,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Expiry Group display uses the Production canonical mapping and never falls back to Category",
+        "Missing Group selection is explicit and reports retain exact identifiers and Group labels",
+        "Inventory, report preview and Excel present missing Batch and canonical Group without changing records"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-inventory-group.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 8,
+        "pass": 5,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Expiry Group display uses the Production canonical mapping and never falls back to Category",
+        "Missing Group selection is explicit and reports retain exact identifiers and Group labels",
+        "Inventory, report preview and Excel present missing Batch and canonical Group without changing records"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-inventory-resolve-all-filtered.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-inventory-resolve-all-filtered.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-inventory-search.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-inventory-search.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-monthly-kpi.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-monthly-kpi.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-needs-review-backend-contract.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 9,
+        "pass": 7,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "review reads and Storage photo visibility remain pharmacy-member scoped and Global Master write authority stays unchanged",
+        "pending-only operational review UI keeps the authorized Global Master and delete actions"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-needs-review-backend-contract.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 9,
+        "pass": 7,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "review reads and Storage photo visibility remain pharmacy-member scoped and Global Master write authority stays unchanged",
+        "pending-only operational review UI keeps the authorized Global Master and delete actions"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-operation.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 34,
+        "pass": 34,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-operation.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 34,
+        "pass": 34,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-parser-reasons.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-parser-reasons.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-photo-cleanup-worker.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-photo-cleanup-worker.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-record-modal.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 0,
+        "fail": 6,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Quantity zero uses versioned authoritative mutation, preserves identity and is separate from Resolve",
+        "Cancel causes no write; negative quantity and failed mutation retain dialog and entered value",
+        "Resolve all previews every matching page; exact versioned selection and units are confirmed before write",
+        "Resolved lazy loads only on request and Restore never substitutes active selection",
+        "Ambiguous result retains frozen request and retries same identity after refresh",
+        "Blank aggregate quantity is rejected rather than being treated as zero"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-record-modal.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 0,
+        "fail": 6,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Quantity zero uses versioned authoritative mutation, preserves identity and is separate from Resolve",
+        "Cancel causes no write; negative quantity and failed mutation retain dialog and entered value",
+        "Resolve all previews every matching page; exact versioned selection and units are confirmed before write",
+        "Resolved lazy loads only on request and Restore never substitutes active selection",
+        "Ambiguous result retains frozen request and retries same identity after refresh",
+        "Blank aggregate quantity is rejected rather than being treated as zero"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-resolution-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-resolution-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-resolution-v2-postgres.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-resolution-v2-postgres.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-resolve-all-filtered-rpc.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-resolve-all-filtered-rpc.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-resolved-clear.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "stale Restore/Clear conflicts are visible and abort the selection; context changes block execution"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-resolved-clear.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "stale Restore/Clear conflicts are visible and abort the selection; context changes block execution"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-resume-recovery.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-resume-recovery.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-review-coordinated-corrections.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 9,
+        "pass": 7,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Shelf exports use server filter authority and do not depend on the current page",
+        "Resolve UI remains pharmacy-local and Storage evidence stays authenticated/private"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-review-coordinated-corrections.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 9,
+        "pass": 7,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Shelf exports use server filter authority and do not depend on the current page",
+        "Resolve UI remains pharmacy-local and Storage evidence stays authenticated/private"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-round2-session-groups.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 9,
+        "pass": 6,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Batch session display uses server state identity, ignores serial and preserves durable source receipts",
+        "Workspace switch hides capture and shows four Inventory KPIs without losing unsaved draft or grouped receipt scope",
+        "Group timestamp is the newest authoritative capture and identifiers retain leading zeros"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-round2-session-groups.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 9,
+        "pass": 6,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Batch session display uses server state identity, ignores serial and preserves durable source receipts",
+        "Workspace switch hides capture and shows four Inventory KPIs without losing unsaved draft or grouped receipt scope",
+        "Group timestamp is the newest authoritative capture and identifiers retain leading zeros"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-save-diagnostic.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-save-diagnostic.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-save-final-performance.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-save-final-performance.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 25,
+        "pass": 25,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-save-latency.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-save-latency.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-scanner-diagnostic.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-scanner-diagnostic.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-session-inline-search.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-session-inline-search.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-session-recovery.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 30,
+        "pass": 29,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Discard removes only a genuine unsent local draft and returns to scan readiness"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-session-recovery.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 30,
+        "pass": 29,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Discard removes only a genuine unsent local draft and returns to scan readiness"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-stage1-identity.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 33,
+        "pass": 8,
+        "fail": 25,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Expiry known-item save uses additive V2 current-state RPC",
+        "Desktop exposes Current Expiry workspace while Handheld keeps it out of shelf workflow",
+        "Expiry is reachable from both Desktop sidebar and Handheld workspace chooser",
+        "Expiry desktop has one canonical visual owner with no stacked override layer",
+        "Expiry desktop keeps page fixed and scrolls only Current Expiry List",
+        "Expiry desktop operations keep operator optional while Handheld remains guarded",
+        "Expiry desktop current list exposes Category filter and edit-delete controls",
+        "Expiry desktop hides duplicate Last Scan surface without changing Handheld item card",
+        "Expiry desktop Scan Search uses authoritative V2 product and identifier services",
+        "Expiry desktop correction is inline and no browser prompt patch remains",
+        "Expiry desktop paste routes barcode-like identifiers through scan resolution",
+        "Expiry desktop separates recent operational work from full current state",
+        "Expiry manual search reuses Receiving result hierarchy and authenticated Global V2 contract",
+        "Expiry desktop search dropdown is not clipped by legacy scan-box overflow",
+        "Manual search selection renders Active Item and save feedback is strongly visible",
+        "Expiry desktop table remains readable and visually structured",
+        "Expiry desktop operator remains optional without trapping scanner focus",
+        "Expiry inline edit exposes both Save and visible Cancel actions",
+        "Expiry Desktop uses explicit Desktop fallback operator while preserving Handheld selection",
+        "Expiry edit action column has room for Save and Cancel in both desktop views",
+        "Expiry normalizes optional capture worker UUID and blocks unsafe legacy review writes",
+        "Expiry desktop session survives route navigation and resets only on sign out",
+        "Expiry session quantity is neutral and capture keeps authoritative state id",
+        "Expiry Session Activity renders corrected current-state values after Edit",
+        "Expiry cleared current state remains in Session Activity as Deleted"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-stage1-identity.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 33,
+        "pass": 8,
+        "fail": 25,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Expiry known-item save uses additive V2 current-state RPC",
+        "Desktop exposes Current Expiry workspace while Handheld keeps it out of shelf workflow",
+        "Expiry is reachable from both Desktop sidebar and Handheld workspace chooser",
+        "Expiry desktop has one canonical visual owner with no stacked override layer",
+        "Expiry desktop keeps page fixed and scrolls only Current Expiry List",
+        "Expiry desktop operations keep operator optional while Handheld remains guarded",
+        "Expiry desktop current list exposes Category filter and edit-delete controls",
+        "Expiry desktop hides duplicate Last Scan surface without changing Handheld item card",
+        "Expiry desktop Scan Search uses authoritative V2 product and identifier services",
+        "Expiry desktop correction is inline and no browser prompt patch remains",
+        "Expiry desktop paste routes barcode-like identifiers through scan resolution",
+        "Expiry desktop separates recent operational work from full current state",
+        "Expiry manual search reuses Receiving result hierarchy and authenticated Global V2 contract",
+        "Expiry desktop search dropdown is not clipped by legacy scan-box overflow",
+        "Manual search selection renders Active Item and save feedback is strongly visible",
+        "Expiry desktop table remains readable and visually structured",
+        "Expiry desktop operator remains optional without trapping scanner focus",
+        "Expiry inline edit exposes both Save and visible Cancel actions",
+        "Expiry Desktop uses explicit Desktop fallback operator while preserving Handheld selection",
+        "Expiry edit action column has room for Save and Cancel in both desktop views",
+        "Expiry normalizes optional capture worker UUID and blocks unsafe legacy review writes",
+        "Expiry desktop session survives route navigation and resets only on sign out",
+        "Expiry session quantity is neutral and capture keeps authoritative state id",
+        "Expiry Session Activity renders corrected current-state values after Edit",
+        "Expiry cleared current state remains in Session Activity as Deleted"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-stage1-navigation-and-handheld.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-stage1-navigation-and-handheld.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-tc26-status.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 21,
+        "pass": 21,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-tc26-status.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 21,
+        "pass": 21,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/expiry-top-motion.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 5,
+        "pass": 4,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "KPI refresh preserves DOM identity, authoritative Records/Units and filter behavior"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/expiry-top-motion.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 5,
+        "pass": 4,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "KPI refresh preserves DOM identity, authoritative Records/Units and filter behavior"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/export-v2-scale.test.cjs",
+      "timeout": true,
+      "failed": [
+        "FILE WALL TIME LIMIT 12s"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/export-v2-scale.test.cjs",
+      "timeout": true,
+      "failed": [
+        "FILE WALL TIME LIMIT 12s"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/export-v2.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/export-v2.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/extra-items-selected-item.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "tests/extra-items-selected-item.test.cjs"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/extra-items-selected-item.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "tests/extra-items-selected-item.test.cjs"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/final-refinements-ui.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Normal startup text is only Loading; capsule DOM and stylesheet are unchanged; security error remains visible"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/final-refinements-ui.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Normal startup text is only Loading; capsule DOM and stylesheet are unchanged; security error remains visible"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/global-items-export.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/global-items-export.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/global-master-group-integrity.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 8,
+        "pass": 6,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Receiving Group choices contain only six approved values and filters use effective Group",
+        "Settings and Receiving expose a controlled Group selector only on Global creation"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/global-master-group-integrity.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 8,
+        "pass": 6,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Receiving Group choices contain only six approved values and filters use effective Group",
+        "Settings and Receiving expose a controlled Group selector only on Global creation"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/handheld-assignment-delta.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/handheld-assignment-delta.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/handheld-history-contract.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/handheld-history-contract.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/handheld-receiving-readiness-hotfix.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/handheld-receiving-readiness-hotfix.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/handheld-scanner-rearm.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/handheld-scanner-rearm.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/header-account-shell.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 10,
+        "pass": 7,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Handheld Account is reachable from Modes with canonical fields and guarded logout unchanged",
+        "Production connection, authentication, release workflow and operational files remain exact baseline",
+        "Modes Account and existing Sign Out dispatch; pending work still prevents logout"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/header-account-shell.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 10,
+        "pass": 7,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Handheld Account is reachable from Modes with canonical fields and guarded logout unchanged",
+        "Production connection, authentication, release workflow and operational files remain exact baseline",
+        "Modes Account and existing Sign Out dispatch; pending work still prevents logout"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/high-priority-persistence.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "desktop manual receiving keeps selection and quantity controls prominent without changing handlers"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/high-priority-persistence.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "desktop manual receiving keeps selection and quantity controls prominent without changing handlers"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/high-priority-print-layout.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/high-priority-print-layout.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/identifier-pharmacy-group.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/identifier-pharmacy-group.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/needs-review-auto-allocation.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "tests/needs-review-auto-allocation.test.cjs"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/needs-review-auto-allocation.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "tests/needs-review-auto-allocation.test.cjs"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/needs-review-quantity.test.cjs",
+      "timeout": true,
+      "failed": [
+        "FILE WALL TIME LIMIT 12s"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/needs-review-quantity.test.cjs",
+      "timeout": true,
+      "failed": [
+        "FILE WALL TIME LIMIT 12s"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/order-import-authority.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/order-import-authority.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/order-item-browser-layout.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 1,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "desktop Order Item Browser keeps filters aligned and search actions compact",
+        "Receiving search quantities and order picker have one desktop visual owner"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/order-item-browser-layout.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 1,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "desktop Order Item Browser keeps filters aligned and search actions compact",
+        "Receiving search quantities and order picker have one desktop visual owner"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/order-toolbar-refactor.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/order-toolbar-refactor.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/production-expiry-integration.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Merged entry loads version checker once after shared cloud service and before app bootstrap"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/production-expiry-integration.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Merged entry loads version checker once after shared cloud service and before app bootstrap"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/production-owner-export-prep.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Previously accepted reports/permissions and security/environment boundaries remain exact"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/production-owner-export-prep.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Previously accepted reports/permissions and security/environment boundaries remain exact"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/project-a-ui-polish.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 2,
+        "fail": 4,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "confirmed order upload refreshes an open Manage Orders view without polling",
+        "Reset applies an empty authoritative manifest to the active-order UI immediately",
+        "fresh startup can parse the complete production ui script",
+        "desktop receiving polish keeps toasts above modals and uses click-only sidebar state"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/project-a-ui-polish.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 2,
+        "fail": 4,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "confirmed order upload refreshes an open Manage Orders view without polling",
+        "Reset applies an empty authoritative manifest to the active-order UI immediately",
+        "fresh startup can parse the complete production ui script",
+        "desktop receiving polish keeps toasts above modals and uses click-only sidebar state"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-allocation-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-allocation-ui.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-consolidation-review.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-consolidation-review.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-critical-repair.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-critical-repair.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-duplicate-line-allocation.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-duplicate-line-allocation.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-email.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 27,
+        "pass": 27,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-email.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 27,
+        "pass": 27,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-final-projection.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-final-projection.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-group-ui-hotfix.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "toolbar reserves neighboring actions; only Item Name weight changes"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-group-ui-hotfix.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "toolbar reserves neighboring actions; only Item Name weight changes"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-hydration-lifecycle.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-hydration-lifecycle.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-live-kpi-event.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-live-kpi-event.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-master-resolution.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 3,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "deferred resolution validates captured scope before learning or writing a receipt",
+        "review draft uses stable operation ID and original captured scope, retaining legacy callers",
+        "immediate Save retains draft on quantity update retry and blocks duplicate click"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-master-resolution.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 3,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "deferred resolution validates captured scope before learning or writing a receipt",
+        "review draft uses stable operation ID and original captured scope, retaining legacy callers",
+        "immediate Save retains draft on quantity update retry and blocks duplicate click"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-multi-order-hotfix.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-multi-order-hotfix.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-order-attribution.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-order-attribution.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-performance-root.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "performance correction is applied to active root runtime"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-performance-root.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "performance correction is applied to active root runtime"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-readiness-recovery.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-readiness-recovery.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-recovery-auth.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-recovery-auth.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-recovery-sql.test.cjs",
+      "timeout": true,
+      "failed": [
+        "FILE WALL TIME LIMIT 12s"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-recovery-sql.test.cjs",
+      "timeout": true,
+      "failed": [
+        "FILE WALL TIME LIMIT 12s"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-report-performance.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-report-performance.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-safety-gates.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-safety-gates.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-simplification.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-simplification.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-split-queue.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-split-queue.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-startup-hydration.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-startup-hydration.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-total-kpi.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-total-kpi.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-unassigned-hydration.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-unassigned-hydration.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/receiving-unknown-default.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/receiving-unknown-default.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/reset-workspace-ui-refresh.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/reset-workspace-ui-refresh.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/sec001-excel-security.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 2
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/sec001-excel-security.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 12,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 2
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/sec004-password-parity.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/sec004-password-parity.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 20,
+        "pass": 20,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/security-production-artifact.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/security-production-artifact.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/security-production-gate.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/security-production-gate.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/security-session-boundaries.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/security-session-boundaries.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/security-source-hardening.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/security-source-hardening.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/settings-access-inline.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 11,
+        "pass": 0,
+        "fail": 11,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "KPI counts keep canonical definitions; each click selects and filters inline",
+        "search combines with KPI across name/code/admin email and preserves query while switching",
+        "single-open pharmacy rows preserve actions and show only admin email",
+        "shared KPI style is reused without changing Receiving declarations",
+        "Database label changes presentation only; all mapping-service and parser logic remains intact",
+        "footer retains dynamic code, connectivity and autosave nodes/logic; hiding is Desktop-only",
+        "inline editing stays singular and cancels on collapse, replacement or filtering",
+        "focused actions keep one target/action and Back restores search, KPI and scroll",
+        "Back protects a draft across sequential fields; refresh and repeated action cannot duplicate or discard it",
+        "refresh after a status action retains the focused target; Back reapplies the saved filter",
+        "leaving Access by tab uses the same unsaved-change guard"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/settings-access-inline.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 11,
+        "pass": 0,
+        "fail": 11,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "KPI counts keep canonical definitions; each click selects and filters inline",
+        "search combines with KPI across name/code/admin email and preserves query while switching",
+        "single-open pharmacy rows preserve actions and show only admin email",
+        "shared KPI style is reused without changing Receiving declarations",
+        "Database label changes presentation only; all mapping-service and parser logic remains intact",
+        "footer retains dynamic code, connectivity and autosave nodes/logic; hiding is Desktop-only",
+        "inline editing stays singular and cancels on collapse, replacement or filtering",
+        "focused actions keep one target/action and Back restores search, KPI and scroll",
+        "Back protects a draft across sequential fields; refresh and repeated action cannot duplicate or discard it",
+        "refresh after a status action retains the focused target; Back reapplies the saved filter",
+        "leaving Access by tab uses the same unsaved-change guard"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/settings-account-access.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "tests/settings-account-access.test.cjs"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/settings-account-access.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "tests/settings-account-access.test.cjs"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/settings-barcode-management.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/settings-barcode-management.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/settings-barcode-scope.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/settings-barcode-scope.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/settings-production-release.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "selective Settings release retains Production configuration, deployment, operational pages and Account"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/settings-production-release.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "selective Settings release retains Production configuration, deployment, operational pages and Account"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/settings-workspace.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 4,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Owner mutations retain their exact accepted validation, guards, RPCs and confirmations",
+        "Handheld runtime, Receiving, identifier service and password/session flows remain untouched"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/settings-workspace.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 6,
+        "pass": 4,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Owner mutations retain their exact accepted validation, guards, RPCs and confirmations",
+        "Handheld runtime, Receiving, identifier service and password/session flows remain untouched"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/sleep-wake-permissions.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 22,
+        "pass": 22,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/sleep-wake-permissions.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 22,
+        "pass": 22,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/splash-layout.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Preview build emits root-relative CSS and preserves logo sizing rules"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/splash-layout.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/stage2-identifier-cutover.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 26,
+        "pass": 9,
+        "fail": 17,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Stage 2 routes receiving identity and Needs Review through V2 contracts",
+        "PC unknown-identifier review requires an explicit active Order and uses an allowed review reason",
+        "Handheld multi-order Needs Review snapshots device scope and defers Order assignment to PC",
+        "Needs Review persists a durable intent and keeps original order scope",
+        "completion archives each selected Order and offers a controlled Complete All action",
+        "Needs Review preserves the captured identifier and requires original Order attribution",
+        "V2-resolved identifiers retain their exact display value through receiving state and queue upload",
+        "Handheld History is recognized-scan history only and REVIEW is the single review entry point",
+        "Handheld compact controls and success acknowledgement use the existing Last Scan state",
+        "visible Settings Barcode Management route exposes the V2 controls before legacy import compatibility",
+        "Handheld can reach the compact Needs Review and photo viewer without a second scan path",
+        "Settings leads with simplified Barcode Management while preserving import compatibility",
+        "Stage 2 loads one coherent cache-versioned startup asset set",
+        "authenticated manifest hydration loads UI globals before the application bootstrap",
+        "reference pharmacy learning is centralized for Receiving and future Expiry reuse",
+        "Scan Item search projects quantities from the per-order receiving ledger",
+        "historical learning RPC is retained; Link & Receive selects an existing Master item"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/stage2-identifier-cutover.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 26,
+        "pass": 9,
+        "fail": 17,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Stage 2 routes receiving identity and Needs Review through V2 contracts",
+        "PC unknown-identifier review requires an explicit active Order and uses an allowed review reason",
+        "Handheld multi-order Needs Review snapshots device scope and defers Order assignment to PC",
+        "Needs Review persists a durable intent and keeps original order scope",
+        "completion archives each selected Order and offers a controlled Complete All action",
+        "Needs Review preserves the captured identifier and requires original Order attribution",
+        "V2-resolved identifiers retain their exact display value through receiving state and queue upload",
+        "Handheld History is recognized-scan history only and REVIEW is the single review entry point",
+        "Handheld compact controls and success acknowledgement use the existing Last Scan state",
+        "visible Settings Barcode Management route exposes the V2 controls before legacy import compatibility",
+        "Handheld can reach the compact Needs Review and photo viewer without a second scan path",
+        "Settings leads with simplified Barcode Management while preserving import compatibility",
+        "Stage 2 loads one coherent cache-versioned startup asset set",
+        "authenticated manifest hydration loads UI globals before the application bootstrap",
+        "reference pharmacy learning is centralized for Receiving and future Expiry reuse",
+        "Scan Item search projects quantities from the per-order receiving ledger",
+        "historical learning RPC is retained; Link & Receive selects an existing Master item"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/staging-startup-hotfix.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 5,
+        "pass": 2,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Optional CDN downloads cannot hold DOMContentLoaded; local XLSX stays ordered and SRI unchanged",
+        "Initialization failure is explicit and retryable, with protected content still covered",
+        "Export, role mapping, security and capsule styles are byte-unchanged from failed Preview"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/staging-startup-hotfix.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 5,
+        "pass": 2,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Optional CDN downloads cannot hold DOMContentLoaded; local XLSX stays ordered and SRI unchanged",
+        "Initialization failure is explicit and retryable, with protected content still covered",
+        "Export, role mapping, security and capsule styles are byte-unchanged from failed Preview"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/staging-startup-writes-compatibility.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/staging-startup-writes-compatibility.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/startup-handheld-root.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/startup-performance.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "tests/startup-performance.test.cjs"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/startup-performance.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "tests/startup-performance.test.cjs"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/startup-version-safety.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/startup-version-safety.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "baseline",
+      "file": "tests/supabase-request-root.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 14,
+        "pass": 3,
+        "fail": 11,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Receiving wake retains exact authority request and diagnostic",
+        "Authoritative absence ends forced startup retries after one response and clears stale orders",
+        "Transport failure retains four recovery attempts, diagnostics and no authoritative clearing",
+        "Busy authority overlap still retries and accepts a later authoritative result",
+        "Absence is not cached: unchanged metadata schedule discovers subsequently assigned orders",
+        "Sleep blocks extra Handheld wake; wake after resume is retained in Receiving",
+        "Shared sync, queue repair, metadata frequency and ten-minute sleep are unchanged",
+        "Empty-workspace background cycles retain metadata but avoid redundant full manifest reads",
+        "Metadata failure invalidates known absence and retains the full-read recovery fallback",
+        "Explicit forced ledger bootstrap still checks the full manifest after a known empty response",
+        "An old pharmacy response cannot mark the new pharmacy as authoritatively empty"
+      ]
+    },
+    {
+      "label": "candidate",
+      "file": "tests/supabase-request-root.test.cjs",
+      "exit": 1,
+      "counts": {
+        "tests": 14,
+        "pass": 3,
+        "fail": 11,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": [
+        "Receiving wake retains exact authority request and diagnostic",
+        "Authoritative absence ends forced startup retries after one response and clears stale orders",
+        "Transport failure retains four recovery attempts, diagnostics and no authoritative clearing",
+        "Busy authority overlap still retries and accepts a later authoritative result",
+        "Absence is not cached: unchanged metadata schedule discovers subsequently assigned orders",
+        "Sleep blocks extra Handheld wake; wake after resume is retained in Receiving",
+        "Shared sync, queue repair, metadata frequency and ten-minute sleep are unchanged",
+        "Empty-workspace background cycles retain metadata but avoid redundant full manifest reads",
+        "Metadata failure invalidates known absence and retains the full-read recovery fallback",
+        "Explicit forced ledger bootstrap still checks the full manifest after a known empty response",
+        "An old pharmacy response cannot mark the new pharmacy as authoritatively empty"
+      ]
+    },
+    {
+      "label": "baseline",
+      "file": "tests/work-orders-scope.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    },
+    {
+      "label": "candidate",
+      "file": "tests/work-orders-scope.test.cjs",
+      "exit": 0,
+      "counts": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failed": []
+    }
+  ]
+}

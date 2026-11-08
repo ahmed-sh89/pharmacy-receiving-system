@@ -66,7 +66,7 @@ async function bootstrapMedryvo(){
             await initializeAuth();
 
             if(typeof finishPendingAccessIfPossible === "function" && getSupabaseAccessToken()){
-                await finishPendingAccessIfPossible().catch(()=>{});
+                await finishPendingAccessIfPossible({registrationStatus:false}).catch(()=>{});
             }
 
             if(typeof loadMyAppContext === "function" && getSupabaseAccessToken()){

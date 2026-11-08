@@ -21,6 +21,60 @@
 
     <title>PharmFlow | Pharmacy Operations</title>
 
+    <!-- Fetch classic scripts in parallel; their execution stays parser-ordered. -->
+    <link rel="preload" as="script" href="js/vendor/sheetjs-0.20.3/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT">
+    <link rel="preload" as="script" href="js/excel-security.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/config.js?v=DUTY_READINESS_20261105">
+    <link rel="preload" as="script" href="js/utils.js?v=RECEIVING_U0030_RECOVERY2">
+    <link rel="preload" as="script" href="js/state.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1">
+    <link rel="preload" as="script" href="ui.js?v=STARTUP_HANDHELD_20261108">
+    <link rel="preload" as="script" href="js/excel.js?v=ORDER_IMPORT_PERMISSION_20261027">
+    <link rel="preload" as="script" href="js/master-gtin.js?v=SEC001_20261027">
+    <link rel="preload" as="script" href="js/identifier-service.js?v=RECEIVING_QUICK_ADD_20261022_1">
+    <link rel="preload" as="script" href="js/scanner.js?v=HANDHELD_ASSIGN_AUTH3">
+    <link rel="preload" as="script" href="js/receiving.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/session.js?v=FINAL_REFINEMENTS_20261028">
+    <link rel="preload" as="script" href="js/reports.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/supabase.js?v=B10CLEAN15_15">
+    <link rel="preload" as="script" href="js/orders.js?v=RECEIVE_ALL_ATOMIC1">
+    <link rel="preload" as="script" href="js/auth-viewport.js?v=HANDHELD_VIEWPORT3">
+    <link rel="preload" as="script" href="js/permissions.js?v=DUTY_REFINE_20261106">
+    <link rel="preload" as="script" href="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028">
+    <link rel="preload" as="script" href="js/auth.js?v=STARTUP_HANDHELD_20261108">
+    <link rel="preload" as="script" href="js/dev-isolation.js?v=B10CLEAN15_15">
+    <link rel="preload" as="script" href="js/needs-review.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/expiry-operation.js?v=EXPIRY_PHOTO_V5_20261021">
+    <link rel="preload" as="script" href="js/expiry-evidence.js?v=EXPIRY_PHOTO_V5_20261021">
+    <link rel="preload" as="script" href="js/expiry-capture-store.js?v=DESKTOP_RECONCILE1">
+    <link rel="preload" as="script" href="js/expiry-active-session.js?v=EXPIRY_HARDENING_20261020">
+    <link rel="preload" as="script" href="js/expiry.js?v=EXPIRY_HARDENING_20261020">
+    <link rel="preload" as="script" href="js/expiry-clear-session.js?v=RETIRE_CLEAR1">
+    <link rel="preload" as="script" href="js/expiry-inventory-report.js?v=EXPIRY_HARDENING_20261020">
+    <link rel="preload" as="script" href="js/expiry-inventory-filters.js?v=KPI_CONSOLIDATED_20261026">
+    <link rel="preload" as="script" href="js/expiry-desktop-v2.js?v=INVENTORY_EDIT_20261026">
+    <link rel="preload" as="script" href="js/expiry-scanner-diagnostic.js?v=HIDDEN1_EXPIRY_AI11_VALIDATED1">
+    <link rel="preload" as="script" href="cloud-workspace.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/app-version.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/data-layer.js?v=B10CLEAN15_15">
+    <link rel="preload" as="script" href="js/pharmflow-next.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/receiving-recovery.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/app.js?v=STARTUP_HANDHELD_20261108">
+    <link rel="preload" as="script" href="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102">
+    <link rel="preload" as="script" href="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028">
+    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY7">
+    <link rel="preload" as="script" href="js/header-account-responsive.js">
+    <link rel="preload" as="script" href="js/header-account-menu.js">
+    <link rel="preload" as="script" href="js/header-account-popover.js">
+    <link rel="preload" as="script" href="js/header-account-ui.js?v=SLEEP_WAKE_20261026">
+    <link rel="preload" as="script" href="js/settings-workspace.js?v=DUTY_REFINE_20261106">
+    <link rel="preload" as="script" href="js/duty-model.js?v=DUTY_REFINE_20261106">
+    <link rel="preload" as="script" href="js/duty-controls.js?v=DUTY_REFINE_20261106">
+    <link rel="preload" as="script" href="js/duty-schedule.js?v=DUTY_REFINE_20261106">
+    <link rel="preload" as="script" href="js/duty-reports.js?v=DUTY_REFINE_20261106">
+    <link rel="preload" as="script" href="js/duty.js?v=DUTY_REFINE_20261106">
+
+
     <link rel="icon" type="image/svg+xml" href="assets/pharmflow-mark-blue.svg">
     <link rel="shortcut icon" href="assets/pharmflow-mark-blue.svg">
     <link rel="apple-touch-icon" href="assets/pharmflow-mark-blue.svg">
@@ -97,22 +151,35 @@
     </div>
 </div>
 <script>
-(function(){
-    try{
-        var ua=String(navigator.userAgent||"").toLowerCase();
-        var explicit=new URLSearchParams(location.search||"").get("handheld")==="1";
-        var remembered=localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE")==="1";
-        var enterprise=/zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
-        var shortSide=Math.min(
-            Number((screen&&screen.width)||innerWidth||9999),
-            Number((screen&&screen.height)||innerHeight||9999)
+"use strict";
+
+/* One policy for the pre-auth shell and the operational UI. Automatic
+   detection is deliberately ephemeral: DevTools can emulate every Android
+   signal, so it must never create a remembered user preference. */
+window.PharmFlowDeviceMode = (() => {
+    function classify(){
+        let explicit = false;
+        try{
+            explicit = new URLSearchParams(window.location.search || "").get("handheld") === "1" ||
+                localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
+        }catch(_){}
+        if(explicit) return "explicit";
+
+        const ua = String(navigator.userAgent || "");
+        const platform = String(navigator.userAgentData?.platform || navigator.platform || "");
+        // A legacy auto-detection flag is never evidence of hardware or intent.
+        if(/windows/i.test(ua) || /^win/i.test(platform)) return "desktop";
+        if(/zebra|symbol|enterprise browser|\btc[0-9]{2,}\b|\bmc[0-9]{2,}\b/i.test(ua)) return "enterprise";
+        const shortest = Math.min(
+            Number(window.screen?.width || window.innerWidth || 9999),
+            Number(window.screen?.height || window.innerHeight || 9999)
         );
-        var formFactor=/android/i.test(ua) && shortSide<=600 && Number(navigator.maxTouchPoints||0)>0;
-        if(enterprise||explicit||remembered||formFactor){
-            document.body.classList.add("zebraDevice");
-            localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
-        }
-    }catch(_){}
+        return /android/i.test(ua) && shortest <= 600 && Number(navigator.maxTouchPoints || 0) > 0
+            ? "android-form-factor" : "desktop";
+    }
+    const policy = Object.freeze({classify, isHandheld: () => classify() !== "desktop"});
+    document.body.classList.toggle("zebraDevice", policy.isHandheld());
+    return policy;
 })();
 </script>
 
@@ -2582,7 +2649,7 @@
 
 <script src="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1"></script>
 
-<script src="ui.js?v=RECEIVING_READY_20261031"></script>
+<script src="ui.js?v=STARTUP_HANDHELD_20261108"></script>
 
 <script src="js/excel.js?v=ORDER_IMPORT_PERMISSION_20261027"></script>
 
@@ -2604,7 +2671,7 @@
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
 <script src="js/permissions.js?v=DUTY_REFINE_20261106"></script>
 <script src="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028"></script>
-<script src="js/auth.js?v=P1_HANDHELD_AUTH_20261102"></script>
+<script src="js/auth.js?v=STARTUP_HANDHELD_20261108"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
@@ -2630,7 +2697,7 @@
 <script src="js/pharmflow-next.js?v=RECEIVING_RELEASE_20261101"></script>
 
 <script src="js/receiving-recovery.js?v=RECEIVING_RELEASE_20261101"></script>
-<script src="js/app.js?v=RECEIVING_RELEASE_20261101"></script>
+<script src="js/app.js?v=STARTUP_HANDHELD_20261108"></script>
 
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>

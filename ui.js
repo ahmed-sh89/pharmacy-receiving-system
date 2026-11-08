@@ -7176,52 +7176,7 @@ function closeOrderStatusReport(){
 ===================================================== */
 
 function isLikelyZebraDevice(){
-    const ua = String(navigator.userAgent || "").toLowerCase();
-
-    const enterpriseHandheld =
-        /zebra|symbol|enterprise browser|tc[0-9]{2,}|mc[0-9]{2,}/i.test(ua);
-
-    let explicitHandheld = false;
-    let persistedHandheld = false;
-
-    try{
-        const params = new URLSearchParams(window.location.search || "");
-        explicitHandheld =
-            params.get("handheld") === "1" ||
-            localStorage.getItem("PHARMFLOW_HANDHELD_TEST_MODE") === "1";
-
-        persistedHandheld =
-            localStorage.getItem("PHARMFLOW_HANDHELD_DEVICE") === "1";
-    }catch(_){}
-
-    /*
-       Chrome on some Zebra builds reports a generic Android user-agent.
-       PharmFlow therefore also recognizes the narrow Android enterprise
-       form factor, then remembers this browser as a Handheld.
-    */
-    const android = /android/i.test(ua);
-    const shortestScreenSide = Math.min(
-        Number(window.screen?.width || window.innerWidth || 9999),
-        Number(window.screen?.height || window.innerHeight || 9999)
-    );
-    const handheldFormFactor =
-        android &&
-        shortestScreenSide <= 600 &&
-        Number(navigator.maxTouchPoints || 0) > 0;
-
-    const detected =
-        enterpriseHandheld ||
-        explicitHandheld ||
-        persistedHandheld ||
-        handheldFormFactor;
-
-    if(detected){
-        try{
-            localStorage.setItem("PHARMFLOW_HANDHELD_DEVICE","1");
-        }catch(_){}
-    }
-
-    return detected;
+    return window.PharmFlowDeviceMode?.isHandheld() === true;
 }
 
 function backupLegacyZebraWorkspace(reason){
