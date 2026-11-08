@@ -14,7 +14,11 @@ Actual checks: Duty 114 PASS / 1 historical FAIL / 1 optional SKIP; related regr
 
 [Full implementation, evidence boundaries and exact owner tests](docs/duty/EXCHANGE_STAGING_20261109.md).
 
-Exact next action: verify Draft PR/Preview commit and Staging backend identity, then owner performs that test list. Keep **STAGING READY FOR USER TEST** until actual verification. Do not promote or modify Production.
+Published implementation commit: `2a0ba2ac54d4d66b889f6e78c23104c9926120f6`; tree `ca717856bc6154b82a8f22e53e1cd0021ada8511` matches the locally tested source exactly. [Draft PR #53](https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/53), open/Draft, not merged. Existing candidate PR #52/branch left untouched; v2 is isolated.
+
+[Runtime Staging Preview](https://pharmflow-test-axq2lh0mr-fhyh2xtskz-3504.vercel.app/) — READY, deployment `dpl_9eHMvNYCbjGhRixTqkGoFwafVXWv`, Preview target (not Production). Remote `/version.json` verifies the implementation SHA, environment staging and `tovkcakucyagvbzvlnks`. GitHub [security run 42525509793](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525509793) SUCCESS; [session boundaries 42525509823](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525509823) SUCCESS. [Duty run 42525509786](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525509786) FAILURE: logs confirm 114 PASS / 1 historical snapshot FAIL / 1 optional SKIP. No bypass. This documentation follow-up does not change tested runtime assets.
+
+Exact next action: owner performs the Staging acceptance list. Keep **STAGING READY FOR USER TEST** until actual verification. Do not promote or modify Production.
 
 ---
 
