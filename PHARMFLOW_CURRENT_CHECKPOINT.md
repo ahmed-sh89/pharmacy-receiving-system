@@ -1,46 +1,49 @@
 # PharmFlow current checkpoint — 8 November 2026
 
-## PR #49 — Production deployed; smoke acceptance OPEN
+## PR #49 — CLOSED — USER VERIFIED
 
-**PRODUCTION DEPLOYMENT: PASS / SMOKE TESTS: PARTIAL / RELEASE CLOSURE: OPEN.**
+**PR #49 RELEASE CLOSURE: CLOSED — USER VERIFIED.** Product Owner Production acceptance recorded 8 November 2026. The previous operational acceptance blocker is resolved; no deployment or operational tests repeated for this documentation closure.
+
+## Verified release identity
 
 - Repository: ahmed-sh89/pharmacy-receiving-system. Production Supabase: `zznoshzcyxmtwfbznjyr`.
-- Approved PR: [#49](https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/49), exact approved head `be2f46b579d0087df004e45a8583f9c6dac84e07`.
-- Required pre-merge main `cbd249427dbe8a0acfd6426ef8eede2f2f4e5f29` verified. Protected merge succeeded as release main/runtime SHA `94300f212994c1995d7dc7595a80c929d0218de1`.
-- Official GitHub Pages [run 42520331672](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42520331672): SUCCESS for that merge SHA. Live HTML build meta and `version.json` both read back the exact release SHA. Later documentation-only merge has its own SHA/version stamp and does not change application source.
-- Scope: shared nonpersistent automatic Handheld detection, explicit mode preservation, exact-URL parallel script preloads preserving execution order/SRI, one redundant registration-status read removed. All 13 reviewed files and exact head verified before merge. No extra application change.
+- Released [PR #49](https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/49); approved head `be2f46b579d0087df004e45a8583f9c6dac84e07`.
+- Application release merge SHA: `94300f212994c1995d7dc7595a80c929d0218de1`; official Pages [run 42520331672](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42520331672) SUCCESS.
+- Product Owner-accepted / pre-closure Production main: `ee5f18dbde4233de078cd59a079a6dd28fe98ab3`, including documentation PR #50; official Pages [run 42520914046](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42520914046) SUCCESS for that SHA. Main, merged release identity and deployment evidence rechecked read-only for this closure. A subsequent documentation-only merge has its own SHA; application source remains identical.
+- Released scope: nonpersistent automatic Handheld classification with explicit mode preserved; exact-URL parallel script preloads preserving execution order/SRI; one redundant registration-status read removed. No further application changes.
 
-## Product Owner Staging acceptance — USER VERIFIED / PASS
+## Actual Product Owner Production acceptance — USER VERIFIED / PASS
 
-Windows authenticated Refresh #1 and #2: **3.5 seconds each**. Desktop restored after Chrome mobile emulation and stayed Desktop after subsequent Refresh. Product Owner reports **Zebra Handheld / Receiving / Expiry PASS**. This is Staging acceptance, not new Production authenticated acceptance.
+On **8 November 2026**, the Product Owner confirms:
 
-## Actual Production smoke evidence
+- Production loads completely and becomes usable **approximately 7 seconds after Refresh**, compared with the previously reported **approximately 30–60 seconds**. These are owner-observed approximate operational timings, not a controlled laboratory benchmark or a DOM-only timing.
+- **Receiving, Orders and Reports** open successfully.
+- **Expiry**, **Duty** and **Administrator** open successfully.
 
-- PASS: official site opens in remote Chrome; standard signed-out Desktop shell (no `zebraDevice`), normal Sign in, no app-origin startup console errors observed, and signed-out reload returns to the protected sign-in state.
-- PASS: deployed `js/supabase.js` and HTML/CSP readbacks use Production ref, no Staging ref; 51 preload links; no Staging timing script/button in Production.
-- Authentication attempt through the secure credential form returned **Invalid login credentials**. No automated credential retry or password reset/change was performed. This does not establish an application regression or successful authenticated access.
-- NOT VERIFIED in this Production execution: successful login/session restoration, authenticated Receiving/orders/reports/Active Manifest, Expiry records, Duty Schedule/Reports and existing employee/schedule contents. No records were created, edited or deleted by these tests. Live record preservation was not independently fingerprinted.
-- Signed-out access remains blocked. Cross-pharmacy isolation, token revocation and comprehensive security are not certified by UI smoke tests.
-- Actual Windows and physical Zebra Production checks were not newly performed by the agent. Preserve the explicitly accepted Staging evidence above without relabeling it Production acceptance.
+This explicit manual operational acceptance closes the prior PR #49 smoke-acceptance gap. Earlier agent sign-in returned `Invalid login credentials`; that attempt is not relabeled agent-authenticated PASS. No operational tests were rerun for closure and no operational data was modified by this documentation task.
 
-## Safety gates / CI exception
+## Staging / verification boundaries
 
-Main/head/base, exact 13-file diff, conflict-free mergeability, active main protection and mandatory `PharmFlow security checks` PASS verified before merge. Targeted CI: 20 focused/build checks + 255 related regressions PASS; security/session-boundary workflows PASS. No required failing check was bypassed or disabled.
+Prior Product Owner **Staging USER VERIFIED / PASS** remains distinct: Windows authenticated Refresh **3.5 seconds in each of two trials**; Desktop restored after mobile emulation and stayed correct after Refresh; **Zebra / Receiving / Expiry PASS**. This is not a new Production hardware test.
 
-Duty CI has the previously reviewed **non-mandatory historical hash comparison** failure (`tests/duty-release-isolation.test.cjs`): main matched all 81 protected manifest files; the candidate differs only in four approved frontend/build files. Current Duty job: 108 PASS / 1 FAIL / 1 SKIP, with only that snapshot assertion failing at `js/app.js`. It was retained unchanged; whole-suite/all-CI green is not claimed. No Duty implementation change is included.
+Retained release evidence: 20 focused/build checks + 255 related regressions PASS; required security and session-boundary checks PASS. Prior agent Production checks established signed-out startup/reload, no app-origin startup errors observed, Production ref/CSP, 51 preloads and absence of Staging diagnostics. No operational tests or audit repeated; mandatory documentation CI remains required. Manual acceptance does not independently prove comprehensive security, cross-pharmacy isolation, token revocation, record fingerprints, every permission combination or physical hardware behavior. No whole-suite-green claim.
 
-No SQL, migrations, schema/data/Auth configuration, Edge Functions, secrets or operational records were changed. Existing security #47, tenant/account gates, Manifest/ledger/transaction synchronization, scanning, permissions, exports and persistence are preserved within reviewed/tested boundaries. No speculative Production fixes.
+## Historical CI exception / safety
 
-## Remaining incidents / exact next action
+The reviewed **non-mandatory Duty file-snapshot exception** remains documented and unchanged. The old 81-file manifest matches the pre-release main; only four approved frontend/build files differ in PR #49. Retained Duty job: 108 PASS / 1 FAIL / 1 SKIP; only `tests/duty-release-isolation.test.cjs`'s historical byte-freeze comparison failed at `js/app.js`. It is not a verified Duty behavioral regression. No check was disabled or bypassed; required security checks must pass for this documentation PR as well.
 
-- **DUTY-SCHEDULE-INTERACTION-001 — OPEN**, separate from PR #49. Intermittent Duty cell selection/editing may stop responding after navigation or the in-app Session Paused reload, and may occur without that overlay. Browser Refresh restores interaction. No fix included or authorized here.
-- PR #49 closure remains **OPEN** until successful authenticated Production smoke acceptance: login/Refresh; read-only Receiving/orders/reports/Manifest; Expiry; Duty Schedule and Reports; confirm no unexpected password-change screen or operational data changes. Use secure sign-in if continuing agent tests, or record explicit Product Owner Production acceptance. Never request credentials in chat.
-- Rollback source baseline is retained; rollback plan is a protected revert PR and official Pages deployment. The prior Pages artifact was available during readiness review. **Actual rollback/restore was not tested.** No database rollback is needed for this frontend-only release.
+Closure changes **only `PHARMFLOW_CURRENT_CHECKPOINT.md` and `PHARMFLOW_CHANGELOG.md`** through existing branch protection. No application code, SQL/migrations, Supabase/schema/data/Auth configuration, Edge Functions, secrets or operational records changed. No manual application deployment or replay of PR #49. The existing main-push workflow is unmodified.
+
+Rollback remains a protected revert PR plus official Pages deployment; **actual rollback/restore was not tested**. No database rollback is required for the frontend-only release.
+
+## Separate unresolved incident / exact next action
+
+**DUTY-SCHEDULE-INTERACTION-001 — OPEN.** Intermittent Duty cell selection/editing can stop responding after navigation or the in-app Session Paused reload, and can also occur without that overlay; browser Refresh restores interaction. Its root cause is not established here. It remains separate from PR #49, was not fixed in this release and is not closed by the operational acceptance above.
+
+Next: undertake only a separately scoped/authorized investigation of that Duty incident. Do not reopen the accepted PR #49 release, repeat deployment/tests, or make speculative Production fixes.
 
 ## Security Release #47 — retained accepted state
 
 Security Release #47 remains **CLOSED — USER VERIFIED** for its prior operational acceptance, not comprehensive security certification. Approved head `0ba04efc5f2272ef6f496914693c31f130a2c6b2`; deployed release SHA `76a14f0f77c55bea8e6df76a5695f428ab1ccfbb`. Migrations `20261108123709_security_session_boundaries.sql` then `20261108124636_security_live_session_request_gate.sql` were previously applied atomically; password Edge handlers v8/v6. No replay or backend change in PR #49.
 
 Residual risks remain: SEC-005 accepted CSP/framing limitations; SEC-006 partially verified comprehensive breached-password screening; SEC-013 vendor PostgreSQL patch/backport dependency. Prior security and historical full-suite verification limits remain; no new penetration/cross-pharmacy certification. [Security closure](docs/security/20261108/CLOSURE.md).
-
-This outcome update changes only this checkpoint and `PHARMFLOW_CHANGELOG.md` through the protected documentation workflow. It records deployment success and partial smoke coverage; it does not mark PR #49 DONE or repair Duty interaction.
