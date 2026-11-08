@@ -49,7 +49,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');const {chromium
  }
  // Shape mismatch (2x1 versus 1x2), overlap, and multi-column compatible rectangles.
  await page.evaluate(()=>document.body.style.zoom=1);
- await drag(cell('A','01'),cell('B','01'));await drag(cell('A','03'),cell('A','04'),true);assert.equal(await exchange.isDisabled(),true);
+ await drag(cell('A','01'),cell('B','01'));await drag(cell('A','03'),cell('A','04'),true);assert.equal(await exchange.isDisabled(),true);assert.match(await page.locator('.duty-footnote').textContent(),/Select two equal ranges/);
  await drag(cell('A','01'),cell('A','03'));await drag(cell('A','02'),cell('A','04'),true);assert.equal(await exchange.isDisabled(),true);
  await drag(cell('A','01'),cell('B','03'));await drag(cell('A','10'),cell('B','12'),true);assert.equal(await exchange.isDisabled(),false);await exchange.click();assert.equal(await page.evaluate(()=>saves.at(-1).p_changes.length),12);
  // Async authoritative refresh and redundant activation both retain ready handlers.

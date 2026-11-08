@@ -174,7 +174,7 @@
   tools.querySelector('[data-s-action="apply-shift"]').disabled=!canEdit||!data.shift_presets?.length;
   tools.querySelector('[data-s-action="exchange"]').disabled=!canEdit||!exchangeRanges();
   const notice=host.querySelector('.duty-footnote [role=status]');
-  if(S.ranges.length>2&&notice)notice.textContent='Select two equal ranges to exchange shifts.';
+  if((S.ranges.length>2||(S.ranges.length===2&&canEdit&&!exchangeRanges()))&&notice)notice.textContent='Select two equal ranges to exchange shifts.';
   else if(notice)notice.textContent=S.notice||(options.loading?'Loading selected month…':'Double-click to edit · Ctrl + Drag to add a range');
   tools.querySelector('[data-s-action="copy"]').disabled=!hasSelection;
   tools.querySelector('[data-s-action="paste"]').disabled=!canEdit||!S.clipboard.length;
