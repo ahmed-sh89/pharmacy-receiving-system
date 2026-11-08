@@ -1,3 +1,9 @@
+## Duty final UI refinements — 9 November 2026
+
+Original interaction/Exchange/Ctrl+Drag/Undo/Redo/Refresh: **USER VERIFIED PASS** at 67b5ce0 (explicit Product Owner report). New range separation, Today display and Reports list: **STAGING READY FOR USER TEST**. [Actual tests, six zoom screenshots and three owner steps](docs/duty/UI_REFINEMENTS_20261109.md).
+
+4 new UI/clock tests PASS; complete Duty 118 PASS / 1 retained historical FAIL / 1 optional SKIP; related auth/session 42 PASS. Existing Exchange and new UI Chromium runners PASS. Midnight/month/range/Friday/Holiday/keyboard/scroll/outside/Escape/focus/geometry checks PASS, zero synthetic UI writes. No failing check disabled. Actual Windows owner UI acceptance remains pending.
+
 ## Duty interaction / Exchange — 9 November 2026
 
 Status: **STAGING READY FOR USER TEST**, not USER VERIFIED/DONE. [Actual test matrix, result boundaries and owner steps](docs/duty/EXCHANGE_STAGING_20261109.md#actual-verification).

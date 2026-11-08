@@ -1,3 +1,9 @@
+## 9 November 2026 — Duty final UI refinements — Staging PR #53
+
+Recorded Product Owner USER VERIFIED PASS for interaction, two/five-cell Exchange, Ctrl+Drag, Undo/Redo and Refresh persistence at 67b5ce0. Added independent blue selected-cell/range edges, Saudi Today date-cell accent and compact badge (midnight/wake updates), and styled accessible Reports employee list with name/code rows. Existing selection, atomic save and report/export data paths preserved; no backend or Production changes. [Evidence, exact files and owner steps](docs/duty/UI_REFINEMENTS_20261109.md).
+
+Duty 118 PASS / 1 historical FAIL / 1 optional SKIP; related auth/session 42 PASS. Both Chromium runners PASS; UI runner 0 writes; six zoom screenshots reviewed. New UI acceptance remains pending.
+
 ## 9 November 2026 — Duty interaction / Exchange / Ctrl+Drag — Staging
 
 Fixed reproduced cleared-scheduler/unchanged-data re-entry failure without replacing an already-live grid. Added compact bidirectional Exchange and explicit Ctrl+Drag range tracking with shape/overlap/third-range validation. Reuses existing atomic pharmacy-scoped revision-checked save RPC; no migration. Manual metadata and destination automatic calculations preserved; one-action Undo/Redo. Preview allowlist restricted to dedicated branch. Production unchanged; owner verification pending.

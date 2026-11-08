@@ -1,26 +1,16 @@
 # PharmFlow current checkpoint — 9 November 2026
 
-## Duty interaction and Exchange — STAGING READY FOR USER TEST
+## Duty final UI refinements — STAGING READY FOR USER TEST
 
-Authorized Staging-only scope: DUTY-SCHEDULE-INTERACTION-001 root-cause fix, bidirectional atomic Exchange, Ctrl+Drag multi-range. Product Owner verification pending. No Production merge/deploy/database/Edge Function/operational writes authorized or performed.
+Continue existing [Draft PR #53](https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/53); no competing PR. Accepted source `67b5ce09492b7fb8fd9e2f7aec76028cd2c73d62`; branch `fix/duty-exchange-staging-20261109-v2`. Production main verified unchanged `c68a940fecd9d40b57b625769e9a4654991b6010`.
 
-Verified Production main: `c68a940fecd9d40b57b625769e9a4654991b6010`. Branch: `fix/duty-exchange-staging-20261109-v2`, based directly on that SHA. Staging Supabase: `tovkcakucyagvbzvlnks`.
+**USER VERIFIED PASS:** original interaction fix, two-cell Exchange, Ctrl+Drag two ranges, five-cell Exchange, Undo/Redo, persistence after Refresh. Product Owner acceptance explicitly recorded; preserve all six.
 
-Root cause reproduced: route activation cleared scheduler month/state but retained the visible DOM and controller data; identical server data skipped mounting. Tab switching mounted and restored the scheduler. Final fix mounts cleared/detached state independently of data equality and preserves a live grid on redundant activation. No timeout recovery or new polling.
+Three authorized UI-only changes: independent blue range/cell boundaries; slim green Today date-cell accent and compact Saudi-local date badge with midnight/wake updates; styled accessible Reports Employee Filter (names + code badges, top-layer scrollable list). Existing hidden select/change adapter preserves report behavior. No changes to exchange/saving/calculations, schema, Edge Functions, permissions, operational records or other modules.
 
-Exchange submits both explicit equal, disjoint rectangles in one existing `save_pharmflow_duty_schedule_v2` transaction, retaining per-cell revision conflict guards and pharmacy lock. No migration required/applied. Automatic destination classification and explicit manual metadata preserved; one-frame revision-safe Undo/Redo. Ctrl+Drag adds a second range, normal drag replaces, third/mismatched/overlapping ranges disable Exchange.
+Actual tests: four new UI/clock tests PASS; Duty 120 total / 118 PASS / 1 historical snapshot FAIL / 1 optional SKIP. Relevant auth/session 42 PASS. Existing real Chromium Exchange runner and new UI/midnight/dropdown runner PASS, 0 UI writes and unchanged synthetic data. 75/80/100% CSS zoom plus browser viewport/DPR rendering checked; six screenshots visually reviewed. Default/isolated Preview builds PASS. Historical snapshot failure at js/app.js retained without disabling checks; no full-suite-green claim.
 
-Actual checks: Duty 114 PASS / 1 historical FAIL / 1 optional SKIP; related regressions 61 PASS / 1 historical FAIL; focused security 66 PASS. Both failures reproduced independently on unchanged main. Chromium real-pointer, idle-resume and reload integration PASS with synthetic server fixture; SQL-engine atomic rollback/rules/permissions tests PASS; default and isolated Preview builds PASS. Native Windows zoom, hosted two-PC acceptance and owner acceptance remain pending. No whole-suite-green or live operational test claim.
-
-[Full implementation, evidence boundaries and exact owner tests](docs/duty/EXCHANGE_STAGING_20261109.md).
-
-Published implementation commit: `2a0ba2ac54d4d66b889f6e78c23104c9926120f6`; tree `ca717856bc6154b82a8f22e53e1cd0021ada8511` matches the locally tested source exactly. [Draft PR #53](https://github.com/ahmed-sh89/pharmacy-receiving-system/pull/53), open/Draft, not merged. Existing candidate PR #52/branch left untouched; v2 is isolated.
-
-[Runtime Staging Preview](https://pharmflow-test-axq2lh0mr-fhyh2xtskz-3504.vercel.app/) — READY, deployment `dpl_9eHMvNYCbjGhRixTqkGoFwafVXWv`, Preview target (not Production). Remote `/version.json` verifies the implementation SHA, environment staging and `tovkcakucyagvbzvlnks`. GitHub [security run 42525509793](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525509793) SUCCESS; [session boundaries 42525509823](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525509823) SUCCESS. [Duty run 42525509786](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42525509786) FAILURE: logs confirm 114 PASS / 1 historical snapshot FAIL / 1 optional SKIP. No bypass. This documentation follow-up does not change tested runtime assets.
-
-Exact next action: owner performs the Staging acceptance list. Keep **STAGING READY FOR USER TEST** until actual verification. Do not promote or modify Production.
-
----
+[Exact changed files, visual evidence and three acceptance steps](docs/duty/UI_REFINEMENTS_20261109.md). Final tested SHA, Preview status/backend identity and current CI are pinned in PR #53. Next: owner visual acceptance of only these three refinements. Keep STAGING READY FOR USER TEST. No Production merge/deploy/database/operational writes authorized or performed.
 
 ## Retained accepted Production releases
 

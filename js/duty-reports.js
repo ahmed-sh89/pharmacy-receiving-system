@@ -197,7 +197,12 @@
   host.innerHTML=`<section class="duty-report" aria-labelledby="duty-report-title">
    <header class="duty-report-heading"><h2 id="duty-report-title">Duty Reports</h2><span>${esc(report.title)}</span></header>
    <div class="duty-report-controls">
-    <label class="duty-report-field">Employee Filter<select data-report-employee aria-label="Employee Filter"><option value="" ${single?'':'selected'}>All Employees</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select></label>
+    <div class="duty-report-field duty-employee-filter"><span id="duty-employee-label">Employee Filter</span>
+    <select data-report-employee aria-label="Employee Filter" hidden tabindex="-1" aria-hidden="true"><option value="" ${single?'':'selected'}>All Employees</option>${report.staff.map(e=>`<option value="${esc(e.code)}" ${e===single?'selected':''}>${esc(e.name)} · ${esc(e.id)}</option>`).join('')}</select>
+    <button type="button" class="duty-employee-trigger" data-report-employee-trigger role="combobox" aria-labelledby="duty-employee-label duty-employee-value" aria-haspopup="listbox" aria-controls="duty-employee-list" aria-expanded="false"><span class="duty-employee-name" id="duty-employee-value">${single?esc(single.name):'All Employees'}</span>${single?`<span class="duty-employee-code">${esc(single.id)}</span>`:''}<svg viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5"/></svg></button>
+    <div id="duty-employee-list" class="duty-employee-list" data-report-employee-list popover="auto" role="listbox" aria-labelledby="duty-employee-label">
+    ${[{code:'',name:'All Employees',id:''},...report.staff].map(e=>`<button type="button" role="option" tabindex="-1" data-employee-option="${esc(e.code)}" aria-selected="${e.code===state.employee}"><span class="duty-employee-name">${esc(e.name)}</span>${e.id?`<span class="duty-employee-code">${esc(e.id)}</span>`:''}<span class="duty-employee-check" aria-hidden="true">${e.code===state.employee?'✓':''}</span></button>`).join('')}
+    </div></div>
     <div class="duty-report-period"><label class="duty-report-field">Period<select data-report-period><option value="full">Full Month</option><option value="custom" ${state.range?'selected':''}>Custom Date Range</option></select></label>
     ${state.range?`<div class="duty-range-inputs">${C.dateField({id:'duty-report-from',name:'from',label:'From',value:state.range.from,min:config.month+'-01',max:M.days(config.month).at(-1).date,attributes:'data-report-from'})}${C.dateField({id:'duty-report-to',name:'to',label:'To',value:state.range.to,min:config.month+'-01',max:M.days(config.month).at(-1).date,attributes:'data-report-to'})}</div>`:''}</div>
     <label class="duty-report-field">Excel format<select data-report-format><option value="standard" ${state.format==='standard'?'selected':''}>Standard Timesheet</option><option value="schedule" ${state.format==='schedule'?'selected':''}>Schedule Layout</option></select></label>
@@ -219,9 +224,45 @@
    if(e.target.value&&!report.staff.some(person=>person.code===e.target.value))return;
    state.employee=e.target.value;state.preview=true;state.page=0;
    mount(host,data,config);
-   host.querySelector('[data-report-employee]').focus();
+   host.querySelector('[data-report-employee-trigger]').focus();
   };
-  host.querySelector('[data-report-clear]').onclick=()=>{state.employee='';state.page=0;mount(host,data,config);host.querySelector('[data-report-employee]').focus();};
+  const trigger=host.querySelector('[data-report-employee-trigger]'),list=host.querySelector('[data-report-employee-list]');
+  const items=()=>[...list.querySelectorAll('[role=option]')];
+  const closeList=(restore=true)=>{list.hidePopover?.();trigger.setAttribute('aria-expanded','false');if(restore&&trigger.isConnected)trigger.focus();};
+  const openList=()=>{
+   list.showPopover?.({source:trigger});trigger.setAttribute('aria-expanded','true');
+   // Top-layer popover escapes panel overflow. Account for CSS/device zoom.
+   const rect=trigger.getBoundingClientRect?.();
+   if(rect&&list.getBoundingClientRect){
+    const scale=list.offsetWidth?list.getBoundingClientRect().width/list.offsetWidth:1;
+    const below=root.innerHeight-rect.bottom-12,above=rect.top-12;
+    list.style.width=Math.min(Math.max(rect.width,280*scale),root.innerWidth-16)/scale+'px';
+    list.style.maxHeight=Math.max(40,Math.min(350,Math.max(below,above)/scale))+'px';
+    const box=list.getBoundingClientRect();list.style.left=Math.max(8,Math.min(rect.left,root.innerWidth-box.width-8))/scale+'px';
+    list.style.top=Math.max(8,box.height<=below?rect.bottom+4:rect.top-box.height-4)/scale+'px';
+   }
+   const selected=list.querySelector('[aria-selected=true]')||items()[0];selected?.focus({preventScroll:true});selected?.scrollIntoView?.({block:'nearest'});
+  };
+  trigger.onclick=()=>{if(trigger.getAttribute('aria-expanded')==='true')closeList();else openList();};
+  trigger.onkeydown=e=>{if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();openList();if(e.key==='Home')items()[0]?.focus();if(e.key==='End')items().at(-1)?.focus();}};
+  const choose=button=>{closeList(false);host.querySelector('[data-report-employee]').onchange({target:{value:button.dataset.employeeOption}});};
+  list.onclick=e=>{const button=e.target.closest('[data-employee-option]');if(button)choose(button);};
+  let search='',searchAt=0;
+  list.onkeydown=e=>{
+   const options=items(),index=options.indexOf(e.target);
+   if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeList();return;}
+   if(e.key==='Tab'){e.preventDefault();closeList();const next=e.shiftKey?host.closest('#page-duty')?.querySelector('[data-duty-tab=reports]'):host.querySelector('[data-report-period]');next?.focus();return;}
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();if(index>=0)choose(options[index]);return;}
+   const offset={ArrowDown:index+1,ArrowUp:index-1,Home:0,End:options.length-1}[e.key];
+   if(offset!==undefined){e.preventDefault();options[Math.max(0,Math.min(options.length-1,offset))]?.focus();return;}
+   if(e.key.length===1&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+    const now=Date.now();search=now-searchAt>700?e.key:search+e.key;searchAt=now;
+    const match=options.find(option=>option.textContent.trim().toLowerCase().startsWith(search.toLowerCase()));if(match){e.preventDefault();match.focus();}
+   }
+  };
+  list.addEventListener('beforetoggle',e=>trigger.setAttribute('aria-expanded',String(e.newState==='open')));
+  list.addEventListener('toggle',e=>{if(e.newState==='closed'){trigger.setAttribute('aria-expanded','false');if(list.contains(host.ownerDocument.activeElement))trigger.focus();}});
+  host.querySelector('[data-report-clear]').onclick=()=>{state.employee='';state.page=0;mount(host,data,config);host.querySelector('[data-report-employee-trigger]').focus();};
   host.querySelector('[data-report-format]').onchange=e=>{
    state.format=e.target.value;state.page=0;mount(host,data,config);
    host.querySelector('[data-report-format]').focus();

@@ -161,11 +161,11 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-vertical td.duty-selected{outline:0}
 #page-duty .duty-vertical tr:not(.duty-friday-row,.duty-holiday-row) td.duty-selected:not(.duty-leave){background:#eaf4ff}
 #page-duty .duty-vertical td.duty-cell:hover:not(.duty-selected)::after{content:"";position:absolute;inset:0;pointer-events:none;border:1px solid #7199bf;background:#367db409}
-#page-duty .duty-vertical td.duty-selected::after{content:"";position:absolute;inset:0;pointer-events:none;border:0 solid #1765ac}
-#page-duty .duty-vertical td.duty-edge-top::after{border-top-width:2px}
-#page-duty .duty-vertical td.duty-edge-bottom::after{border-bottom-width:2px}
-#page-duty .duty-vertical td.duty-edge-left::after{border-left-width:2px}
-#page-duty .duty-vertical td.duty-edge-right::after{border-right-width:2px}
+#page-duty .duty-vertical td.duty-selected::after{content:"";position:absolute;inset:0;pointer-events:none;border:1px solid var(--duty-selection-line)}
+#page-duty .duty-vertical td.duty-edge-top::after{border-top:2px solid var(--duty-selection-edge)}
+#page-duty .duty-vertical td.duty-edge-bottom::after{border-bottom:2px solid var(--duty-selection-edge)}
+#page-duty .duty-vertical td.duty-edge-left::after{border-left:2px solid var(--duty-selection-edge)}
+#page-duty .duty-vertical td.duty-edge-right::after{border-right:2px solid var(--duty-selection-edge)}
 #page-duty .duty-date-button{display:grid;justify-items:start;gap:2px;width:100%;border:0;background:transparent;box-shadow:none;padding:3px 6px}
 #page-duty .duty-date-button strong{font-size:15px;color:#173b61}
 #page-duty .duty-date-button span,#page-duty .duty-date-button small{font-size:11px;font-weight:500}
@@ -427,7 +427,32 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-preset-hours [data-ot]{color:#17663e;background:#e8f6ed;border:1px solid #abd8ba}
 #page-duty .duty-preset-hours small{flex-basis:100%;font-size:10px;color:#62738a}
 
-/* Two gesture ranges share calm selection styling; B uses a subtle violet tint. */
-#page-duty .duty-vertical tr:not(.duty-friday-row,.duty-holiday-row) td.duty-selected.duty-range-b:not(.duty-leave){background:#f0edfa;}
-#page-duty .duty-vertical td.duty-selected.duty-range-b::after{border-color:#8570b5;}
 .duty-grid-scroll [data-s-code],.duty-date-button{user-select:none;}
+
+/* Independent blue ranges: per-cell lines and range edges do not change geometry. */
+#page-duty .duty-vertical td.duty-selected{--duty-selection-line:#aec7df;--duty-selection-edge:#236ca6;background-clip:padding-box}
+#page-duty .duty-vertical td.duty-selected.duty-range-b{--duty-selection-line:#8db6d8;--duty-selection-edge:#174e82}
+#page-duty .duty-vertical tr:not(.duty-friday-row,.duty-holiday-row) td.duty-selected.duty-range-b:not(.duty-leave){background:#dcebf8}
+/* Only the date cell gets today's green accent; weekday/holiday content stays intact. */
+#page-duty .duty-vertical tbody th.duty-today{background:#edf7f1;box-shadow:inset 3px 0 #278466}
+#page-duty .duty-vertical th.duty-today .duty-date-button strong{color:#175c49}
+#page-duty .duty-today-badge{display:inline-flex;align-items:center;gap:6px;min-height:28px;box-sizing:border-box;max-width:100%;padding:3px 7px;border:1px solid #c7ddd4;border-left:3px solid #278466;border-radius:6px;background:#f2f8f5;color:#173f70;white-space:nowrap;font-size:11px;font-weight:700;line-height:18px}
+#page-duty .duty-today-badge small{font-size:10px;font-weight:500;color:#486c60}
+/* Employee Filter: top-layer listbox, with stable native value/change adapter. */
+#page-duty .duty-employee-filter{position:relative}
+#page-duty .duty-employee-filter select[hidden]{display:none}
+#page-duty .duty-employee-trigger{display:flex;align-items:center;gap:8px;width:100%;min-width:0;min-height:34px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#173f70;padding:5px 8px;font:inherit;text-align:left;cursor:pointer}
+#page-duty .duty-employee-name{font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+#page-duty .duty-employee-code{flex-shrink:0;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid #c9d9e9;border-radius:4px;background:#edf3f9;color:#315a80;font-size:10px;font-weight:700;line-height:18px;padding:0 5px;font-variant-numeric:tabular-nums}
+#page-duty .duty-employee-trigger svg{width:11px;height:8px;flex-shrink:0;fill:none;stroke:#173f70;stroke-width:1.5}
+#page-duty .duty-employee-trigger:hover{border-color:#7d9fbe;background:#f0f6fc}
+#page-duty .duty-employee-trigger:focus-visible,#page-duty .duty-employee-trigger[aria-expanded=true]{outline:2px solid #377cad;outline-offset:1px}
+#page-duty .duty-employee-list{position:fixed;inset:auto;margin:0;box-sizing:border-box;width:320px;max-width:calc(100vw - 16px);max-height:350px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:4px;border:1px solid #b9cfe2;border-radius:8px;background:#fff;color:#173f70;box-shadow:0 8px 28px #173f7026}
+#page-duty .duty-employee-list [role=option]{display:flex;align-items:center;gap:8px;width:100%;min-height:38px;box-sizing:border-box;padding:7px 9px;border:0;border-bottom:1px solid #e7eef5;border-radius:0;background:#fff;color:#173f70;text-align:left;cursor:pointer;font-family:inherit}
+#page-duty .duty-employee-list [role=option]:last-child{border-bottom:0}
+#page-duty .duty-employee-list [role=option]:hover{background:#f1f6fb}
+#page-duty .duty-employee-list [role=option][aria-selected=true]{background:#e7f0fa;color:#153f6a}
+#page-duty .duty-employee-list [role=option]:focus{outline:2px solid #377cad;outline-offset:-2px;border-radius:4px;background:#edf5fc}
+#page-duty .duty-employee-list small{color:#678097;font-size:10px;font-weight:400}
+#page-duty .duty-employee-check{width:14px;flex-shrink:0;font-size:12px;color:#2165a8;text-align:center}
+@media(max-width:750px){#page-duty .duty-today-badge small{display:none}}

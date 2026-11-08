@@ -3,7 +3,7 @@
  'use strict';
  const M=window.DutyModel,C=window.DutyControls,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const S={range:null,group:'pharmacists',staffPage:0,custom:new Set(),month:'',selected:[],ranges:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
- let host,data,options,scopeVersion=0,drag=null,skipClick=false;
+ let host,data,options,scopeVersion=0,drag=null,skipClick=false,todayTimer=null;
  const palette=[['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose'],['','Clear Color']];
  const past=[],future=[],localRevisions=new Map();
  const holidayFirst=()=>options.demo||data.holiday_first===true;
@@ -36,6 +36,24 @@
   if(S.month!==config.month){S.scroll={left:0,top:0};S.month=config.month;S.range=null;clearSelection();S.editing=null;S.notice='';}
   render();
  }
+ // Display-only local clock: patch the date indicators without replacing cells,
+ // moving focus, changing selection, or making schedule/network writes.
+ function refreshToday(){
+  if(todayTimer!==null){window.clearTimeout?.(todayTimer);todayTimer=null;}
+  if(!host?.isConnected)return;
+  const today=C.today(),badge=host.querySelector('[data-duty-today]');
+  if(badge){badge.querySelector('time').textContent=formatDate(today);badge.querySelector('time').dateTime=today;badge.querySelector('small').textContent=dayLabel.format(new Date(today+'T12:00Z'));badge.setAttribute('aria-label','Today, '+dayLabel.format(new Date(today+'T12:00Z'))+', '+today);}
+  for(const button of host.querySelectorAll('[data-s-column]')){
+   const current=button.dataset.sColumn===today;
+   button.closest('th').classList.toggle('duty-today',current);
+   if(current)button.setAttribute('aria-current','date');else button.removeAttribute('aria-current');
+  }
+  // Saudi Arabia currently uses UTC+03 throughout the year. Re-read the real
+  // local date after midnight and after wake/focus (including a clock change).
+  if(window.setTimeout){todayTimer=window.setTimeout(refreshToday,Math.max(1000,Date.parse(today+'T00:00:00+03:00')+86400000-Date.now()));todayTimer?.unref?.();}
+ }
+ window.addEventListener?.('focus',refreshToday);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshToday();});
  function clearSelection(){S.ranges=[];S.selected=[];S.anchor=null;S.cursor=null;S.rowAnchor=null;}
  function render(){
   if(!host?.isConnected)return;
@@ -56,7 +74,7 @@
    <form data-date-range popover="manual" role="dialog" aria-label="Schedule date range">${C.dateField({id:"duty-schedule-from",name:"from",label:"Start Date",value:S.range?.from||first,min:first,max:last})}${C.dateField({id:"duty-schedule-to",name:"to",label:"End Date",value:S.range?.to||last,min:first,max:last})}<p class="duty-range-error" role="alert"></p><div class="duty-popover-footer"><button type="button" data-range-cancel>Cancel</button><button type="submit" class="duty-primary">Apply</button></div></form></div>
    ${S.range?'<button type="button" data-s-action="full-month">Full Month</button>':''}
    <div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
-   <button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="exchange" title="Exchange selected shifts" disabled>Exchange</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
+   <span class="duty-today-badge" data-duty-today><span>Today · <time></time></span><small></small></span><button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="exchange" title="Exchange selected shifts" disabled>Exchange</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
    ${[['delete','Delete','Delete','M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7'],['undo','Undo','Ctrl+Z','M8 4L3 9l5 5M3 9h11a5 5 0 0 1 0 10h-3'],['redo','Redo','Ctrl+Y','M16 4l5 5-5 5m5-5H10a5 5 0 0 0 0 10h3']].map(([id,label,shortcut,path])=>`<button type="button" class="duty-icon duty-icon-${id}" data-s-action="${id}" aria-label="${label}" title="${label} (${shortcut})" ${id==='undo'&&(!past.length||!writable())||id==='redo'&&(!future.length||!writable())?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`).join('')}
    ${dropdown('status','Apply status to selection','Status…',Object.entries({...M.statuses,OTHER_LEAVE:'Unpaid Leave',EMPTY:'Clear Cell'}))}
    <button type="button" data-s-action="color">Cell Color</button></div></div>
@@ -67,7 +85,7 @@
    <div class="duty-footnote"><span role="status">${esc(S.notice||(options.loading?'Loading selected month…':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
-  bind();C.bindCalendars(host);C.fitViewport(host);updateSelection();
+  bind();C.bindCalendars(host);C.fitViewport(host);updateSelection();refreshToday();
  }
  function cell(e,d){
   const p=payload(e.code,d.date),n=hoursFor(e.code,d.date,p);
@@ -157,15 +175,18 @@
  function updateSelection(){
   const keys=new Set(S.selected.map(c=>key(c.code,c.date)));
   const cells=[...host.querySelectorAll('[data-s-code]')];
+  const rangeKeys=S.ranges.map(range=>new Set(range.map(c=>key(c.code,c.date))));
+  const rangeFor=td=>td?.hasAttribute('data-s-code')?rangeKeys.findIndex(keys=>keys.has(key(td.dataset.sCode,td.dataset.sDate))):-1;
   const isSelected=td=>td?.hasAttribute('data-s-code')&&keys.has(key(td.dataset.sCode,td.dataset.sDate));
   for(const td of cells){
    const {sCode:code,sDate:date}=td.dataset,active=isSelected(td),row=td.parentElement;
    td.classList.toggle('duty-range-b',active&&S.ranges[1]?.some(c=>c.code===code&&c.date===date));
    td.classList.toggle('duty-selected',active);td.setAttribute('aria-selected',String(active));
-   td.classList.toggle('duty-edge-top',active&&!isSelected(row.previousElementSibling?.children[td.cellIndex]));
-   td.classList.toggle('duty-edge-bottom',active&&!isSelected(row.nextElementSibling?.children[td.cellIndex]));
-   td.classList.toggle('duty-edge-left',active&&!isSelected(td.previousElementSibling));
-   td.classList.toggle('duty-edge-right',active&&!isSelected(td.nextElementSibling));
+   const sameRange=other=>isSelected(other)&&rangeFor(other)===rangeFor(td);
+   td.classList.toggle('duty-edge-top',active&&!sameRange(row.previousElementSibling?.children[td.cellIndex]));
+   td.classList.toggle('duty-edge-bottom',active&&!sameRange(row.nextElementSibling?.children[td.cellIndex]));
+   td.classList.toggle('duty-edge-left',active&&!sameRange(td.previousElementSibling));
+   td.classList.toggle('duty-edge-right',active&&!sameRange(td.nextElementSibling));
    td.tabIndex=(S.cursor?code===S.cursor.code&&date===S.cursor.date:td===cells[0])?0:-1;
   }
   const hasSelection=!!S.selected.length&&!S.editing;
@@ -724,6 +745,7 @@
  }
  window.DutySchedule={mount,rememberScroll,isMounted:(el,month)=>host===el&&!!host?.isConnected&&S.month===month,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>{if(S.editing&&!host?.querySelector('.duty-cell-editor')?.isConnected)S.editing=null;return !!S.editing||S.busy||S.confirming||!!(drag?.moved&&host?.hasPointerCapture?.(drag.id));},clear(keepClipboard=false){
   if(drag?.frame)cancelAnimationFrame(drag.frame);
+  if(todayTimer!==null){window.clearTimeout?.(todayTimer);todayTimer=null;}
   drag=null;skipClick=false;presetGroup='all';scopeVersion++;clearHistory();
   if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.range=null;}
   Object.assign(S,{scroll:{left:0,top:0},range:null,editing:null,selected:[],ranges:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
