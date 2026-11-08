@@ -1,0 +1,3512 @@
+[
+  {
+    "function": "public.add_pharmflow_global_identifier_v2(p_operation_id uuid, p_identifier_display text, p_item_code text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "d99d974547ec7448496a748484798d191be5c0bf2b297e27ef62f399ddb3a3f9",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_global_item_identifiers_v2",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_identifier_mapping_audit_v1",
+      "public.pharmflow_is_reference_master_admin_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.add_pharmflow_pharmacy_identifier_v2(p_operation_id uuid, p_pharmacy_id uuid, p_identifier_display text, p_item_code text, p_item_name text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "6e8499dfe5da4e7d24b8d2cfd0066558b57af9709e332bdd7796f7a09567fa35",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_is_pharmacy_identifier_admin_v2",
+      "public.pharmflow_pharmacy_gtin_v1",
+      "public.pharmflow_pharmacy_identifier_mapping_audit_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.append_global_master_gtin_import(p_import_id uuid, p_records jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "30cfedb74271bae6420935562a4634568a7c975b74273b7be5e9d0634e008736",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmflow_global_gtin_import_rows_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.append_global_master_gtin_import_v2(p_import_id uuid, p_records jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "c9a984cba0ceba67baf4f955bb6e3c137cf67a49daee0b519179ba7c075ba8a5",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmflow_global_gtin_import_rows_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.append_pharmflow_cloud_transaction(p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity numeric, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "3990d1a1a81f286eb564453642bca5875d2230e258a32010b2e22746c6c3b67d",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_can_access_pharmacy",
+      "public.pharmflow_cloud_transactions"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.append_pharmflow_cloud_transaction(p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "ebcecec7f5508aa078f430a6061df6a3cb673d2f1ab62ee534ddd6943143b497",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_manifest_member_v2",
+      "public.pharmflow_receiving_transactions_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.append_pharmflow_cloud_transaction_v2(p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "e98292a804f145fa49d543c8d525814eb218d7298309fc132d0775a740177b91",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_receiving_member_v2",
+      "public.pharmflow_receiving_transactions_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.append_pharmflow_learned_transaction_v3(p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb, p_mapping_id uuid, p_mapping_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "7cbd28681980ac6294ec6522845b0622ec539cf6a8db8476531d6c7cb5e33d24",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_gtin_lifecycle_member_v3",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_receiving_transactions_v1",
+      "public.try_finalize_pharmflow_needs_review_resolution_intent_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.append_pharmflow_learned_transaction_v4(p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb, p_mapping_id uuid, p_mapping_revision bigint, p_mapping_scope text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp",
+      "lock_timeout=3s"
+    ],
+    "source_sha256": "9bba335581ef444df8e51996ab424c401c4977a595a0b4be44ad1499cc0c0b7e",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.append_pharmflow_receiving_action_v4",
+      "public.is_pharmacy_member",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_receiving_item_code_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.append_pharmflow_receiving_action_v4(p_pharmacy_id uuid, p_transaction_id text, p_order_number text, p_item_code text, p_item_name text, p_gtin text, p_quantity integer, p_source text, p_device_id text, p_occurred_at timestamp with time zone, p_payload jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "d60795c80bf923118754f30876bd7da1e7b4e917c67df7d2471a6ff6e86c1ac2",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_receiving_member_v2",
+      "public.pharmflow_receiving_transactions_v1",
+      "public.try_finalize_pharmflow_needs_review_resolution_intent_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.apply_pharmflow_duty_preset_v1(p_pharmacy_id uuid, p_month date, p_preset_id text, p_expected_settings_revision bigint, p_changes jsonb, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "33443d69df057a265b8e71d8aa3604ded479a8de7b1b59a0ee82893c609efbaf",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "public.save_pharmflow_duty_schedule_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.assign_pharmflow_needs_review_order_v1(p_pharmacy_id uuid, p_review_id uuid, p_order_number text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "5012411b2749fd8e6e0766314802319c096b73e21b433872050b881cf01d9f77",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.atomic_reset_pharmflow_current_workspace(p_pharmacy_id uuid, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "47d754d626dc605ff9eda5a3ccc09447be5b9d87462ed86358959d09002de139",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.clear_pharmflow_cloud_workspace",
+      "public.is_pharmacy_member",
+      "public.pharmflow_workspace_generation_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.atomic_reset_pharmflow_current_workspace_v3(p_pharmacy_id uuid, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "b1f501b111808ea08791be11b1d07d60a139a61f7a8d35baf49563dda132373a",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.clear_pharmflow_cloud_workspace",
+      "public.pharmflow_manifest_member_v2",
+      "public.pharmflow_workspace_generation_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.atomic_reset_pharmflow_current_workspace_v4(p_pharmacy_id uuid, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "d41fad563912b69e1b071303fbad651f2071782a7866e2055c69f8b892c4714d",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.clear_pharmflow_cloud_workspace",
+      "public.pharmflow_manifest_member_v2",
+      "public.pharmflow_workspace_generation_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.authorize_pharmflow_expiry_photo_cleanup_v1(p_pharmacy_id uuid, p_review_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "43eb4acb7567d21fee0fa8a6a0384483b1922d92f04fe8ca766f5c3a0c9547cb",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.begin_global_master_gtin_import(p_source_file text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "47ce86780d2447674eeb189887400241b3dea571b5ea482cfde7d9f02563ee03",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmflow_global_gtin_imports_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.bootstrap_system_owner(p_pharmacy_name text, p_pharmacy_code text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "6e503bb82065864c16730f249a156026fdadb4c46d23786cbd4f8da2175604c0",
+    "calls": [
+      "public.pharmacies",
+      "public.pharmacy_members",
+      "public.system_owners"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.can_delete_pharmflow_expiry_staged_photo_v1(p_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "2e54fa9bcb514fcbefdfa9050729ec7869777704c891f93cf27e8e84a231a540",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.cancel_pharmflow_expiry_capture_v1(p_pharmacy_id uuid, p_operation_id uuid, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "14c8b4290a483a4863a713e7e7bfa3cec1f2bb1cee60f47e1bec700d6ecc332a",
+    "calls": [
+      "pharmflow_expiry_private.operations",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.claim_pharmacy_admin_assignment()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, auth"
+    ],
+    "source_sha256": "55b10fa603db4207ca4176e681ccecd8d5ff497d1fe7b4b0b6527ba7ffcd7ff9",
+    "calls": [
+      "pharmflow_auth_private.password_change_complete"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.clear_pharmflow_active_order_manifest(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "17dcc095d873920d908fcf48e557bd25c2c484bace3d904945847f1eb97014de",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.clear_pharmflow_active_order_manifest_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "5ae5d6b0ede708fd6491791e555e31c9ba28bd0fb8db153bce42f32eb06243b2",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_manifest_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.clear_pharmflow_cloud_workspace(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "6ca67b5299eb7c138e3190916d56551055aa91659e8f186b87192e6e945e6d80",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_can_access_pharmacy"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.clear_pharmflow_expiry_desktop_session_v1(p_pharmacy_id uuid, p_session_id uuid, p_request_id uuid, p_device_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog"
+    ],
+    "source_sha256": "3431ed5cfe295d2160eb212179b5100b38e15ea32a357a331808c10734f4c4fd",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.active_sessions_v1",
+      "pharmflow_expiry_private.require_signed_session",
+      "pharmflow_expiry_private.session_clear_requests_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.clear_pharmflow_receiving_needs_review_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, storage, pg_temp"
+    ],
+    "source_sha256": "814b04721b6fc9d2e60a0d10531d536f8dd5d493e98a1c1a6679d4de6f59a463",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.clear_pharmflow_receiving_needs_review_v3(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "62a4ea50e0ce069518451fbde11715137ca64552ad4cd9725acaa20add9fa19e",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.clear_pharmflow_receiving_transactions(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "58e1f9427f0cba691bfe031ed100cc2eb0227b0d0e617149dd9c8410177a3c30",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_manifest_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.clear_pharmflow_receiving_transactions_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "811315b3b1ce78ab121e253f4ed7a41e9d30e9e073bf5a5131fdbd05b4879856",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_receiving_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.close_pharmflow_expiry_auth_session_v1()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog"
+    ],
+    "source_sha256": "598bd93ecf6b56806ec0d268739fdd7268b4c32e3494861acd8654a8840faf35",
+    "calls": [
+      "pharmflow_expiry_private.closed_auth_sessions_v1",
+      "pharmflow_expiry_private.valid_auth_session"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.commit_global_master_gtin_import(p_import_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "33ef20533ba1b424322852397af40f7d5062e750af11792bd0cfd7cb8a0467ac",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmflow_global_gtin_conflicts_v1",
+      "public.pharmflow_global_gtin_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.commit_global_master_gtin_import_v2(p_import_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "01bb7af6ddde40d9a37fe26c2ac305eb04da7400a0e76376e633cbf6334cf081",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmflow_global_gtin_conflicts_v1",
+      "public.pharmflow_global_gtin_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmacy_expiry_current_state_v1(p_pharmacy_id uuid, p_state_id uuid, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_batch_no text, p_worker_id uuid, p_device_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "5b8bfe5271fd1ea90411684958497e4d92a6d49ae58242267b7dd7bbc1c47e90",
+    "calls": [
+      "public.is_pharmacy_member",
+      "public.pharmflow_expiry_events_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmacy_learned_gtin(p_pharmacy_id uuid, p_gtin text, p_new_item_code text, p_new_item_name text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "6b248960e7d55ce29888608da27a85159b31415cc4aca5fa903119fa70054a6c",
+    "calls": [
+      "public.pharmacy_learned_gtin_audit",
+      "public.pharmflow_is_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmacy_learned_gtin_v2(p_pharmacy_id uuid, p_gtin text, p_new_item_code text, p_new_item_name text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "f7670ed94d9b54bf0168787f25565ae39d1749a7a7c7e2f30cbb46c62f906fa9",
+    "calls": [
+      "public.pharmflow_is_member",
+      "public.pharmflow_pharmacy_gtin_audit_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmacy_learned_gtin_v3(p_pharmacy_id uuid, p_operation_id uuid, p_gtin text, p_expected_mapping_id uuid, p_expected_mapping_revision bigint, p_new_item_code text, p_new_item_name text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "a8e00c799e472cbe7a1ee91e7827e1c247f1859ccdc9f098455308df354d0688",
+    "calls": [
+      "public.pharmflow_gtin_candidates_v3",
+      "public.pharmflow_gtin_lifecycle_admin_v3",
+      "public.pharmflow_gtin_lifecycle_v3",
+      "public.pharmflow_normalized_gtin_match_count_v3",
+      "public.pharmflow_order_has_item_v3",
+      "public.pharmflow_receiving_transactions_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmflow_expiry_desktop_group_v1(p_pharmacy_id uuid, p_session_id uuid, p_state_id uuid, p_request_id uuid, p_expected_members jsonb, p_quantity integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog"
+    ],
+    "source_sha256": "4e7e8027563a3ae074db1d6df1f288729b8d5266b364375d19759e8adfed2f8b",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.require_signed_session",
+      "pharmflow_expiry_private.session_group_adjustments_v1",
+      "public.correct_pharmflow_expiry_desktop_session_v1",
+      "public.save_pharmflow_expiry_desktop_capture_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmflow_expiry_desktop_session_v1(p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_request_id uuid, p_expected_revision integer, p_correction jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "8d4f4af565fcca50fcca9a7c421e9804b910d4303c6170edf3c3bff9e65d3298",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.batch_is_scanner_payload",
+      "pharmflow_expiry_private.require_signed_session",
+      "pharmflow_expiry_private.save_known_core",
+      "pharmflow_expiry_private.session_adjustments_v1",
+      "public.delete_pharmflow_expiry_review_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmflow_expiry_session_v2(p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_request_id uuid, p_expected_revision integer, p_correction jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "da38aa255fdae31c663b65e2271ae5aa7bb0fd58dc2e4e99de2f70b9a77c821e",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.batch_is_scanner_payload",
+      "pharmflow_expiry_private.first_operator_v1",
+      "pharmflow_expiry_private.gs1_source_locks",
+      "pharmflow_expiry_private.require_signed_session",
+      "pharmflow_expiry_private.save_known_core",
+      "pharmflow_expiry_private.session_adjustments_v1",
+      "public.delete_pharmflow_expiry_review_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmflow_extra_receipts_v1(p_pharmacy_id uuid, p_operation_id uuid, p_receipts jsonb, p_destination_order text, p_expected_revision bigint, p_device_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=\"\""
+    ],
+    "source_sha256": "713479e28293d9d8d6c1308c69b3e1eac417ee84d50fdde2313a2a81de310a6a",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.allocate_pharmflow_receiving_v1",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmflow_global_identifier_v2(p_operation_id uuid, p_identifier_id uuid, p_expected_mapping_revision bigint, p_new_item_code text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "044b17765368f2fe996888fbeb579f6eea116329177d709000f7f99913329db4",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_identifier_mapping_audit_v1",
+      "public.pharmflow_is_reference_master_admin_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.correct_pharmflow_pharmacy_identifier_v2(p_operation_id uuid, p_pharmacy_id uuid, p_identifier_id uuid, p_expected_mapping_revision bigint, p_new_item_code text, p_new_item_name text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "96ba4120cb809736f52d069ed3c861030bae63e9d5a9c4a0758f6d1736ac12bd",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_is_pharmacy_identifier_admin_v2",
+      "public.pharmflow_pharmacy_identifier_mapping_audit_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.count_pharmflow_expiry_reviews_v1(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "a15567c2e7dad5ff8d0cf4eed99ca632cb07c65848dcf1c454125538bff850cd",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.count_pharmflow_needs_review_scope_v3(p_pharmacy_id uuid, p_workflow text, p_order_numbers text[])",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "87ccf35cfba0279f2fee73bdb9782fc6e65eb293d4233e0246f533014fc47774",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.count_pharmflow_needs_review_v2(p_pharmacy_id uuid, p_workflow text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "74322eed9782c846ec99d8c7eb97c9bf0a7780da8e08609c5d7efcd11d76ca72",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.create_pharmacy_member_invite(p_pharmacy_id uuid, p_email text, p_role text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "e7dae3ef54136dd991f7366816429c4cdf63d87616ee9a3bbe9e9c2922596984",
+    "calls": [
+      "public.is_pharmacy_admin",
+      "public.is_system_owner",
+      "public.pharmacy_invitations"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.create_pharmflow_global_item_and_learn_v1(p_global_operation_id uuid, p_pharmacy_operation_id uuid, p_pharmacy_id uuid, p_item_code text, p_item_name text, p_group_name text, p_category text, p_sub_category text, p_identifier_display text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "dfac0d739adce322755525da31f6ff673472027f588ddfdc198890eb3210236c",
+    "calls": [
+      "public.add_pharmflow_pharmacy_identifier_v2",
+      "public.create_pharmflow_global_item_v2",
+      "public.pharmflow_is_pharmacy_identifier_admin_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.create_pharmflow_global_item_v2(p_operation_id uuid, p_item_code text, p_item_name text, p_group_name text, p_category text, p_sub_category text, p_identifier_display text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "b1b09a21b725c3b7b4e6715cdc3808d1274691d7d85704298debf4778a719c95",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_global_item_identifiers_v2",
+      "public.pharmflow_global_items_v2",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_identifier_mapping_audit_v1",
+      "public.pharmflow_is_reference_master_admin_v1",
+      "public.pharmflow_normalize_main_group_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.create_pharmflow_needs_review_v2(p_pharmacy_id uuid, p_workflow text, p_gtin text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "0b53a2b7b07f39738012d7e98a7cb08dcc9ee5b4641373b38bed0f354b700c77",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member",
+      "public.pharmflow_needs_review_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.create_pharmflow_needs_review_v3(p_pharmacy_id uuid, p_workflow text, p_identifier_display text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "08c8b030756cb16565256349caca3d3d9b525a8bf84896b66ab32bf7a022fa12",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_needs_review_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.create_pharmflow_needs_review_v4(p_pharmacy_id uuid, p_workflow text, p_identifier_display text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text, p_work_scope_order_numbers text[])",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "ec9ef8d2129af0c61b533df41c724f7e7d3e6e7340d6773d702b37602972d2ec",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_needs_review_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.create_pharmflow_needs_review_v5(p_operation_id text, p_pharmacy_id uuid, p_workflow text, p_identifier_display text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text, p_work_scope_order_numbers text[])",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "b0ea1e25f61544bb88b991080938b10a2caab450f2c2ac024ca48c66ec6dc40c",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_needs_review_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.create_pharmflow_needs_review_v6(p_operation_id text, p_pharmacy_id uuid, p_workflow text, p_identifier_display text, p_raw_barcode text, p_session_id text, p_order_number text, p_order_name text, p_review_reason text, p_master_item_code_hint text, p_master_item_name_hint text, p_source text, p_device_id text, p_work_scope_order_numbers text[], p_pending_quantity integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp",
+      "lock_timeout=3s"
+    ],
+    "source_sha256": "9cbcf7ff23f72a2fab62481c9637d31c702eca4d182b136bdbb4010b6cc6a399",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_needs_review_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.deactivate_pharmacy_expiry_worker(p_pharmacy_id uuid, p_worker_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog"
+    ],
+    "source_sha256": "d52f621483c6cf5030fc4f6da7b180f7959f62d777b00f08ba4ac5e6beaecac6",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.operator_audit_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_admin",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_all_pharmflow_finalized_archives(p_pharmacy_id uuid, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "2580887e3a958e1030a05dd3f274fdaafb430d0aef06e92fc126e15d1cc55972",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_all_pharmflow_historical_data_v2(p_pharmacy_id uuid, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "ed7a7d78260402e1bd12a32123478bd627dd868ab4c25bce0bcf888930513e89",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_all_pharmflow_received_history(p_pharmacy_id uuid, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "bf6c54cdefe4f02de78a045b1f1e78d8ea209700ef38849dfdc582df06e3b02a",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_pharmacy_expiry_capture(p_pharmacy_id uuid, p_capture_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "822742c09a85ac4196d92b78378f15d9cdb2ef6340b19094e75c8466723263b3",
+    "calls": [
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_pharmacy_needs_review(p_pharmacy_id uuid, p_review_id uuid)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "d10a9c6bbca576d03faefcf0d4c93a3a3ca4a9bdbac0d049dd14622761486e3e",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_pharmflow_expiry_review_v1(p_pharmacy_id uuid, p_review_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "018043b4e38762f1d2e83fe5920ed1cdea483f936b93f80bb840f5c6b626a0f2",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_pharmflow_needs_review_v2(p_pharmacy_id uuid, p_review_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "6e0af74fc1ae5bf0c0ae02646bbe28bc1e3c203eb86be8714ffebc21a29434be",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_pharmflow_order_complete(p_pharmacy_id uuid, p_order_number text, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "41003add15a4aad22dcbe814941babefe8509bc2e7f7eac39d90b94dbd9afbbd",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.delete_unused_pharmflow_global_item_v1(p_operation_id uuid, p_item_code text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "bb4bca7f8105bf38543c96affd4f349d77962e9d9b73e3ec6eb2548a74a642da",
+    "calls": [
+      "public.pharmflow_is_reference_master_admin_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.discard_all_pharmflow_active_orders(p_pharmacy_id uuid, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "1630dde7f1d5339be8f5531f3a0fea15039715516f188f042813bbb3dfe3ac6a",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.discard_pharmflow_active_order(p_pharmacy_id uuid, p_order_number text, p_confirmation text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "7d69357e6aa9a7188faace4a8fb81b7a694c9e68b1a1fc1eb1949c5ee50b076b",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.export_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid, p_filters jsonb, p_resolved boolean)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pharmflow_expiry_private, pg_temp"
+    ],
+    "source_sha256": "061396f2491a0129ece1d91d4e55ca51c2bb45b911cad3298ba4dab962a51ebf",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.inventory_match_v1",
+      "pharmflow_expiry_private.inventory_operator_v1",
+      "pharmflow_expiry_private.inventory_rows_group_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.finalize_pharmflow_order(p_pharmacy_id uuid, p_order_number text)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "4fe33430438fbcd61bb9c694ce2d60594956d77a4353bb4ca4fe0bfd970ffafb",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.finalize_pharmflow_receiving_workspace_v1(p_pharmacy_id uuid, p_completion_key text, p_order_numbers text[], p_discrepancies jsonb, p_new_items jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "cd429e0f01a63a5e10e4aacb8f451de1bd791a5f64ab726262f237efb97bd591",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin",
+      "public.pharmflow_receiving_history_items_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_global_master_gtin_meta()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "d98037a2786423752ab6969e613ab56890991eb5475314b70b91e0a0b939922f",
+    "calls": [
+      "pharmflow_auth_private.current_pharmacy",
+      "pharmflow_auth_private.require_access"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_global_master_gtin_page(p_offset integer, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "416855db9096357a6bed4ed6d12b044efa2791a24df3b9c4c248a7e95a972fef",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_global_master_gtin_page_v2(p_offset integer, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "d6dc6e3324573f2b2218f0354913f3d3c4a7f5ec5fb61c1ae9cfd85c5ba61d5b",
+    "calls": [
+      "pharmflow_auth_private.current_pharmacy",
+      "pharmflow_auth_private.require_access"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_my_app_context()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "01fb3ef8b1736cf4c3e3b0f2955641d2377143e744264deda26450d0c6c3f161",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_my_pharmacy_access_status_v1()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "1239d7cb5ed08e6eb17dd6e05bd9388872ec559125926e41dfa97f4c5d521f4f",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_my_pharmacy_registration()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "bacaab36417141e71b5c8be3b4a0034b80f98758535be49e9e4d5fa721460246",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_my_pharmflow_permissions_v1(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "d7c2bd22dbed6b90c8d0f1f655df0a5386537ed8f1c4299ee38a34826d5de045",
+    "calls": [
+      "pharmflow_auth_private.data_allowed",
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_active_order_manifest(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "c6746f1b5d9a8f074d617cea40b30179f8c37da1c60c086b108f28fd70f463db",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_active_order_manifest_meta_v1(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "0ef5ea7045a08ed781023588be6f1e4c7082486bf471f028dfdf106eea189556",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_receiving_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_active_order_manifest_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "330a4e1615a092f7b92b304f4765f6a7e6767ea6ba1615954ea7dfea3bde8d7e",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_manifest_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_active_order_manifest_v3(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "a52649f1afa71707c8b3e5465ac3d892621118761058801ed7e61559be18c39f",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_manifest_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_cloud_workspace(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "176e000123ef1c0da55d917eb24a645a6e1696f98b738c61e03d74bbabc1c19b",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_can_access_pharmacy"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_duty_foundation_v1(p_pharmacy_id uuid, p_month date)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "31ec7839965e00e7c25946fa456894d84f766ddbf156f0b88f7713f1cabc0d9f",
+    "calls": [
+      "pharmflow_duty_private.allowed"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_duty_schedule_v1(p_pharmacy_id uuid, p_month date)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "c8c9c3cfc78b3cf05df849335451f41a6595320862ae051924e1d42761a875b9",
+    "calls": [
+      "pharmflow_duty_private.effective_minutes",
+      "public.get_pharmflow_duty_foundation_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_expiry_auth_session_v1(p_pharmacy_id uuid, p_device_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog"
+    ],
+    "source_sha256": "0b1bd4c2d7386f6dccd6fce7d31bd7473cc022beb681d6505e016724d7d5584f",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.active_sessions_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_expiry_review_contract_v1(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "6f5f65f684ed37831275b97c76f0aca4106f8bdb780c5bdd7cdb5e5f81516e7e",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.claim_photo_cleanup_jobs",
+      "pharmflow_expiry_private.complete_photo_cleanup_job",
+      "pharmflow_expiry_private.fail_photo_cleanup_job",
+      "public.add_pharmflow_global_identifier_v2",
+      "public.count_pharmflow_expiry_reviews_v1",
+      "public.delete_pharmflow_expiry_review_v1",
+      "public.get_pharmflow_expiry_review_v1",
+      "public.is_pharmacy_member",
+      "public.list_pharmflow_expiry_reviews_v1",
+      "public.resolve_pharmflow_expiry_review_v1",
+      "public.save_pharmflow_expiry_capture_v3"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_expiry_review_v1(p_pharmacy_id uuid, p_review_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "1afc581e4e70fc24eb0491d15963889d74afa57b2d464bfa9257270db903f79c",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_master_cache_meta_v2()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "c0d083d59bdaf11e47bbf68f3fd46f21f243387a491e6f2e2f59d1c6f07a741c",
+    "calls": [
+      "pharmflow_auth_private.current_pharmacy",
+      "pharmflow_auth_private.require_access"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_master_cache_page_v2(p_offset integer, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "e51a893e755c77f51d759c2d4b68194ca9ced7fd3c804627afe7caf27e34a9c7",
+    "calls": [
+      "pharmflow_auth_private.current_pharmacy",
+      "pharmflow_auth_private.require_access"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_order(p_pharmacy_id uuid, p_order_number text)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "55f10df52d85b28a44bf6db8e5697a770f0fec3f597a8c204f8b1e34cde1a947",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_order_source_items(p_pharmacy_id uuid, p_order_number text)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "03e2aa273af81e0eda6dde56d8f672335ac868f0e66659de6c102400a2d41ca9",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_order_source_items_v2(p_pharmacy_id uuid, p_order_number text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "5b5cb61b90500f0acd8fe43ce7d4c4fc13abc62d875680d3240cb9105a24b831",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_receiving_groups_v1(p_item_codes text[])",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp",
+      "statement_timeout=5s"
+    ],
+    "source_sha256": "93d1eff83119107a8de16370f9358dd34537ff85824ca65d645daf7a4eab9411",
+    "calls": [
+      "pharmflow_auth_private.current_pharmacy",
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_receiving_item_code_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_receiving_workspace_history_v1(p_pharmacy_id uuid, p_workspace_history_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "4ec15a51bdb24c32500d02a318430c0e7920587235f2c9f5e571d8a68b767215",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_pharmflow_workspace_generation(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "74c442ec69060b47688e30c14a2969469c6a382dfa46c0ee89ee2b78fd68cc5d",
+    "calls": [
+      "pharmflow_auth_private.module_allowed",
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_workspace_generation_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.get_public_setup_status()",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "5e5a310974addf4122b4ad27c382e0b282bf14a2dc66fc46656364accae5495f",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.guard_global_master_owner_only()",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "421cd5a01842d90f26046d458cf9b3d140b454fd2429bb46be80a522530ca8d4",
+    "calls": [],
+    "classification": "trigger function, not an ordinary directly invocable PostgREST RPC"
+  },
+  {
+    "function": "public.handle_new_auth_user()",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "f77f2f10ff5ad250ee0f31193e6b6d288e53758fb1431e19579f8b5385cacfc0",
+    "calls": [
+      "public.profiles"
+    ],
+    "classification": "trigger function, not an ordinary directly invocable PostgREST RPC"
+  },
+  {
+    "function": "public.is_pharmacy_admin(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "92f2db65e55a1a6666084da8c943790d8c4003bb5ab9260eca11e6afe8e55ecf",
+    "calls": [
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.is_pharmacy_member(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "1b8d419de4e2ca3b8d6534d2f9d30bd0919610cf3c52eb6ac62f6fd6bdc4bf93",
+    "calls": [
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.is_system_owner()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "77d88bacac8af9c808068782679a67d2f3a52812db66c04cdbd7a4883edc729b",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.learn_pharmacy_gtin(p_pharmacy_id uuid, p_gtin text, p_item_code text, p_item_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "37981c844c405f6ab56fb83ba9d7e68064fcbc92f4958771be34d085cc3eb9d6",
+    "calls": [
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.learn_pharmflow_existing_identifier_v3(p_operation_id uuid, p_pharmacy_id uuid, p_identifier_display text, p_item_code text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp",
+      "lock_timeout=3s"
+    ],
+    "source_sha256": "611325a5e5bc8b732d9d4f07b7368ebbe6d638dabfaeee70de4132e4999f9021",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.add_pharmflow_global_identifier_v2",
+      "public.add_pharmflow_pharmacy_identifier_v2",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_is_pharmacy_identifier_admin_v2",
+      "public.pharmflow_is_reference_master_admin_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.learn_pharmflow_identifier_v1(p_global_operation_id uuid, p_pharmacy_operation_id uuid, p_pharmacy_id uuid, p_identifier_display text, p_item_code text, p_item_name text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "79fe9570d27263bff10b3d63b437c32003a582ebfa573175966f6712e5f92377",
+    "calls": [
+      "public.learn_pharmflow_identifier_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.learn_pharmflow_identifier_v2(p_global_operation_id uuid, p_pharmacy_operation_id uuid, p_pharmacy_id uuid, p_identifier_display text, p_item_code text, p_item_name text, p_group_name text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "783b73208e219c9eb741ac806b01f312a41c0b388c786bf7d9e27e07fadba4e9",
+    "calls": [
+      "public.add_pharmflow_global_identifier_v2",
+      "public.add_pharmflow_pharmacy_identifier_v2",
+      "public.create_pharmflow_global_item_and_learn_v1",
+      "public.pharmflow_is_pharmacy_identifier_admin_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_my_pharmacies()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "90a4d5045adbc68f486821afcacc3d541cd80723b6cd0d7e089108c321ac17bf",
+    "calls": [
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmacy_expiry_captures(p_pharmacy_id uuid, p_expiry_year integer, p_expiry_months integer[], p_categories text[], p_worker_ids uuid[], p_search text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "f656fbd189feb7707e6ae328a0ede143da6d591cc72baaa0c754eeebe51d540a",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmacy_expiry_current_state_v1(p_pharmacy_id uuid, p_include_cleared boolean, p_search text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "82db3f51568eee2473f21ba7caee77cbbfda4bc22bef690ecb5f3b5ce2c6a47b",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmacy_expiry_workers(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog"
+    ],
+    "source_sha256": "0a526fd08ee489828470f6a50c6767d04863908462354763792855f7c97ff3cb",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.operator_audit_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmacy_needs_review(p_pharmacy_id uuid, p_workflow text, p_order_id text)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "27abfc084bb26ba6c71a42505828b81897fd491427062fd5767d7769e3df4ad8",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_cloud_transactions(p_pharmacy_id uuid, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "7ff9196742d23032787f45163037a840089dc4762bb4409f299ef1ed5d058c8b",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_manifest_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_cloud_transactions_delta_v3(p_pharmacy_id uuid, p_after_created_at timestamp with time zone, p_after_transaction_id text, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "e9aff1b8e10e9312582b91e8ea2af582bf49096a6731dd21c9bb318cba7fa171",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_receiving_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_cloud_transactions_v2(p_pharmacy_id uuid, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "f8f8ec8b945a24b61d07138886031eb70219d3e1598346d36fcf21f439b0b11f",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_receiving_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_cloud_transactions_v3(p_pharmacy_id uuid, p_order_numbers text[], p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "2bd27c9d745d39d2fadb9a1175cc1286589b352f6f7d7abc8a6788c288e5bdf9",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_receiving_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_expiry_capture_receipts_v1(p_pharmacy_id uuid, p_device_id text, p_worker_id uuid, p_operation_ids uuid[])",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "930bffdcf8c3649acfaa10015014ebbd41d14692941c5791954fdc24aea27486",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_expiry_desktop_session_v1(p_pharmacy_id uuid, p_session_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "7ecb2117e536050cbe9bd24fb69a168d515a34a61f5af15dfed3bf3a95485c49",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.require_signed_session",
+      "public.pharmflow_normalize_main_group_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_expiry_reviews_v1(p_pharmacy_id uuid, p_status text, p_limit integer, p_offset integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pharmflow_expiry_private, pg_temp"
+    ],
+    "source_sha256": "fe09fceec40401f50bc091f60a207626696dc9b827441a11a823bbf1e1ae2fa9",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_expiry_session_v2(p_pharmacy_id uuid, p_session_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "67c078a007b88d13c7343b30abce899e4b79bb8847f28c7c9f865d6f52268577",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.gs1_source_locks",
+      "pharmflow_expiry_private.require_signed_session"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_finalized_archives(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "71e9e1393b5e33be6797e8ce8b63847c232b4530ed7ca1172c8b6b24b5922fb7",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_global_item_identifiers_v2(p_item_code text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "07f9830876f9f32825bb6d3a698d14049816b5ef8d41d6de6625ae8d243a5246",
+    "calls": [
+      "pharmflow_auth_private.current_pharmacy",
+      "pharmflow_auth_private.require_access"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_handheld_receiving_history_v1(p_pharmacy_id uuid, p_device_id text, p_before_created_at timestamp with time zone, p_before_review_id uuid, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "02a48cab852a01522a612b01e7ab37e43628a6f44dc5043f6ad3c794eab59f39",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_needs_review_history_v3(p_pharmacy_id uuid, p_workflow text, p_order_number text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "21b9d76b964dadab22724ded19f7a8584f21d4cbed9238748b9ebd9b10b22012",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_needs_review_v2(p_pharmacy_id uuid, p_workflow text, p_order_number text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "479c2f5f60ec253e3b78ee2dc4c8d79d4e5e0614b9c554b8431a38546fd84d0b",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_needs_review_v4(p_pharmacy_id uuid, p_workflow text, p_order_number text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "1273685bc1a8ae9145dd45d7f04c230e46bde4e16d9f3721369cb53ee2939712",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_new_item_history_v1(p_pharmacy_id uuid, p_from date, p_to date)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "97dcf802eba006fa93a71ac4e2fc3c76e66219daceb4dfa61886488315c96407",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_orders(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "817ff7a14073d2d7d783c3c58336fd5c709c61f42191cd394b0c69072578ff67",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_pharmacy_item_identifiers_v1(p_pharmacy_id uuid, p_item_code text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "75eeafbb7d8df15955a6d06770a7b1737ec497f47dbd4f5da855edb32d407cc4",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.list_pharmflow_receiving_workspace_history_v1(p_pharmacy_id uuid, p_from date, p_to date)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "d3a399dc73b364a0f3bc423d58415ac47b1cccc231d9cf058da3c99c667127d6",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.manage_pharmflow_duty_directory_v2(p_pharmacy_id uuid, p_kind text, p_action text, p_rows jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "34a86bd061ebb8733219d02a8e873502397c7eb577cb001fb15797f94845f7f5",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "public.manage_pharmflow_duty_directory_v1",
+      "public.pharmflow_duty_audit_v1",
+      "public.save_pharmflow_duty_position_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.medryvo_is_system_owner()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, auth"
+    ],
+    "source_sha256": "ae85220f1aa71d1229f12150f971fbf3eabd650d31896c0b37f2f62dea1eaeb9",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.mutate_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid, p_request_id uuid, p_action text, p_selection jsonb, p_quantity integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "6a594f6e22056a6c29af8b04469658401689988e92ccb982f6fdaed9598c0423",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.inventory_rows_v1",
+      "pharmflow_expiry_private.resolved_inventory_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member",
+      "public.pharmflow_expiry_events_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_assign_pharmacy_admin(p_pharmacy_id uuid, p_email text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, auth"
+    ],
+    "source_sha256": "a1eb404d36e999988e525647cd544b56fdb8488bbfda1a4171ec550ed54933c2",
+    "calls": [
+      "public.medryvo_is_system_owner",
+      "public.pharmacy_admin_assignments",
+      "public.pharmacy_members",
+      "public.profiles"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_create_pharmacy(p_name text, p_code text, p_admin_email text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "0f98f6046715763091baa6f7b0887791bd6ed924ca640037661f3fe000d4b5f7",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmacies",
+      "public.pharmacy_invitations"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_export_global_items_page_v2(p_kind text, p_after text, p_limit integer, p_version text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "79290ab56cd617e7a8cdbde0a2e6fd8a3a2eb372884c180e077ca74d97a9415a",
+    "calls": [
+      "pharmflow_auth_private.password_change_complete",
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_list_gtin_mapping_disputes(p_status text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "71ea698ae16854ac381a5385d1138f085b6cebdb8776dadf3eba65039f5f1e24",
+    "calls": [
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_list_pharmacies()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, auth"
+    ],
+    "source_sha256": "b59087fb7b5595f69df2be2a3cfacf10196a5399e71a7f694c1a41be5412898c",
+    "calls": [
+      "public.medryvo_is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_list_pharmacy_registrations(p_status text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "74fedeec7bdd130d50517158eebb20ce10634882529c763a53f8a68a5a95f9ef",
+    "calls": [
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_provision_pharmacy_v2(p_operation_id uuid, p_name text, p_code text, p_admin_email text, p_receiving text, p_expiry text, p_data_access text, p_finish boolean)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "d94975f9d338ec27db73f973d2f55afb44e461e32b63567c98677237d192aacc",
+    "calls": [
+      "pharmflow_auth_private.password_change_complete",
+      "pharmflow_auth_private.validate_initial_permissions",
+      "public.is_system_owner",
+      "public.owner_provision_pharmacy_v1",
+      "public.owner_set_pharmflow_permissions_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_review_pharmacy_registration(p_request_id uuid, p_decision text, p_note text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "ed9da45747866abfe51065d890352f93cabcaeb6eceaef0b24537dab99ea4f21",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmacies",
+      "public.pharmacy_members"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_review_pharmacy_registration_v3(p_request_id uuid, p_decision text, p_official_pharmacy_name text, p_official_pharmacy_code text, p_note text, p_receiving text, p_expiry text, p_data_access text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "565c2e12256759de062318ae3f4a1892d8afe0e012da941b2717d6aec10e99ef",
+    "calls": [
+      "pharmflow_auth_private.password_change_complete",
+      "pharmflow_auth_private.validate_initial_permissions",
+      "public.is_system_owner",
+      "public.owner_review_pharmacy_registration_v2",
+      "public.owner_set_pharmflow_permissions_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_set_pharmacy_status(p_pharmacy_id uuid, p_status text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, auth"
+    ],
+    "source_sha256": "480674a79865b22e7945758bd57a3ab979e2b34c03ce81295d315df65baa9ed3",
+    "calls": [
+      "public.medryvo_is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_set_pharmflow_permissions_v1(p_pharmacy_id uuid, p_receiving text, p_expiry text, p_data_access text, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "07ac87c09f4b0b1a67203afa9a652af4798b0c64c4c7953b3de9a8ecff600aef",
+    "calls": [
+      "pharmflow_auth_private.password_change_complete",
+      "public.is_system_owner",
+      "public.pharmflow_permission_audit_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_set_pharmflow_permissions_v2(p_pharmacy_id uuid, p_receiving text, p_expiry text, p_data_access text, p_duty text, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "10940898da0eee647533d3db8d1efc0f9c11d5ea8aac415de75fb9e473637956",
+    "calls": [
+      "pharmflow_auth_private.password_change_complete",
+      "public.is_system_owner",
+      "public.pharmflow_permission_audit_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.owner_update_pharmacy_identity_v1(p_pharmacy_id uuid, p_official_pharmacy_name text, p_official_pharmacy_code text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, auth"
+    ],
+    "source_sha256": "5130ebba5273afc9a5a658a466fba28f1aecac1c644fc57f41a99b9ac960e6a6",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmflow_pharmacy_identity_audit_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.patch_pharmflow_item_priorities_v1(p_pharmacy_id uuid, p_changes jsonb, p_expected_generation bigint, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "22603a44b6b99a76e48d8d674f36cc26b89994d46ad571a1e8238b1a3838d0b3",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_manifest_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.patch_pharmflow_item_priorities_v2(p_pharmacy_id uuid, p_changes jsonb, p_expected_generation bigint, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "3377f0e6d9b2f7c364b92495daeaff84b8bf00f8a314703ec7708fe246348912",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_manifest_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.pharmflow_approved_import_20261015(p_action text, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "f8b385228c3ea35d01658c9c0a9358368a0a4a1b5ae27bab9d4b7b3ba6d839d3",
+    "calls": [
+      "public.add_pharmflow_global_identifier_v2",
+      "public.create_pharmflow_global_item_v2",
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.pharmflow_can_access_pharmacy(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "12f9f616b0f653d95258e46b153ad3b5c2a603b06140b159df0c356bcc648aa4",
+    "calls": [
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.pharmflow_is_member(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "bed7e77fcbde42698dada82d9b43885f0a32e1e4be75f71c8d2387ec0088f838",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.pharmflow_is_pharmacy_identifier_admin_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "930e8d3b7220bcfe501f9bb8fe415c0246a954481e1f5fed60c439c802dd5af4",
+    "calls": [
+      "pharmflow_auth_private.data_allowed"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.pharmflow_is_reference_master_admin_v1()",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "ae36f90adaec4ae852b59f72470f9da145978c29a4547fa6df2ecf0b6405f562",
+    "calls": [
+      "pharmflow_auth_private.global_allowed"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.pharmflow_manifest_member_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "df597c67ce3381d5d49ea97cd3798e121427c2b15a12926bfba7dcd43918fcd3",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.pharmflow_receiving_member_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "4e58a5dd7e579ac9b10f2b6baeb4b481eec02bebdf74037299272531d04c18ad",
+    "calls": [],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.pharmflow_receiving_sync_health_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "6cf7530d38d34e5fca10ff4e9a1d2720f0c9d467d04e5bb6ec80ed79ad018209",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_receiving_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.preview_pharmacy_learned_gtin_lifecycle_v3(p_pharmacy_id uuid, p_gtin text, p_action text, p_new_item_code text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "5025050db7b747b0f5541cc8cca60a16e68fcce462300707f9f16a983e8c1b59",
+    "calls": [
+      "public.pharmflow_gtin_candidates_v3",
+      "public.pharmflow_gtin_lifecycle_admin_v3",
+      "public.pharmflow_normalized_gtin_match_count_v3",
+      "public.pharmflow_order_has_item_v3"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.query_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid, p_filters jsonb, p_resolved boolean, p_sort text, p_offset integer, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pharmflow_expiry_private, pg_temp"
+    ],
+    "source_sha256": "03ebfdb78e380272d1c1a9f89e9d717803253d2052c7b4f664b421a91eb4b882",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.inventory_match_v1",
+      "pharmflow_expiry_private.inventory_operator_v1",
+      "pharmflow_expiry_private.inventory_rows_group_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.quick_add_pharmflow_order_item_v1(p_operation_id uuid, p_pharmacy_id uuid, p_source_order text, p_work_scope_order_numbers text[], p_item_code text, p_item_name text, p_group_name text, p_identifier_display text, p_quantity integer, p_allow_over_receiving boolean, p_capture jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp",
+      "lock_timeout=3s"
+    ],
+    "source_sha256": "db3f4609eff8ed70cf45ec87963b43be56434cf9a791a7180b27ddc818cedf4f",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.append_pharmflow_learned_transaction_v4",
+      "public.create_pharmflow_global_item_v2",
+      "public.learn_pharmflow_existing_identifier_v3",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_is_pharmacy_identifier_admin_v2",
+      "public.pharmflow_is_reference_master_admin_v1",
+      "public.pharmflow_normalize_main_group_v1",
+      "public.pharmflow_receiving_item_code_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.redeem_pharmacy_invite(p_invite_token uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "684b2f4a5321fb62eed78b09e6e2c5f26e1f9710c90599d585990246f6cc6d9f",
+    "calls": [
+      "public.pharmacy_members"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.register_pharmflow_order_upload(p_pharmacy_id uuid, p_order_number text, p_order_date date, p_from_warehouse text, p_to_warehouse text, p_source_file text, p_item_count integer)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "325b1a1ea71d3c4724eb1af42c47de460f9e0419e598c45707e9c6124e7f8314",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin",
+      "public.pharmflow_orders"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.remove_pharmacy_learned_gtin(p_pharmacy_id uuid, p_gtin text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "2395e958fdf27e16f74b3728e4cab0e484fe289b23948b815f7f5585f00a4af1",
+    "calls": [
+      "public.pharmacy_learned_gtin_audit",
+      "public.pharmflow_is_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.remove_pharmacy_learned_gtin_v2(p_pharmacy_id uuid, p_gtin text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "f6d1f7d571444427774b97aa292483418a8d69627a2fdbbaf900b0c77e9d3650",
+    "calls": [
+      "public.pharmflow_is_member",
+      "public.pharmflow_pharmacy_gtin_audit_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.remove_pharmacy_learned_gtin_v3(p_pharmacy_id uuid, p_operation_id uuid, p_gtin text, p_expected_mapping_id uuid, p_expected_mapping_revision bigint, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "51bfd6b2bfe322d6baf78b8a1bb4ceec46a97bebc67e663496b8887a1b6d8d89",
+    "calls": [
+      "public.pharmflow_gtin_candidates_v3",
+      "public.pharmflow_gtin_lifecycle_admin_v3",
+      "public.pharmflow_gtin_lifecycle_v3",
+      "public.pharmflow_normalized_gtin_match_count_v3",
+      "public.pharmflow_receiving_transactions_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.remove_pharmflow_global_identifier_v2(p_operation_id uuid, p_identifier_id uuid, p_expected_mapping_revision bigint, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "2030269f47300c4b10e494d4068e411346e4ca196af57514bd1f845ee841c365",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_identifier_mapping_audit_v1",
+      "public.pharmflow_is_reference_master_admin_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.remove_pharmflow_pharmacy_identifier_v2(p_operation_id uuid, p_pharmacy_id uuid, p_identifier_id uuid, p_expected_mapping_revision bigint, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "5cfb3b214246c7a8f44a8450372553e1ae06b75ef6d070c5427a4f01d0a54f69",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_is_pharmacy_identifier_admin_v2",
+      "public.pharmflow_pharmacy_identifier_mapping_audit_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.remove_pharmflow_settings_identifier_v1(p_global_operation_id uuid, p_pharmacy_operation_id uuid, p_pharmacy_id uuid, p_identifier_display text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "c3f981382188a951c0b796dbaef9ecf0c5f05fb0a97e3feecfdffefa5bf79968",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmflow_identifier_key_v2",
+      "public.remove_pharmflow_global_identifier_v2",
+      "public.remove_pharmflow_pharmacy_identifier_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.rename_pharmacy_expiry_worker(p_pharmacy_id uuid, p_worker_id uuid, p_worker_name text, p_expected_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog"
+    ],
+    "source_sha256": "d11e000f74fb1cb1752d0ff6de36e4bd736a1092b8f697b8fda54a8b915c671c",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.operator_audit_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_admin",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.report_wrong_gtin_mapping(p_pharmacy_id uuid, p_gtin text, p_current_item_code text, p_suggested_item_code text, p_suggested_item_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "7c5e324a3d82802581ca8d10ce2cfde042b12aa63cf114944d438b71d256f7e2",
+    "calls": [
+      "public.is_pharmacy_member",
+      "public.pharmflow_gtin_mapping_disputes_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.request_pharmflow_needs_review_resolution_v4(p_operation_id uuid, p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text, p_resolution_transaction_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "4ae1bd8b6f2f5dfad0cd54b5c481ba20585b1cf260b786d3634b4f965c9d2a09",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin",
+      "public.pharmflow_needs_review_resolution_intents_v1",
+      "public.try_finalize_pharmflow_needs_review_resolution_intent_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.request_pharmflow_needs_review_resolution_v5(p_operation_id uuid, p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text, p_resolution_transaction_id text, p_allocations jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "128ce9357b37baee2fc45afdbf922df7fe9110466276a4d2bde3fb75096acca1",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin",
+      "public.pharmflow_needs_review_resolution_intents_v1",
+      "public.try_finalize_pharmflow_needs_review_resolution_intent_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.reserve_pharmflow_expiry_capture_v1(p_pharmacy_id uuid, p_operation_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "99691b261015633dedd449869bed5a1399aed630cf329f0496bb99e252c3c47a",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.operations",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_all_filtered_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid, p_request_id uuid, p_filters jsonb, p_selection jsonb, p_expected_count integer, p_expected_units bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "4b61b0ee7fc60748b9d1b1cada6fd898e2d32901bfaa74b18c64c05a9547cde4",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.filtered_inventory_requests_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member",
+      "public.mutate_pharmflow_expiry_inventory_v1",
+      "public.select_pharmflow_expiry_inventory_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_pharmacy_learned_gtin(p_pharmacy_id uuid, p_gtin text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "b74e78fa15d590312c2d88d3dd8b6ba0436f77ad8a41790821ddd01c22f1209c",
+    "calls": [
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_pharmacy_learned_gtin_v3(p_pharmacy_id uuid, p_gtin text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "6c004ca93185e291435fc7f5e060a9089bcee586d2fe21228a92f75172370cf3",
+    "calls": [
+      "public.pharmflow_gtin_lifecycle_member_v3",
+      "public.pharmflow_normalized_gtin_match_count_v3"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_pharmacy_needs_review(p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "3894d1ea8edd08101497f4a476d01347490f8bc9c03e0e7210fb7ffe131ec23b",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_pharmflow_expiry_review_v1(p_pharmacy_id uuid, p_review_id uuid, p_operation_id uuid, p_item_code text, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pharmflow_expiry_private, pg_temp"
+    ],
+    "source_sha256": "18b3c6bad996e310fb8e9c9a42425c2c2559b7a38f8bc4b10303c5420420dfac",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.save_known_core",
+      "public.is_pharmacy_member",
+      "public.pharmflow_expiry_review_resolution_audit_v1",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_pharmacy_gtin_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_pharmflow_expiry_review_v2(p_pharmacy_id uuid, p_review_id uuid, p_operation_id uuid, p_item_code text, p_reason text, p_new_item jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "6711803a3029db8e75747499bba26630c9739c5b853c171da84ea0196eb29966",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.add_pharmflow_global_identifier_v2",
+      "public.create_pharmflow_global_item_v2",
+      "public.is_pharmacy_member",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_is_reference_master_admin_v1",
+      "public.pharmflow_normalize_main_group_v1",
+      "public.resolve_pharmflow_expiry_review_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_pharmflow_identifier_v2(p_pharmacy_id uuid, p_identifier_display text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "f692dd838ec15099b2454789d514000dca10e6b283782c2a0c175b2ef2320e74",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_identifier_key_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_pharmflow_needs_review_v2(p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text, p_resolution_type text, p_resolution_transaction_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "25694b09ef8ebed582db1057e6c3fad2a09916e4460bd692a8d624eb0bfa9bee",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.resolve_pharmflow_needs_review_v3(p_pharmacy_id uuid, p_review_id uuid, p_item_code text, p_item_name text, p_resolution_type text, p_resolution_transaction_id text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "703d8c4d0c58c91e5ada6beea95ed4241ec189d7d8b970cfb266c4875a360688",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.revise_pharmflow_receiving_order_v1(p_pharmacy_id uuid, p_operation_id uuid, p_order_number text, p_file jsonb, p_expected_generation bigint, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=\"\""
+    ],
+    "source_sha256": "fe89bfdfa93de5e8ddacafcb1006a1049dcf48686f50e5f34677499a3a804e16",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin",
+      "public.save_pharmflow_order_source_items_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmacy_expiry_capture(p_pharmacy_id uuid, p_item_code text, p_item_name text, p_gtin text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_device_id text, p_source text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "f5c7656a3d812778f6fc9f6790906dfca6ea4cb843926510e1d4dafc10f8fe94",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_expiry_captures_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmacy_expiry_capture_smart(p_pharmacy_id uuid, p_item_code text, p_item_name text, p_gtin text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_batch_no text, p_sample_serial text, p_device_id text, p_source text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "dfe2ca572bdf59c6f667d3b9ee1a440b48ee9c1eb735a57e9b07ac0504a9de93",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_expiry_captures_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmacy_expiry_verified_state_v1(p_pharmacy_id uuid, p_item_code text, p_item_name text, p_identifier_display text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_batch_no text, p_sample_serial text, p_device_id text, p_source text, p_event_type text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "7b51aa66e9f2acbac7ca298b799af258512fbd043eebb77ed557bf646500e947",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_expiry_current_state_v1",
+      "public.pharmflow_expiry_events_v1",
+      "public.pharmflow_identifier_key_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmacy_expiry_verified_state_v2(p_pharmacy_id uuid, p_item_code text, p_item_name text, p_identifier_display text, p_category text, p_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_batch_no text, p_sample_serial text, p_device_id text, p_source text, p_event_type text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "7e927a264c238b5e5152fc3dc4b42e642ca1d009822c1f759c24b26fdbb01483",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_expiry_current_state_v1",
+      "public.pharmflow_expiry_events_v1",
+      "public.pharmflow_identifier_key_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmacy_expiry_worker(p_pharmacy_id uuid, p_worker_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog"
+    ],
+    "source_sha256": "44a112359f535677d5ce8cb6d51bd71759af86311202352cb165c484a086bc27",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.operator_audit_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_admin",
+      "public.is_pharmacy_member",
+      "public.pharmflow_expiry_workers_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmacy_needs_review(p_pharmacy_id uuid, p_workflow text, p_gtin text, p_raw_barcode text, p_order_id text, p_order_name text, p_pending_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_device_id text, p_source text)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "9ba2fc57570fa08cd7d7d36c759737d83c2b80b22922df39cd4e593d554e63ad",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_needs_review_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmacy_needs_review(p_pharmacy_id uuid, p_workflow text, p_gtin text, p_raw_barcode text, p_order_id text, p_order_name text, p_pending_quantity integer, p_expiry_month integer, p_expiry_year integer, p_worker_id uuid, p_device_id text, p_source text, p_review_reason text)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "9309cccd17bc80a821f941bb14f4570f7bc8d85e651afe011775f66259caab82",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_needs_review_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_active_order_manifest(p_pharmacy_id uuid, p_manifest jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "622d1d4fdce6126f57b017336e6ab344d753c9f93de217a0597e504c64f52118",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member",
+      "public.pharmflow_active_order_manifest_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_active_order_manifest_v2(p_pharmacy_id uuid, p_manifest jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "86a4142875feff3e81ecb0fc6b39866a4f0af8ae8cdef655187c2c7876b9535b",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.pharmflow_active_order_manifest_v1",
+      "public.pharmflow_manifest_member_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_active_order_manifest_v3(p_pharmacy_id uuid, p_manifest jsonb, p_expected_generation bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "bb2786c5173789aa575200a8de21e0b3bb4f7f0e994b77f2dc27c4b503876fd0",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_active_order_manifest_v1",
+      "public.pharmflow_manifest_member_v2",
+      "public.pharmflow_workspace_generation_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_active_order_manifest_v4(p_pharmacy_id uuid, p_manifest jsonb, p_expected_generation bigint, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "0cc9ddb5ee07ab27992006d5c38d52a133c34f8498f48a45d380b1db8e7dfe44",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_active_order_manifest_v1",
+      "public.pharmflow_manifest_member_v2",
+      "public.pharmflow_workspace_generation_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_cloud_workspace(p_pharmacy_id uuid, p_workspace jsonb, p_device_id text)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "97cddcaecfd92456c56c529e239045beb73ddcf269a3e5f5ef14ad28386b768e",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.pharmflow_can_access_pharmacy",
+      "public.pharmflow_cloud_workspaces"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_cloud_workspace_guarded(p_pharmacy_id uuid, p_workspace jsonb, p_device_id text, p_expected_generation bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "e199bec7a1535a962516b992d7f521387d38ec4b3d0959cbe32100da1169ffad",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member",
+      "public.pharmflow_workspace_generation_v1",
+      "public.save_pharmflow_cloud_workspace"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_duty_employee_v1(p_pharmacy_id uuid, p_code text, p_name text, p_position_key text, p_active boolean, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "d7ea6c4ff842906577e6e8edb642ea15084cd783e30a22b86f9626ec5d9ae64b",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "public.pharmflow_duty_audit_v1",
+      "public.pharmflow_duty_employees_v1",
+      "public.pharmflow_duty_positions_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_duty_employee_v2(p_pharmacy_id uuid, p_code text, p_display_code text, p_name text, p_position_key text, p_active boolean, p_basic_minutes integer, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "56d84c7c0452b50704c1521aa3a89cd668b7ba323e82edd7a66e68a3ab0c7beb",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "pharmflow_duty_private.completed_totals",
+      "public.pharmflow_duty_audit_v1",
+      "public.save_pharmflow_duty_employee_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_duty_employee_v3(p_pharmacy_id uuid, p_code text, p_display_code text, p_name text, p_position_key text, p_active boolean, p_basic_minutes integer, p_expected_revision bigint, p_schedule_display_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "0640960d2565dfa2796c0ce8d219e50d4f7b3a10e695f6f02852f4a1341dc2a6",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "public.pharmflow_duty_audit_v1",
+      "public.save_pharmflow_duty_employee_v2"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_duty_entries_v1(p_pharmacy_id uuid, p_changes jsonb, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "b6dc3dc7f5d74ac1b8c2fc610936c2eb2a2d5b46cd2600ccf1366d0d3bbc6df2",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "pharmflow_duty_private.validate_entry",
+      "public.pharmflow_duty_audit_v1",
+      "public.pharmflow_duty_entries_v1",
+      "public.pharmflow_duty_months_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_duty_position_v1(p_pharmacy_id uuid, p_key text, p_label text, p_active boolean, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "8350186657bac2a34ceee2dd70d8e3b68e5144aa97b071bdf020624bc121ea42",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "public.pharmflow_duty_audit_v1",
+      "public.pharmflow_duty_positions_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_duty_presets_v1(p_pharmacy_id uuid, p_presets jsonb, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "3668e77b4b7f96d43bd90fcd3679717800a0e6ab3bfeae6062cd3762d9e7fb14",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "pharmflow_duty_private.validate_entry",
+      "public.pharmflow_duty_audit_v1",
+      "public.pharmflow_duty_settings_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_duty_schedule_v2(p_pharmacy_id uuid, p_month date, p_changes jsonb, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "fcd9caff48799309af519587debc4ee55875d8c72e6ae332ed3777f98b3ecc7f",
+    "calls": [
+      "public.get_pharmflow_duty_schedule_v1",
+      "public.save_pharmflow_duty_entries_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_duty_settings_v1(p_pharmacy_id uuid, p_default_basic integer, p_hour_rules jsonb, p_employee_defaults jsonb, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "7c90f3aa8cb110f42a70c59ffc6c0fd8625661d2179d56bbfc1a882dcf18473e",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "pharmflow_duty_private.completed_totals",
+      "pharmflow_duty_private.validate_defaults",
+      "public.pharmflow_duty_audit_v1",
+      "public.pharmflow_duty_settings_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_expiry_capture_v3(p_pharmacy_id uuid, p_operation_id uuid, p_capture jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "1ab561b8df7779a2be92094088ea19788788bebe37cf9815bf55d3b2a4714d0b",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.batch_is_scanner_payload",
+      "pharmflow_expiry_private.review_details",
+      "pharmflow_expiry_private.save_known_core",
+      "pharmflow_expiry_private.scan_facts",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member",
+      "public.pharmflow_identifier_key_v2",
+      "public.pharmflow_needs_review_v2",
+      "public.reserve_pharmflow_expiry_capture_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_expiry_desktop_capture_v1(p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_capture jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "e24c830d7a1ec068242afcc1aec9aecd67fc289e44d94f025888a4e621418bed",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.require_signed_session",
+      "pharmflow_expiry_private.session_captures_v1",
+      "public.is_pharmacy_member",
+      "public.reserve_pharmflow_expiry_capture_v1",
+      "public.save_pharmflow_expiry_capture_v3"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_expiry_session_capture_v2(p_pharmacy_id uuid, p_session_id uuid, p_operation_id uuid, p_capture jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "3df64c03f10f45d7951063d43579469135ba0a4e8287010c3c8354413109901e",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.require_signed_session",
+      "public.save_pharmflow_expiry_session_capture_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_finalized_archive(p_pharmacy_id uuid, p_archive_id text, p_order_numbers text[], p_closed_at timestamp with time zone, p_archive_payload jsonb)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "220d4f01350df4484559afa13ca2b0ea0b1059e8c486b800c6ca51add9f5379e",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member",
+      "public.pharmflow_finalized_archives_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_order_source_items(p_pharmacy_id uuid, p_order_number text, p_items jsonb, p_replace boolean)",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "f81f6d47ae41280ab06c1274d7db336dd039f11c8c668af5028ba2f35fdf4d6d",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_admin",
+      "public.pharmflow_order_source_items"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.save_pharmflow_order_source_items_v2(p_pharmacy_id uuid, p_order_number text, p_items jsonb, p_replace boolean)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "d8ac6e6e25decd1fc68fc10481e2bfc835039aaa92e2fc60a0f4c1473b7def27",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_admin",
+      "public.pharmflow_order_source_items"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.search_pharmflow_global_items_v2(p_query text, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "86553f0064da0b791b4fa5b182eb9bc66a977d654e396cc71ff41d27347f7121",
+    "calls": [
+      "pharmflow_auth_private.current_pharmacy",
+      "pharmflow_auth_private.require_access"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.search_pharmflow_global_items_v3(p_query text, p_limit integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=\"\""
+    ],
+    "source_sha256": "a3ba81831ea0bf4f8bf3509fd7ab2209868d63cfe705a7a6a6e96bbc4834c367",
+    "calls": [
+      "pharmflow_auth_private.current_pharmacy",
+      "pharmflow_auth_private.require_access"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.select_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid, p_filters jsonb, p_resolved boolean, p_ids uuid[])",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pharmflow_expiry_private, pg_temp"
+    ],
+    "source_sha256": "79226fa68eabb16a230bacd2ad3013813d5ea019e4ed095044335323d631c466",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.inventory_match_v1",
+      "pharmflow_expiry_private.inventory_operator_v1",
+      "pharmflow_expiry_private.inventory_rows_group_v1",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.set_pharmacy_needs_review_quantity(p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "3932816b0aa6ed06005ed2698a7a54e0a3c721c3a414fe1658d8b071c1895e87",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.set_pharmflow_duty_holiday_v1(p_pharmacy_id uuid, p_date date, p_active boolean, p_expected_revision bigint)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "73b3819103b03f08f96e299fd0f51cde6e4f2de0c2d88d194dca8811a6a60ed5",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "public.pharmflow_duty_audit_v1",
+      "public.pharmflow_duty_holidays_v1",
+      "public.pharmflow_duty_months_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.set_pharmflow_duty_holidays_v2(p_pharmacy_id uuid, p_dates jsonb, p_active boolean, p_name text, p_note text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "6bf71694cb2737421b9ce1eb6a2f5dd054d6d3e6039045d6e84ced535f3bbaed",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "public.pharmflow_duty_audit_v1",
+      "public.set_pharmflow_duty_holiday_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.set_pharmflow_duty_month_v1(p_pharmacy_id uuid, p_month date, p_status text, p_expected_revision bigint, p_reason text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public"
+    ],
+    "source_sha256": "d7a853de2cc530c32cba91eaf24653cf6c30e91e2c901dda92b133cab9036fae",
+    "calls": [
+      "pharmflow_duty_private.allowed",
+      "public.pharmflow_duty_audit_v1",
+      "public.pharmflow_duty_months_v1"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.set_pharmflow_needs_review_photo_v2(p_pharmacy_id uuid, p_review_id uuid, p_photo_path text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "f0931252fa19bc8305c986eae316f6a8937b1e09f0db2a8a3f96cc406650549b",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.set_pharmflow_needs_review_qty_v2(p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "2f3d4aaaa5f4d501c84345d8b7b197f4bbf76234312e835483027b525047b530",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.set_pharmflow_needs_review_qty_v3(p_pharmacy_id uuid, p_review_id uuid, p_pending_quantity integer)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp",
+      "lock_timeout=3s"
+    ],
+    "source_sha256": "d68cb8d15ea86e79d17dc6b76bdd5ad322ff5c8b7c6aa5f5bd2453210859d457",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.submit_pharmacy_registration(p_pharmacy_name text, p_pharmacy_code text, p_applicant_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "7e2ed7f1954ed28f56770f3d10c784e81501584329bb3d6ce9b0f9d5bb93d5c8",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmacy_registration_requests"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.submit_pharmacy_registration_v2(p_requested_pharmacy_code text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, auth"
+    ],
+    "source_sha256": "5e83b22f4289a9716b343dd99bc46eccd8d8676cdc92ff49a766b1a7bf213981",
+    "calls": [
+      "public.is_system_owner",
+      "public.pharmacy_registration_requests"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.summary_pharmflow_expiry_inventory_v1(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=pg_catalog, public, pg_temp"
+    ],
+    "source_sha256": "4fb388ff8828edda2fbb361930bb6eb44cff6c241af051799639546c3c0f61a9",
+    "calls": [
+      "pharmflow_auth_private.require_access",
+      "pharmflow_expiry_private.valid_auth_session",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.sync_pharmflow_pharmacy_identifier_v2()",
+    "owner": "postgres",
+    "anon_execute": true,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "d8fa4e15e71dc48c089ee0a319c387bf587d219cc7b41ab1ab5b51b98e153685",
+    "calls": [
+      "public.pharmflow_identifier_key_v2"
+    ],
+    "classification": "trigger function, not an ordinary directly invocable PostgREST RPC"
+  },
+  {
+    "function": "public.update_my_display_name(p_display_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "dca1ef55d88548c3dbb9bd9209375d499ab8b3fcb379deb3aabbe53537d67f11",
+    "calls": [
+      "public.profiles"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.update_my_pharmacy_name(p_pharmacy_id uuid, p_pharmacy_name text)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public"
+    ],
+    "source_sha256": "74fbcd05729852e656480cb5623782ef1b624013ca8fec23f948cfc89b19734b",
+    "calls": [
+      "public.is_pharmacy_admin",
+      "public.is_system_owner"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  },
+  {
+    "function": "public.verify_pharmflow_historical_state_v2(p_pharmacy_id uuid)",
+    "owner": "postgres",
+    "anon_execute": false,
+    "authenticated_execute": true,
+    "search_path": [
+      "search_path=public, pg_temp"
+    ],
+    "source_sha256": "e3094c137f77c7d8aa91d1533d6f17b1f1853dbec8f680c83d7cbdd76a24371c",
+    "calls": [
+      "pharmflow_auth_private.require_receiving_compat",
+      "public.is_pharmacy_member"
+    ],
+    "classification": "source/owner/grants/call boundary inventoried; see assessment for intentional API roles, candidate corrections and incomplete per-RPC runtime coverage"
+  }
+]

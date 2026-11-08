@@ -1,60 +1,16 @@
-# Receiving Email Production release — 3 November 2026
+# PharmFlow current checkpoint — 8 November 2026
 
-**Production deployment: PASS. Mandatory non-destructive smoke: PASS.**
+Phase: consolidated security audit / Staging remediation / Production release preparation.
+Status: READY FOR REVIEW; Production execution BLOCKED pending separately pinned approval and fresh preflight. No complete-security certification.
 
-PR #41 merged through the normal GitHub workflow. Approved head: `00b2e365210b669cb0a5fe54f2f976f7882566e9`; accepted Staging: `de01f49dcb5084274606e6e29c1a8e1c31c027ce`. Runtime release/main after merge: `c5c9b23079af046fe60903f3703094acaf70bab4`, based on `3c2abf7f45b20e038af9b58a24bbcb399dd39e36`. Official GitHub Pages run [41546695844](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/41546695844) completed SUCCESS. Served page build identity and `version.json` match the runtime release SHA. Served `js/orders.js`, `js/auth.js` and `js/supabase.js` matched release source exactly; Production configuration remains intact.
+Production main and served Pages verified: 1457f45fdf2af0ec84546a076e64191b5980a79a (PR45 Duty release). Production Supabase zznoshzcyxmtwfbznjyr remained read-only. Final readback: all 307 inspected public/application-private function source/owner/config/execution boundaries unchanged. Earlier accepted Receiving/Expiry/Duty/Auth/Handheld/export behavior is retained; this security task makes no new physical-device or owner UI acceptance claim.
 
-The release changes only `js/orders.js`, `tests/receiving-email.test.cjs`, and `tests/fixtures/receiving-email.fixture.js`. Runtime edits are confined to the email HTML generator. Cards retain #E1EAF2 backgrounds, #CBD9E6 borders, category-colored numbers and 3px matching top accents. Expanded five-card layout, six-column word-wrapped item tables, Arabic sections, clipboard behavior, calculations and conditional visibility are preserved. Staging preview/build helpers are excluded.
+Branch: security/consolidated-audit-20261108, based on current main. Candidate adds live-session checks to old role/membership boundaries, DATA guard to legacy global page, one additive self-session RPC, narrowly scoped pre-request exception, two password Edge guards/no-store and three invoker trigger search paths. Existing grants/RLS/operational records and frontend runtime untouched.
 
-Pre-merge gates: unchanged Production baseline, exact approved head/files, no conflicts, GitHub PR CI SUCCESS, 77 focused release tests PASS and build/artifact validation PASS. Final execution reran all 27 email tests: PASS. Forward and reverse rollback patch checks PASS. Normal merge used an expected-head SHA; no security-control bypass. Vercel's automatic branch Preview was rejected by the existing Production build guard; no Vercel deployment was published or manually requested.
+Staging tovkcakucyagvbzvlnks: two migrations applied and exact-source history verified. Hosted versions 20261108124132 and 20261108124709; release source files 20261108123709_security_session_boundaries.sql then 20261108124636_security_live_session_request_gate.sql. Staging password handlers v6/v3 deployed, JWT required; source readback matched. Production remains v7/v5, not redeployed. Production-only legacy contracts/three trigger bodies tested in isolated PostgreSQL because absent from Staging; do not claim hosted parity.
 
-Authenticated read-only Production smoke in HHP084: Receiving opened; both existing active orders remained visible; Receiving Report and actual live discrepancy preview opened; category unit totals matched the displayed report and Remaining Units. Card colors/top accents/alignment and six-column Status containment PASS. Copy Email displayed **Formatted email copied**; HTML fragment, card colors and 3px dimensions were present. Report row count and ordered/received totals were identical before and after these read/copy actions. No application JavaScript errors observed (browser-extension messages excluded). No scans, quantity changes, imports, assignments, finalizations or operational record writes were performed.
+Verification: consolidated 316 PASS/0 FAIL/3 SKIP; final affected SQL suite 13 PASS overlaps; 11 actual Stage SQL assertions PASS; 9 live HTTP checks per password endpoint PASS. Build/npm audit (zero reported vulnerabilities)/current-source secret-pattern scan PASS. Full historical suite NOT green: interrupted at stalled fixture; all 75 observed failures reproduced on untouched Production main. Do not rewrite unrelated tests. Original supplier files and external paste template were unavailable for three optional tests. Disposable synthetic Auth identity and transactional fixtures cleaned; zero synthetic accounts remain.
 
-Live data showed three nonzero KPI categories, correctly suppressing zero categories. The five-card expanded behavior was already browser-tested on the identical accepted generator and owner-accepted in actual Outlook Web (USER VERIFIED — PASS). Actual post-release Outlook paste was not repeated by the agent. The previously documented artificial extreme at 420px (15-digit code plus 9-digit item quantity) still requires a wider pane; it is unchanged and was disclosed before owner acceptance. No new email issue or rollback trigger was observed.
+October closure preserved: SEC001/002/003/004/007/008/009/010/011/012 closed or remediated within prior documented boundaries. SEC005 accepted framing/CSP risk; SEC006 partially verified live breached-password screening; SEC013 vendor backport/security coverage pending for Production build17.6.1.155 (Stage17.11.0.003). No confirmed unresolved Critical/High finding established by this audit; security-definer advisory counts are not exploit counts. Missing explicit live-session checks in raw helpers were mitigated at the public Data API by the existing request guard; do not misreport the SQL reproduction as a public owner takeover.
 
-No migrations, schema, database, Supabase, authentication, Handheld, dependency, workflow or unrelated code changes. Rollback, if needed, is a protected reverting PR for #41 followed by official Pages deployment; preserve the earlier authentication/Handheld fixes and do not restore databases or clear operational storage.
-
-This follow-up updates only this checkpoint and the changelog; runtime bytes remain those of `c5c9b23` (Pages build identity may advance with the documentation commit). Historical checkpoint entries below are retained as dated history.
-
----
-
-# Receiving Production preparation — 1 November 2026
-
-Release branch `release/receiving-approved-prep-20261101` is based on remote main `4978f12e9daf92eb60205e140583b0e3aa758f49` and contains only accepted Receiving candidate `f5896709dd458a094193c83e69f5a7e1442a51d4` changes and dependencies. No Production writes, migrations, deployment or merge. 114 focused PASS/2 optional SKIP; 62 existing CI-source checks PASS; build PASS. Database catalog confirms new revision/correction contracts absent: three ordered migrations require separate approval and atomic rollout. BLOCKED FOR PRODUCTION DEPLOYMENT. See docs/releases/RECEIVING_PRODUCTION_PREP_20261101.md. Staging helpers/uploads/operational synthetic data and unrelated modules excluded.
-
-# Current focused task — 29 October 2026
-
-Receiving multi-order hotfix: READY FOR RELEASE / owner verification pending. Baseline main f6e341782b6844929c5ced87511ad29ec4440487; Production zznoshzcyxmtwfbznjyr. Search/card/Dashboard now share selected-scope Item Code totals; additions allocate across Orders, reports remain separate. 86 focused tests/build PASS. No DB/schema/Auth/Edge changes or operational writes. Existing HHP084/1019577 ledger remains 131/0; separate -31/+31 proposal NOT APPROVED/NOT EXECUTED. Prior October security changes retained; no Expiry Staging merge. Required next: PR checks, controlled Pages release/served-SHA verification, then owner read-only smoke. See docs/releases/RECEIVING_MULTI_ORDER_HOTFIX_20261029.md and separate correction proposal for evidence/limits/rollback. Historical security labels below are dated; this task does not reopen or re-audit the security program.
-
----
-
-# PharmFlow current checkpoint — 28 October 2026
-
-READY FOR USER TEST — PRODUCTION UNCHANGED. Main remains `08843e42399b8830af6f0eb0773f04e0269cf0b6`. Five original Staging improvements remain USER VERIFIED. New refinement acceptance is pending.
-
-Feature branch: `feature/final-staging-refinements-20261028`, based on prepared `232f7fe`. Refreshed Production preparation: `release/accepted-improvements-prep-20261028`, excluding Staging build binding and migration-history file. Exact commits/Preview: `docs/staging-final-20261028/DEPLOYMENT.md` and delivery response.
-
-Resolved server export blocker: V2 transactional revision replaces full fingerprint per page; counts once. Pages stream to UTF-8/ZIP Worker; text, counts and associations preserved. Same-size isolated writer RSS 737→199MiB, 5.5→1.7s. Full 56,588/78,164 SQL→XLSX test: 183 requests, zero fingerprints, 1.43s DB, 3.25s generation; these are local SQL/Node, not Windows/network acceptance. Browser-scale readiness remains pending.
-
-UI: Export Data beside existing Create action, separate row removed, KPI/table structure unchanged. Normal startup text only Loading..., capsule markup/styles unchanged. System Owner display Administrator; internal roles and Pharmacy Admin unchanged. Real security/error states preserved.
-
-Staging-only migration `20261028022820_owner_export_revision_stream_v2`: private revision singleton/table, one trigger function, two statement triggers, one Owner/live-session RPC. Staging Master 17/22 preserved; validation fixtures rolled back; SEC-007 exact. No Production write, migration, Auth/Edge change, main merge or deployment.
-
-35 focused tests and default/Staging builds PASS; full-size independent ZIP/openpyxl count/text/association checks PASS. See `docs/staging-final-20261028/IMPLEMENTATION.md` and TEST_RESULTS.json. Proposed Production apply/rollback refreshed and isolated-SQL tested; no promotion authorized.
-
-Next: Owner tests updated Preview: Refresh Loading, Administrator, compact toolbar/KPI layout and Excel download. Full-size target Windows/browser/Excel acceptance remains open. DATA-001, Azinc/Expiry, Pharmacy Code and SEC-009 remain excluded. Preserve October 28 security, all report/quantity rules, capsule design, pharmacy isolation and Vercel main block. See `docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md` for later approval/deploy/rollback sequence.
-
-
-## 2026-10-28 — Consolidated selective Production preparation
-
-All Staging improvements through97c7385 are Product Owner USER VERIFIED within tested scenarios. Production main/served08843e4 unchanged. Production-based release includes accepted startup, ExportV2, labels/Loading/Access, Reports, final Receiving toolbar and canonical Group.51 focusedPASS/buildPASS; final guarded SQL apply/rollback2PASS; full-size56588/78164 XLSX183requests. Live Supabase preflight unavailable (Unknown tool); concurrent writer lock impact and full-size Windows/Excel limits remain OPEN gates. No deployment or migration. Authoritative inventory, hashes, limitations, release/rollback/smoke sequence: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. PREPARED FOR PRODUCTION APPROVAL — NOT DEPLOYED; final approval blocked pending gates.
-
-
-## 2026-10-28 — Resumed export blocker correction
-
-Production read-only schema/RLS/SEC007 compatibilityPASS after correcting malformed connection identifier. Staging migration20261028141551 switches revision triggers to BEFORE STATEMENT;17Items/22Identifiers/revision1 preserved. Owner/non-owner/revoked/session/mutation/rollback checksPASS. Existing real PostgreSQL concurrency proof reused;6 affected testsPASS,51 priorPASS retained. Production apply/rollback revised to BEFORE, no runtime/UI changes. Windows Chrome/Excel full-size result remainsOPEN. Details/hashes: docs/releases/ACCEPTED_IMPROVEMENTS_PREP_20261028.md. No Production writes/merges/deployments.
-
-
-## 2026-10-28 — Production release deployed
-
-READY FOR USER VERIFICATION. Approved3648a277 merged via PR33; runtimeab05fb5a5cfc2b1dc2cf35dabd9c8c5619c960ad, Pages40726680723SUCCESS. Production migration20261028162904 BEFORE STATEMENT applied/verified. Master56588/78164 counts and complete content hashes unchanged; SEC007/RLS/ACL preserved. Owner/non-owner/revoked read-only SQL checksPASS. Windows synthetic full-size Excel USER VERIFIED/PASS. CI/build/securityPASS. Actual signed-in Production UI/export smokePENDING; no USER VERIFIED DONE claim. No operational/Auth/Edge changes, no Vercel main deployment and no rollback. Details: docs/releases/PRODUCTION_DEPLOYMENT_20261028.md. This follow-up is documentation-only, runtime/SQL unchanged.
+Exact next action: review consolidated Draft security PR and docs/security/20261108/ASSESSMENT.md + RELEASE.md. Before separately approved Production execution: pin head, verify backup/recovery/config/source drift, acknowledge remaining limits, then only two ordered migrations and two Edge publications followed by protected merge/Pages/read-only smoke. Do not replay historical SQL, change Auth settings, upgrade database, activate modules, reset real passwords or clear scan queues. Prefer forward recovery; rollback can reopen security boundaries.

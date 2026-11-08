@@ -40,6 +40,11 @@ Deno.serve(async (request) => {
   const caller = callerData.user;
   if (callerError || !caller) return json({ error: "Authentication required" }, 401);
 
+  // getUser validates identity; a signed JWT can outlive a revoked session.
+  // Live temporary-password sessions must remain able to complete.
+  const { data: liveSession, error: sessionError } = await callerClient.rpc("pharmflow_has_live_session_v1");
+  if (sessionError || liveSession !== true) return json({ error: "Authentication session expired or revoked" }, 401);
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();
@@ -118,6 +123,12 @@ Deno.serve(async (request) => {
       password: newPassword,
       app_metadata: { ...caller.app_metadata, pharmflow_must_change_password: false },
     });
+    if (updateError?.code === "weak_password") {
+      return json({
+        code: "weak_password",
+        error: "Choose a different, stronger password. This password does not meet security requirements.",
+      }, 422);
+    }
     if (updateError) return json({ error: "Unable to update password" }, 500);
     return json({ success: true });
   }

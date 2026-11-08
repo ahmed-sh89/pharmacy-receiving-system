@@ -1,0 +1,6 @@
+{
+  "supabase/migrations/20261108123709_security_session_boundaries.sql": "b9ef4e680318a6144e9d69c15202ed5a77d222018967923af84d00bc0dd48bd3",
+  "supabase/migrations/20261108124636_security_live_session_request_gate.sql": "0c09ce467bc08b748e6e9de493ded383c483184a1c2fc7625af0ed27a9897dba",
+  "supabase/functions/pharmflow-password-admin/index.ts": "b2d403ffb41c163e0360e0d6c3dbb7f238a5ca18795d0f05e2b78abc05848bce",
+  "supabase/functions/pharmflow-password-admin-settings-rc/index.ts": "db099a3c8dc7c1cc0e9fb5bf7ddf89a0ffbfb7b1bc5da8c8a05d1ce0262b89c0"
+}

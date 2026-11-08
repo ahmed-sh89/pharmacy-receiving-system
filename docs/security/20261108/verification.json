@@ -1,0 +1,254 @@
+{
+  "production_sha": "1457f45fdf2af0ec84546a076e64191b5980a79a",
+  "production_function_definitions_compared": 307,
+  "production_function_definition_owner_config_execute_drift": [],
+  "advisories": [
+    {
+      "name": "rls_enabled_no_policy",
+      "level": "INFO",
+      "count": 67,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+    },
+    {
+      "name": "function_search_path_mutable",
+      "level": "WARN",
+      "count": 3,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable"
+    },
+    {
+      "name": "anon_security_definer_function_executable",
+      "level": "WARN",
+      "count": 24,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "level": "WARN",
+      "count": 222,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+    }
+  ],
+  "stable_consolidated": {
+    "tests": 319,
+    "pass": 316,
+    "fail": 0,
+    "skipped": 3,
+    "command_files": [
+      "tests/auth-request-timeout.test.cjs",
+      "tests/auth-session-001.test.cjs",
+      "tests/duty-all-export.test.cjs",
+      "tests/duty-controls.test.cjs",
+      "tests/duty-database.test.cjs",
+      "tests/duty-download-regression.test.cjs",
+      "tests/duty-final-acceptance.test.cjs",
+      "tests/duty-final-regression.test.cjs",
+      "tests/duty-foundation.test.cjs",
+      "tests/duty-permission-modal.test.cjs",
+      "tests/duty-polish.test.cjs",
+      "tests/duty-presets-database.test.cjs",
+      "tests/duty-presets-ui.test.cjs",
+      "tests/duty-readiness.test.cjs",
+      "tests/duty-release-isolation.test.cjs",
+      "tests/duty-reports.test.cjs",
+      "tests/duty-scheduling.test.cjs",
+      "tests/duty-ux-corrections.test.cjs",
+      "tests/duty-workflow-database.test.cjs",
+      "tests/duty-workflow.test.cjs",
+      "tests/handheld-receiving-readiness-hotfix.test.cjs",
+      "tests/handheld-scanner-rearm.test.cjs",
+      "tests/order-toolbar-refactor.test.cjs",
+      "tests/receiving-allocation-ui.test.cjs",
+      "tests/receiving-consolidation-review.test.cjs",
+      "tests/receiving-critical-repair.test.cjs",
+      "tests/receiving-duplicate-line-allocation.test.cjs",
+      "tests/receiving-final-projection.test.cjs",
+      "tests/receiving-hydration-lifecycle.test.cjs",
+      "tests/receiving-live-kpi-event.test.cjs",
+      "tests/receiving-multi-order-hotfix.test.cjs",
+      "tests/receiving-readiness-recovery.test.cjs",
+      "tests/receiving-recovery-auth.test.cjs",
+      "tests/receiving-recovery-sql.test.cjs",
+      "tests/receiving-simplification.test.cjs",
+      "tests/receiving-split-queue.test.cjs",
+      "tests/receiving-startup-hydration.test.cjs",
+      "tests/receiving-total-kpi.test.cjs",
+      "tests/receiving-unassigned-hydration.test.cjs",
+      "tests/receiving-unknown-default.test.cjs",
+      "tests/sec001-excel-security.test.cjs",
+      "tests/sec004-password-parity.test.cjs",
+      "tests/security-production-artifact.test.cjs",
+      "tests/security-production-gate.test.cjs",
+      "tests/security-session-boundaries.test.cjs",
+      "tests/security-source-hardening.test.cjs",
+      "tests/sleep-wake-permissions.test.cjs"
+    ]
+  },
+  "final_affected_sql_suite": {
+    "pass": 13,
+    "fail": 0,
+    "overlaps_consolidated": true
+  },
+  "full_historical_suite": {
+    "status": "interrupted after legacy fixture stalled; not PASS",
+    "observed_failures": 75,
+    "same_names_reproduced_on_unmodified_main": 75,
+    "unmatched": []
+  },
+  "historical_failures": [
+    "Ambiguous result retains frozen request and retries same identity after refresh",
+    "Batch session display uses server state identity, ignores serial and preserves durable source receipts",
+    "Blank aggregate quantity is rejected rather than being treated as zero",
+    "Cancel causes no write; negative quantity and failed mutation retain dialog and entered value",
+    "Delete confirmation removes only current session contribution and refreshes authority",
+    "Desktop exposes Current Expiry workspace while Handheld keeps it out of shelf workflow",
+    "Desktop save persists the original scanner frame and exact parsed serial",
+    "Discard removes only a genuine unsent local draft and returns to scan readiness",
+    "Excel and paper lists share one authoritative export RPC and retain only shelf columns",
+    "Excel full active export ignores applied Operator and month selections",
+    "Excel uses all active pharmacy rows, exact text identifiers, Operator and local dates",
+    "Expiry Desktop uses explicit Desktop fallback operator while preserving Handheld selection",
+    "Expiry Group display uses the Production canonical mapping and never falls back to Category",
+    "Expiry Session Activity renders corrected current-state values after Edit",
+    "Expiry cleared current state remains in Session Activity as Deleted",
+    "Expiry desktop Scan Search uses authoritative V2 product and identifier services",
+    "Expiry desktop correction is inline and no browser prompt patch remains",
+    "Expiry desktop current list exposes Category filter and edit-delete controls",
+    "Expiry desktop has one canonical visual owner with no stacked override layer",
+    "Expiry desktop hides duplicate Last Scan surface without changing Handheld item card",
+    "Expiry desktop keeps page fixed and scrolls only Current Expiry List",
+    "Expiry desktop operations keep operator optional while Handheld remains guarded",
+    "Expiry desktop operator remains optional without trapping scanner focus",
+    "Expiry desktop paste routes barcode-like identifiers through scan resolution",
+    "Expiry desktop search dropdown is not clipped by legacy scan-box overflow",
+    "Expiry desktop separates recent operational work from full current state",
+    "Expiry desktop session survives route navigation and resets only on sign out",
+    "Expiry desktop table remains readable and visually structured",
+    "Expiry edit action column has room for Save and Cancel in both desktop views",
+    "Expiry inline edit exposes both Save and visible Cancel actions",
+    "Expiry is reachable from both Desktop sidebar and Handheld workspace chooser",
+    "Expiry known-item save uses additive V2 current-state RPC",
+    "Expiry manual search reuses Receiving result hierarchy and authenticated Global V2 contract",
+    "Expiry normalizes optional capture worker UUID and blocks unsafe legacy review writes",
+    "Expiry session quantity is neutral and capture keeps authoritative state id",
+    "Group timestamp is the newest authoritative capture and identifiers retain leading zeros",
+    "Handheld Account is reachable from Modes with canonical fields and guarded logout unchanged",
+    "Inventory KPIs display overlapping calendar ranges including operational current-month Expired",
+    "Inventory, report preview and Excel present missing Batch and canonical Group without changing records",
+    "KPI expired interval remains unbounded and keyboard selection replaces",
+    "KPI refresh preserves DOM identity, authoritative Records/Units and filter behavior",
+    "Late token refresh cannot resurrect a signed-out session",
+    "Manual search selection renders Active Item and save feedback is strongly visible",
+    "Menus support Escape focus restoration and keyboard movement",
+    "Missing Group selection is explicit and reports retain exact identifiers and Group labels",
+    "Modes Account and existing Sign Out dispatch; pending work still prevents logout",
+    "Normal startup text is only Loading; capsule DOM and stylesheet are unchanged; security error remains visible",
+    "Old success timers cannot dismiss newer success or a persistent warning/error",
+    "Production connection, authentication, release workflow and operational files remain exact baseline",
+    "Quantity zero uses versioned authoritative mutation, preserves identity and is separate from Resolve",
+    "Receiving Group choices contain only six approved values and filters use effective Group",
+    "Receiving and Expiry call paths are unchanged by Add Item patch",
+    "Resolve UI remains pharmacy-local and Storage evidence stays authenticated/private",
+    "Resolve all previews every matching page; exact versioned selection and units are confirmed before write",
+    "Resolved lazy loads only on request and Restore never substitutes active selection",
+    "SIMULATED canonical ten-minute sleep blocks native fetch; resume restores it without changing threshold",
+    "SIMULATED shared idle scheduler keeps eight metadata checks and two generation checks per two minutes",
+    "Scan draft survives Inventory switching; independent table schemas remain aligned",
+    "Session table has no retired menu or dedicated placeholder; row Edit/Delete remain",
+    "Settings and Receiving expose a controlled Group selector only on Global creation",
+    "Shelf exports use server filter authority and do not depend on the current page",
+    "Success returns to READY after2500ms without hiding Active Item or fields",
+    "TC26 compact rules retain 44px controls and normal-flow save; shared scanner and Receiving files stay outside this fix",
+    "Worker selection persists once per user/pharmacy session and does not transfer across users",
+    "Workspace switch hides capture and shows four Inventory KPIs without losing unsaved draft or grouped receipt scope",
+    "desktop manual receiving keeps selection and quantity controls prominent without changing handlers",
+    "existing item retry never creates a duplicate item or mapping",
+    "pending-only operational review UI keeps the authorized Global Master and delete actions",
+    "review reads and Storage photo visibility remain pharmacy-member scoped and Global Master write authority stays unchanged",
+    "save succeeds even when optional item detail refresh fails; modal closes once",
+    "scan resolver retains exact identifier and authoritative RPC contract",
+    "single KPI click replaces; double adds without an intermediate query; clear cancels queued clicks",
+    "stale Restore/Clear conflicts are visible and abort the selection; context changes block execution",
+    "tests/extra-items-selected-item.test.cjs",
+    "tests/needs-review-auto-allocation.test.cjs"
+  ],
+  "build": "PASS",
+  "npm_audit_vulnerabilities": 0,
+  "synthetic_cleanup_users_remaining": 0,
+  "live_primary_edge": [
+    {
+      "test": "synthetic password login",
+      "pass": true
+    },
+    {
+      "test": "live mandatory session RPC",
+      "pass": true
+    },
+    {
+      "test": "temporary password reuse rejected on deployed primary Edge",
+      "pass": true
+    },
+    {
+      "test": "distinct replacement completes on deployed primary Edge",
+      "pass": true
+    },
+    {
+      "test": "replacement credential login and metadata",
+      "pass": true
+    },
+    {
+      "test": "synthetic local logout",
+      "pass": true
+    },
+    {
+      "test": "pharmflow-password-admin: revoked signed token denied",
+      "pass": true
+    },
+    {
+      "test": "pharmflow-password-admin-settings-rc: revoked signed token denied",
+      "pass": true
+    },
+    {
+      "test": "revoked session RPC denied",
+      "pass": true
+    }
+  ],
+  "live_legacy_edge": [
+    {
+      "test": "synthetic password login",
+      "pass": true
+    },
+    {
+      "test": "live mandatory session RPC",
+      "pass": true
+    },
+    {
+      "test": "temporary password reuse rejected on deployed selected Edge",
+      "pass": true
+    },
+    {
+      "test": "distinct replacement completes on deployed selected Edge",
+      "pass": true
+    },
+    {
+      "test": "replacement credential login and metadata",
+      "pass": true
+    },
+    {
+      "test": "synthetic local logout",
+      "pass": true
+    },
+    {
+      "test": "pharmflow-password-admin: revoked signed token denied",
+      "pass": true
+    },
+    {
+      "test": "pharmflow-password-admin-settings-rc: revoked signed token denied",
+      "pass": true
+    },
+    {
+      "test": "revoked session RPC denied",
+      "pass": true
+    }
+  ],
+  "staging_sql_assertions": 11
+}

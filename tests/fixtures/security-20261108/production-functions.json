@@ -1,0 +1,178 @@
+[
+  {
+    "schema": "public",
+    "proname": "bootstrap_system_owner",
+    "args": "p_pharmacy_name text, p_pharmacy_code text",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.bootstrap_system_owner(p_pharmacy_name text, p_pharmacy_code text)\n RETURNS TABLE(pharmacy_id uuid, pharmacy_code text, pharmacy_name text, system_role text, member_role text)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n    v_user uuid := auth.uid();\r\n    v_existing_owner uuid;\r\n    v_pharmacy uuid;\r\n    v_code text;\r\nbegin\r\n    if v_user is null then\r\n        raise exception 'Authentication required';\r\n    end if;\r\n\r\n    -- Prevent two browsers from winning first-owner setup at the same time.\r\n    perform pg_advisory_xact_lock(hashtext('medryvo_bootstrap_system_owner'));\r\n\r\n    select so.user_id\r\n      into v_existing_owner\r\n      from public.system_owners so\r\n      order by so.created_at asc\r\n      limit 1;\r\n\r\n    if v_existing_owner is not null and v_existing_owner <> v_user then\r\n        raise exception 'System owner is already configured';\r\n    end if;\r\n\r\n    if nullif(trim(p_pharmacy_name),'') is null then\r\n        raise exception 'Pharmacy name is required';\r\n    end if;\r\n\r\n    v_code := upper(regexp_replace(coalesce(p_pharmacy_code,''), '[^A-Za-z0-9_-]+', '', 'g'));\r\n    if length(v_code) < 3 then\r\n        raise exception 'Pharmacy code must be at least 3 characters';\r\n    end if;\r\n\r\n    -- Owner record can safely be retried by the SAME authenticated user.\r\n    insert into public.system_owners(user_id)\r\n    values (v_user)\r\n    on conflict (user_id) do nothing;\r\n\r\n    -- If this same Owner already has an admin pharmacy membership, return it.\r\n    select p.id\r\n      into v_pharmacy\r\n      from public.pharmacy_members pm\r\n      join public.pharmacies p on p.id = pm.pharmacy_id\r\n     where pm.user_id = v_user\r\n       and pm.role = 'admin'\r\n     order by pm.created_at asc\r\n     limit 1;\r\n\r\n    if v_pharmacy is null then\r\n        insert into public.pharmacies(\r\n            code, name, active, status, approved_at, approved_by\r\n        )\r\n        values (\r\n            v_code, trim(p_pharmacy_name), true, 'active', now(), v_user\r\n        )\r\n        on conflict (code) do update\r\n        set name = excluded.name,\r\n            active = true,\r\n            status = 'active',\r\n            approved_at = coalesce(public.pharmacies.approved_at, now()),\r\n            approved_by = coalesce(public.pharmacies.approved_by, v_user),\r\n            updated_at = now()\r\n        returning id into v_pharmacy;\r\n\r\n        insert into public.pharmacy_members(pharmacy_id, user_id, role, active)\r\n        values (v_pharmacy, v_user, 'admin', true)\r\n        on conflict (pharmacy_id, user_id) do update\r\n        set role = 'admin', active = true;\r\n    end if;\r\n\r\n    return query\r\n    select p.id,\r\n           p.code,\r\n           p.name,\r\n           'owner'::text,\r\n           'admin'::text\r\n      from public.pharmacies p\r\n     where p.id = v_pharmacy;\r\nend;\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "get_global_master_gtin_page",
+    "args": "p_offset integer, p_limit integer",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.get_global_master_gtin_page(p_offset integer DEFAULT 0, p_limit integer DEFAULT 1000)\n RETURNS TABLE(item_code text, gtin text, item_name text, category text)\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n    if auth.uid() is null then raise exception 'Authentication required'; end if;\r\n    return query\r\n    select g.item_code,g.gtin,g.item_name,g.category\r\n    from public.pharmflow_global_gtin_v1 g\r\n    order by g.id\r\n    offset greatest(coalesce(p_offset,0),0)\r\n    limit least(greatest(coalesce(p_limit,1000),1),2000);\r\nend $function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "is_pharmacy_admin",
+    "args": "p_pharmacy_id uuid",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.is_pharmacy_admin(p_pharmacy_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n    select public.is_system_owner() or exists (\r\n        select 1\r\n        from public.pharmacy_members m\r\n        join public.pharmacies p on p.id = m.pharmacy_id\r\n        where m.pharmacy_id = p_pharmacy_id\r\n          and m.user_id = auth.uid()\r\n          and m.role = 'admin'\r\n          and m.active = true\r\n          and p.status = 'active'\r\n    );\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "is_pharmacy_member",
+    "args": "p_pharmacy_id uuid",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.is_pharmacy_member(p_pharmacy_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n    select public.is_system_owner() or exists (\r\n        select 1\r\n        from public.pharmacy_members m\r\n        join public.pharmacies p on p.id = m.pharmacy_id\r\n        where m.pharmacy_id = p_pharmacy_id\r\n          and m.user_id = auth.uid()\r\n          and m.active = true\r\n          and p.status = 'active'\r\n    );\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "is_system_owner",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.is_system_owner()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n    select exists (\r\n        select 1 from public.system_owners o\r\n        where o.user_id = (select auth.uid())\r\n    );\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "medryvo_is_system_owner",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public, auth"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.medryvo_is_system_owner()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'auth'\nAS $function$\r\n    select exists(\r\n        select 1\r\n        from public.system_owners so\r\n        where so.user_id = auth.uid()\r\n    );\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "pharmflow_can_access_pharmacy",
+    "args": "p_pharmacy_id uuid",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "anon_exec": true,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.pharmflow_can_access_pharmacy(p_pharmacy_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\n    select auth.uid() is not null and (\r\n        public.is_system_owner()\r\n        or exists(select 1 from public.pharmacy_members m where m.pharmacy_id=p_pharmacy_id and m.user_id=auth.uid() and coalesce(m.active,true)=true)\r\n    );\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "pharmflow_is_member",
+    "args": "p_pharmacy_id uuid",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public, pg_temp"
+    ],
+    "anon_exec": true,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.pharmflow_is_member(p_pharmacy_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\n select exists(select 1 from public.system_owners so where so.user_id=auth.uid())\r\n or exists(select 1 from public.pharmacy_members pm where pm.pharmacy_id=p_pharmacy_id and pm.user_id=auth.uid());\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "pharmflow_manifest_member_v2",
+    "args": "p_pharmacy_id uuid",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public, pg_temp"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.pharmflow_manifest_member_v2(p_pharmacy_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\n    select\r\n        auth.uid() is not null\r\n        and (\r\n            exists(\r\n                select 1\r\n                from public.system_owners so\r\n                where so.user_id=auth.uid()\r\n            )\r\n            or exists(\r\n                select 1\r\n                from public.pharmacy_members pm\r\n                where pm.pharmacy_id=p_pharmacy_id\r\n                  and pm.user_id=auth.uid()\r\n            )\r\n        );\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "pharmflow_receiving_member_v2",
+    "args": "p_pharmacy_id uuid",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public, pg_temp"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.pharmflow_receiving_member_v2(p_pharmacy_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\r\n    select auth.uid() is not null and (\r\n        exists(select 1 from public.system_owners so where so.user_id=auth.uid())\r\n        or exists(\r\n            select 1 from public.pharmacy_members pm\r\n            where pm.pharmacy_id=p_pharmacy_id and pm.user_id=auth.uid()\r\n        )\r\n    );\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "redeem_pharmacy_invite",
+    "args": "p_invite_token uuid",
+    "owner": "postgres",
+    "prosecdef": true,
+    "proconfig": [
+      "search_path=public"
+    ],
+    "anon_exec": false,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.redeem_pharmacy_invite(p_invite_token uuid)\n RETURNS TABLE(pharmacy_id uuid, pharmacy_code text, pharmacy_name text, member_role text)\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n    v_user uuid := auth.uid();\r\n    v_email text;\r\n    v_inv public.pharmacy_invitations%rowtype;\r\nbegin\r\n    if v_user is null then\r\n        raise exception 'Authentication required';\r\n    end if;\r\n\r\n    select lower(email) into v_email from auth.users where id = v_user;\r\n\r\n    select * into v_inv\r\n    from public.pharmacy_invitations i\r\n    where i.invite_token = p_invite_token\r\n      and i.used_at is null\r\n      and i.expires_at > now()\r\n    for update;\r\n\r\n    if not found then\r\n        raise exception 'Invitation is invalid, expired, or already used';\r\n    end if;\r\n\r\n    if lower(v_inv.email) <> v_email then\r\n        raise exception 'Invitation email does not match signed-in account';\r\n    end if;\r\n\r\n    insert into public.pharmacy_members(pharmacy_id,user_id,role,active)\r\n    values (v_inv.pharmacy_id, v_user, v_inv.role, true)\r\n    on conflict (pharmacy_id,user_id) do update\r\n    set role = excluded.role, active = true;\r\n\r\n    update public.pharmacy_invitations\r\n    set used_at = now(), used_by = v_user\r\n    where id = v_inv.id;\r\n\r\n    return query\r\n    select p.id, p.code, p.name, v_inv.role\r\n    from public.pharmacies p\r\n    where p.id = v_inv.pharmacy_id;\r\nend;\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "sync_pharmacy_active_status",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": false,
+    "proconfig": null,
+    "anon_exec": true,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.sync_pharmacy_active_status()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nbegin\r\n    if new.status = 'active' then\r\n        new.active := true;\r\n    elsif new.status = 'suspended' then\r\n        new.active := false;\r\n    end if;\r\n    return new;\r\nend;\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "touch_updated_at",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": false,
+    "proconfig": null,
+    "anon_exec": true,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.touch_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nbegin\r\n    new.updated_at = now();\r\n    return new;\r\nend;\r\n$function$\n"
+  },
+  {
+    "schema": "public",
+    "proname": "update_session_timestamp",
+    "args": "",
+    "owner": "postgres",
+    "prosecdef": false,
+    "proconfig": null,
+    "anon_exec": true,
+    "auth_exec": true,
+    "definition": "CREATE OR REPLACE FUNCTION public.update_session_timestamp()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nbegin\n    new.updated_at = now();\n    return new;\nend;\n$function$\n"
+  }
+]

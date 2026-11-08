@@ -21,7 +21,7 @@ jobs:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-fund --no-audit
       - name: Focused offline security and Receiving fixtures
-        run: node --test tests/security-source-hardening.test.cjs tests/security-production-artifact.test.cjs tests/security-production-gate.test.cjs tests/receiving-consolidation-review.test.cjs tests/receiving-multi-order-hotfix.test.cjs tests/receiving-duplicate-line-allocation.test.cjs tests/receiving-split-queue.test.cjs tests/sec004-password-parity.test.cjs
+        run: node --test tests/security-source-hardening.test.cjs tests/security-production-artifact.test.cjs tests/security-production-gate.test.cjs tests/security-session-boundaries.test.cjs tests/receiving-consolidation-review.test.cjs tests/receiving-multi-order-hotfix.test.cjs tests/receiving-duplicate-line-allocation.test.cjs tests/receiving-split-queue.test.cjs tests/sec004-password-parity.test.cjs
       - name: Accepted Receiving release checks
         run: node --test tests/receiving-final-projection.test.cjs tests/receiving-allocation-ui.test.cjs tests/receiving-critical-repair.test.cjs tests/receiving-hydration-lifecycle.test.cjs tests/receiving-live-kpi-event.test.cjs tests/receiving-readiness-recovery.test.cjs tests/receiving-recovery-auth.test.cjs tests/receiving-recovery-sql.test.cjs tests/receiving-simplification.test.cjs tests/receiving-startup-hydration.test.cjs tests/receiving-total-kpi.test.cjs tests/receiving-unassigned-hydration.test.cjs tests/receiving-unknown-default.test.cjs tests/sec001-excel-security.test.cjs tests/sleep-wake-permissions.test.cjs tests/order-toolbar-refactor.test.cjs
       - name: P1 Handheld and authentication regression checks
