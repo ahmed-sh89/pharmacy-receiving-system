@@ -1,3 +1,5 @@
+> **Production outcome — 8 November 2026: Security Release #47 CLOSED — USER VERIFIED.** Approved remediation deployed at `76a14f0f77c55bea8e6df76a5695f428ab1ccfbb`; Product Owner operational acceptance PASS. See [closure](CLOSURE.md). The assessment below is retained as historical pre-release evidence; its authorization/deployment HOLD statements are superseded by the closure. SEC-005 remains ACCEPTED RISK, SEC-006 PARTIALLY VERIFIED, SEC-013 VENDOR DEPENDENCY. No comprehensive certification is implied.
+
 # PharmFlow security audit and release candidate — 8 November 2026
 
 **READY FOR REVIEW. Production execution BLOCKED pending separate authorization.** No confirmed unresolved Critical/High finding was established in this assessment. This is a scoped assessment, not a vulnerability-free certification.

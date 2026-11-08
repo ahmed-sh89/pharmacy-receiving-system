@@ -1,16 +1,36 @@
 # PharmFlow current checkpoint — 8 November 2026
 
-Phase: consolidated security audit / Staging remediation / Production release preparation.
-Status: READY FOR REVIEW; Production execution BLOCKED pending separately pinned approval and fresh preflight. No complete-security certification.
+Security Release #47: **CLOSED — USER VERIFIED**. Approved remediation deployed and operationally accepted; continuing security maintenance remains separate. This is not comprehensive security certification.
 
-Production main and served Pages verified: 1457f45fdf2af0ec84546a076e64191b5980a79a (PR45 Duty release). Production Supabase zznoshzcyxmtwfbznjyr remained read-only. Final readback: all 307 inspected public/application-private function source/owner/config/execution boundaries unchanged. Earlier accepted Receiving/Expiry/Duty/Auth/Handheld/export behavior is retained; this security task makes no new physical-device or owner UI acceptance claim.
+## Production state
 
-Branch: security/consolidated-audit-20261108, based on current main. Candidate adds live-session checks to old role/membership boundaries, DATA guard to legacy global page, one additive self-session RPC, narrowly scoped pre-request exception, two password Edge guards/no-store and three invoker trigger search paths. Existing grants/RLS/operational records and frontend runtime untouched.
+- Repository: ahmed-sh89/pharmacy-receiving-system; Production Supabase: zznoshzcyxmtwfbznjyr. Staging remains isolated.
+- Approved PR #47 head: `0ba04efc5f2272ef6f496914693c31f130a2c6b2`.
+- Verified release main/runtime SHA: `76a14f0f77c55bea8e6df76a5695f428ab1ccfbb`. The subsequent protected documentation merge has its own main SHA; it does not change application source.
+- Applied atomically with corresponding migration-history records: `20261108123709_security_session_boundaries.sql`, then `20261108124636_security_live_session_request_gate.sql`. Exact source/readback and preservation assertions passed in the release session; not repeated here.
+- Edge: pharmflow-password-admin **v8**, pharmflow-password-admin-settings-rc **v6**; approved sources and JWT enforcement verified during release.
+- PR #47 merged through protection; official GitHub Pages [run 42492205460](https://github.com/ahmed-sh89/pharmacy-receiving-system/actions/runs/42492205460) **SUCCESS**. No release replay.
 
-Staging tovkcakucyagvbzvlnks: two migrations applied and exact-source history verified. Hosted versions 20261108124132 and 20261108124709; release source files 20261108123709_security_session_boundaries.sql then 20261108124636_security_live_session_request_gate.sql. Staging password handlers v6/v3 deployed, JWT required; source readback matched. Production remains v7/v5, not redeployed. Production-only legacy contracts/three trigger bodies tested in isolated PostgreSQL because absent from Staging; do not claim hosted parity.
+## Acceptance and verification boundaries
 
-Verification: consolidated 316 PASS/0 FAIL/3 SKIP; final affected SQL suite 13 PASS overlaps; 11 actual Stage SQL assertions PASS; 9 live HTTP checks per password endpoint PASS. Build/npm audit (zero reported vulnerabilities)/current-source secret-pattern scan PASS. Full historical suite NOT green: interrupted at stalled fixture; all 75 observed failures reproduced on untouched Production main. Do not rewrite unrelated tests. Original supplier files and external paste template were unavailable for three optional tests. Disposable synthetic Auth identity and transactional fixtures cleaned; zero synthetic accounts remain.
+**USER VERIFIED — PASS — 8 November 2026:** login; session persistence after Refresh; read-only Receiving, Orders, Reports, Expiry, Duty and Administrator access according to account permissions; logout followed by Refresh requiring authentication. This explicit Product Owner acceptance resolves the operational acceptance blocker. Agent-authenticated UI testing remained blocked by Session Paused; it is not relabeled AGENT VERIFIED.
 
-October closure preserved: SEC001/002/003/004/007/008/009/010/011/012 closed or remediated within prior documented boundaries. SEC005 accepted framing/CSP risk; SEC006 partially verified live breached-password screening; SEC013 vendor backport/security coverage pending for Production build17.6.1.155 (Stage17.11.0.003). No confirmed unresolved Critical/High finding established by this audit; security-definer advisory counts are not exploit counts. Missing explicit live-session checks in raw helpers were mitigated at the public Data API by the existing request guard; do not misreport the SQL reproduction as a public owner takeover.
+Prior scoped automated evidence retained: consolidated 316 PASS / 0 FAIL / 3 SKIP; affected SQL 13 PASS overlaps; Staging SQL 11 assertions and 9 HTTP checks per endpoint PASS. Full historical suite was not green: 75 observed baseline failures reproduced on unchanged baseline. No completed tests rerun for documentation.
 
-Exact next action: review consolidated Draft security PR and docs/security/20261108/ASSESSMENT.md + RELEASE.md. Before separately approved Production execution: pin head, verify backup/recovery/config/source drift, acknowledge remaining limits, then only two ordered migrations and two Edge publications followed by protected merge/Pages/read-only smoke. Do not replay historical SQL, change Auth settings, upgrade database, activate modules, reset real passwords or clear scan queues. Prefer forward recovery; rollback can reopen security boundaries.
+Manual acceptance is operational only: no comprehensive penetration test, cross-pharmacy isolation test or independent token-revocation proof. Physical Zebra and multi-PC acceptance is not newly claimed. Backup availability was verified before release; actual restoration was not tested.
+
+## Residual risks
+
+- SEC-005 — ACCEPTED RISK: CSP/framing limitations.
+- SEC-006 — PARTIALLY VERIFIED: comprehensive leaked-password screening.
+- SEC-013 — VENDOR DEPENDENCY: Supabase PostgreSQL security patch/backport confirmation.
+
+Prior SEC-001/002/003/004/007/008/009/010/011/012 protections remain within their documented verification boundaries. No confirmed unresolved Critical/High issue was established in the reviewed release scope; no vulnerability-free claim.
+
+## Preservation and next action
+
+Documentation task modifies only checkpoint, changelog and security documentation. No application code, migrations, Edge Functions, Auth configuration, security rules or operational data changed. Migration-time fingerprints across 78 tables passed during release; later legitimate concurrent Handheld Expiry activity is preserved, not reversed.
+
+Current development readiness: approved security release complete; ready for the next explicitly scoped development task. Track the three residual risks separately. Preserve Receiving, Expiry, Duty, pharmacy isolation, persistence, exports, synchronization and handheld workflows. Do not replay this release.
+
+Detailed closure and retained release evidence: [security closure](docs/security/20261108/CLOSURE.md).
