@@ -5,8 +5,9 @@
 Production main inspected: `cbd249427dbe8a0acfd6426ef8eede2f2f4e5f29` (unchanged remotely). Dedicated branch: `fix/startup-handheld-staging-20261108`.
 
 - Device persistence root cause verified and fixed; shared early/runtime policy ignores legacy automatic flags on Windows, preserves explicit selection and Zebra/Android fallback. Automated classification passes; actual Windows/DevTools and physical Zebra acceptance remain pending.
+- Verified serial asset bottleneck corrected with exact-URL preloads, preserving execution order/lifecycle/SRI. Signed-out remote Chrome: DOMContentLoaded 8.952 → 1.653 s; Auth initialization finish ~10.746 → 3.153 s. Runtime Preview `f9d5bfeb59a2d360d4ad78d6172d85b17d6eec00` READY: https://pharmflow-test-62521qhhb-fhyh2xtskz-3504.vercel.app/ . Draft PR #49. Actual Windows/authenticated/hardware acceptance pending.
 - One redundant registration read removed from bootstrap only. Controlled 60 ms/response component comparison saves one round trip (~121 → 61 ms). Full reported 30–60 second startup cause and live before/after totals remain **NOT VERIFIED / OPEN**.
-- Verification: 19 new focused/build-fence tests and 255 relevant regression tests PASS. Historical full suite is not green; do not equate scoped passing tests with full-suite success.
+- Verification: 20 new focused/build-fence tests and 255 relevant regression tests PASS. Historical full suite is not green. Startup/security/session CI passed; Duty CI fails the older byte-freeze assertion for the intentionally changed js/app.js. Keep PR Draft; do not claim all CI green.
 - Exact-branch Vercel Preview binds Staging `tovkcakucyagvbzvlnks`; read-only startup timing panel is Preview-only. No Production deployment, merge, backend changes or operational test writes.
 - Next: owner tests exact Preview on Windows and Zebra, captures startup timings with empty/active synthetic orders and repeated reload/logout; continue diagnosis from measured spans. No USER VERIFIED/DONE claim and no Production promotion authorization.
 
