@@ -110,14 +110,14 @@ function receivingAllocationBalance(tx){
     return (AppState.workspace.receivingHistory||[]).reduce((n,t)=>normalizeItemCode(t.itemCode)===normalizeItemCode(tx.itemCode)&&normalizeOrderNumber(t.selectedOrderNumber||t.orderId||t.orderNumber)===order?n+Number(t.quantity||0):n,0);
 }
 function receivingReceiptAvailable(tx){
-    const reversed=(AppState.workspace.receivingHistory||[]).filter(row=>row.source==="ORDER_ALLOCATION" && row.correctsTransactionId===tx.transactionId && Number(row.quantity)<0).reduce((n,row)=>n+Number(row.quantity),0);
+    const reversed=(AppState.workspace.receivingHistory||[]).filter(row=>row.correctsTransactionId===tx.transactionId && Number(row.quantity)<0).reduce((n,row)=>n+Number(row.quantity),0);
     return Math.max(0,Math.min(Number(tx.quantity)+reversed,receivingAllocationBalance(tx)));
 }
 function getExtraCorrectionReceipts(){
     const selected=new Set(getSelectedReceivingOrderNumbers().map(normalizeOrderNumber));
     const targets=getActiveReceivingOrderNumbers();
     const seen=new Set();
-    return (AppState.workspace.receivingHistory||[]).filter(tx=>{if(!tx.transactionId||seen.has(tx.transactionId)||Number(tx.quantity)<=0)return false;seen.add(tx.transactionId);return true;}).map(tx=>{
+    return (AppState.workspace.receivingHistory||[]).filter(tx=>{if(tx.undone===true||!tx.transactionId||seen.has(tx.transactionId)||Number(tx.quantity)<=0)return false;seen.add(tx.transactionId);return true;}).map(tx=>{
         const order=normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||''),code=normalizeItemCode(tx.itemCode),file=order?getWorkspaceOrderFile(order):null;
         const unassigned=!order&&tx.unassigned===true;
         const extra=order&&selected.has(order)&&Array.isArray(file?.sourceRows)&&!file.sourceRows.some(line=>normalizeItemCode(line.itemCode)===code&&Number(line.orderedQty)>0);
@@ -172,8 +172,9 @@ function getReceivingUnassignedSummary(rows=getExtraCorrectionReceipts()){
 function renderExtraReceivingCorrection(body){
     const rows=getExtraCorrectionItems(),selected=new Set();let operation=null;
     const writable=typeof isPharmacyAdmin==='function'&&isPharmacyAdmin()&&window.PharmFlowPermissions?.allowed('RECEIVING',true)&&!isLikelyZebraDevice?.();
+    const renderScope=writable?receivingRecoveryScope():null;
     const extraCount=getKpiPanelItems('manual').length,unassignedCount=new Set(rows.filter(row=>row.types.includes('Unassigned')).map(row=>row.code)).size;
-    body.innerHTML=`<div class="receivingExtraSummary">Extra items: <b>${extraCount}</b><span>Unassigned items: <b>${unassignedCount}</b></span></div><div class="receivingExtraTools"><label>Find item<input data-search type="search" placeholder="Item code or name"></label><label>Show<select data-filter><option value="All">All receipts</option><option>Extra</option><option>Unassigned</option></select></label></div><div class="receivingExtraAssign" ${writable?'':'hidden'}><label>Destination order<select data-target aria-label="Destination order"><option value="">Select records first</option></select></label><button class="primaryButton" data-preview type="button" disabled>Confirm</button><span data-selected role="status"></span></div><div class="receivingExtraTable" data-list></div><p class="receivingExtraMessage" data-message role="status" aria-live="polite"></p>`;
+    body.innerHTML=`<div class="receivingExtraSummary">Extra items: <b>${extraCount}</b><span>Unassigned items: <b>${unassignedCount}</b></span></div><div class="receivingExtraTools"><label>Find item<input data-search type="search" placeholder="Item code or name"></label><label>Show<select data-filter><option value="All">All receipts</option><option>Extra</option><option>Unassigned</option></select></label></div><div class="receivingExtraAssign" ${writable?'':'hidden'}><label>Destination order<select data-target aria-label="Destination order"><option value="">Select records first</option></select></label><button class="primaryButton" data-preview type="button" disabled>Assign to Order</button><span data-selected role="status"></span></div><div class="receivingExtraTable" data-list></div><p class="receivingExtraMessage" data-message role="status" aria-live="polite"></p>`;
     const list=body.querySelector('[data-list]'),target=body.querySelector('[data-target]'),preview=body.querySelector('[data-preview]'),message=body.querySelector('[data-message]');
     const updateSelection=()=>{
         const chosen=rows.filter(r=>selected.has(r.tx.transactionId)),old=target.value;
@@ -181,7 +182,7 @@ function renderExtraReceivingCorrection(body){
         target.innerHTML='<option value="">Choose destination</option>'+destinations.map(order=>`<option value="${escapeHTML(order)}">${escapeHTML(order)}</option>`).join('');
         if(destinations.includes(old))target.value=old;
         preview.disabled=!writable||!chosen.length||!target.value;
-        body.querySelector('[data-selected]').textContent=chosen.length?`${chosen.length} receipts · ${chosen.reduce((n,r)=>n+r.quantity,0)} units`:'';
+        body.querySelector('[data-selected]').textContent=chosen.length?`${chosen.reduce((n,r)=>n+r.receipts.length,0)} receipts · ${chosen.reduce((n,r)=>n+r.quantity,0)} units`:'';
         target.disabled=!destinations.length;
         message.textContent=(chosen.length&&!destinations.length)||(rows.length&&!rows.some(row=>row.destinations.length))?'No eligible destination orders.':'';
     };
@@ -189,7 +190,29 @@ function renderExtraReceivingCorrection(body){
         const query=body.querySelector('[data-search]').value.trim().toLowerCase(),filter=body.querySelector('[data-filter]').value||'All';
         const visible=rows.filter(r=>(filter==='All'||r.types.includes(filter))&&(!query||`${r.code} ${r.tx.itemName} ${r.order}`.toLowerCase().includes(query)));
         const selectable=visible.filter(r=>writable&&r.destinations.length);
-        list.innerHTML=visible.length?`<table class="quickKpiTable"><thead><tr><th><input data-select-all type="checkbox" aria-label="Select eligible visible receipts" ${selectable.length?'':'disabled'}></th><th>Item Code</th><th>Item Name</th><th>Received</th><th>Current assignment</th><th>Type</th></tr></thead><tbody>${visible.map(r=>`<tr><td><input data-receipt="${escapeHTML(r.tx.transactionId)}" aria-label="Select receipt ${escapeHTML(r.code)} ${escapeHTML(r.tx.transactionId)}" type="checkbox" ${selected.has(r.tx.transactionId)?'checked':''} ${writable&&r.destinations.length?'':'disabled'}></td><td>${escapeHTML(r.code)}</td><td><b>${escapeHTML(r.tx.itemName)}</b></td><td>${r.quantity}</td><td>${escapeHTML(r.order||'Unassigned')}</td><td>${r.type}</td></tr>`).join('')}</tbody></table>`:'<div class="tableEmptyState">No Extra or Unassigned receipts.</div>';
+        list.innerHTML=visible.length?`<table class="quickKpiTable"><thead><tr><th><input data-select-all type="checkbox" aria-label="Select eligible visible receipts" ${selectable.length?'':'disabled'}></th><th>Item Code</th><th>Item Name</th><th>Received</th><th>Current assignment</th><th>Type</th><th>Receipt action</th></tr></thead><tbody>${visible.map(r=>`<tr><td><input data-receipt="${escapeHTML(r.tx.transactionId)}" aria-label="Select receipt ${escapeHTML(r.code)} ${escapeHTML(r.tx.transactionId)}" type="checkbox" ${selected.has(r.tx.transactionId)?'checked':''} ${writable&&r.destinations.length?'':'disabled'}></td><td>${escapeHTML(r.code)}</td><td><b>${escapeHTML(r.tx.itemName)}</b></td><td>${r.quantity}</td><td>${escapeHTML(r.order||'Unassigned')}</td><td>${r.type}</td><td>${writable?`<select data-cancel-choice="${escapeHTML(r.tx.transactionId)}" aria-label="Receipt to remove for ${escapeHTML(r.code)}"><option value="">Choose exact receipt</option>${r.receipts.map(receipt=>`<option value="${escapeHTML(receipt.tx.transactionId)}">${escapeHTML(receipt.tx.dateTime||'')} · ${receipt.quantity} units · ${escapeHTML(receipt.tx.transactionId)}</option>`).join('')}</select><button type="button" data-remove-receipt="${escapeHTML(r.tx.transactionId)}">Remove Receipt</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="tableEmptyState">No Extra or Unassigned receipts.</div>';
+        list.querySelectorAll('[data-remove-receipt]').forEach(button=>{
+            let cancellation=null;
+            button.onclick=async()=>{
+                if(button.disabled)return;
+                const group=rows.find(row=>row.tx.transactionId===button.dataset.removeReceipt);
+                const choice=[...list.querySelectorAll('[data-cancel-choice]')].find(input=>input.dataset.cancelChoice===button.dataset.removeReceipt);
+                const receipt=group?.receipts.find(row=>row.tx.transactionId===choice?.value);
+                if(!receipt){message.textContent='Choose the exact receipt to remove.';return;}
+                if(!window.confirm(`Remove this receipt?\n${receipt.code} — ${receipt.tx.itemName}\n${receipt.quantity} units · ${receipt.order||'Unassigned'}\nReceipt: ${receipt.tx.transactionId}\nThe original receipt and cancellation remain in audit history.`))return;
+                button.disabled=true;
+                try{
+                    const scope=renderScope,revision=Number(PharmFlowCloudWorkspace.activeManifestRevision);
+                    const key=JSON.stringify([scope,receipt.tx.transactionId,receipt.quantity,revision]);
+                    if(cancellation?.key!==key)cancellation={key,id:crypto.randomUUID()};
+                    assertReceivingRecoveryScope(scope);
+                    await authRpc('cancel_pharmflow_extra_receipt_v1',{p_pharmacy_id:scope.pharmacyId,p_operation_id:cancellation.id,p_transaction_id:receipt.tx.transactionId,p_expected_quantity:receipt.quantity,p_expected_revision:revision,p_device_id:ensureDeviceId()});
+                    await refreshReceivingAfterRecovery(scope);
+                    refreshDashboard?.();refreshOpenKpiPanel?.();showToast('Receipt cancelled; audit history preserved.','success');
+                }catch(error){message.textContent=error.message||'Cancellation not confirmed. Refresh to verify before retrying.';}
+                finally{button.disabled=false;}
+            };
+        });
         list.querySelectorAll('[data-receipt]').forEach(input=>input.onchange=()=>{input.checked?selected.add(input.dataset.receipt):selected.delete(input.dataset.receipt);updateSelection();});
         const all=list.querySelector('[data-select-all]');if(all){all.checked=selectable.length>0&&selectable.every(r=>selected.has(r.tx.transactionId));all.onchange=()=>{selectable.forEach(r=>all.checked?selected.add(r.tx.transactionId):selected.delete(r.tx.transactionId));draw();updateSelection();};}
     };
@@ -198,7 +221,7 @@ function renderExtraReceivingCorrection(body){
     preview.onclick=async()=>{
         preview.disabled=true;
         try{
-            const scope=receivingRecoveryScope(),chosen=rows.filter(r=>selected.has(r.tx.transactionId)),destination=target.value;
+            const scope=renderScope,chosen=rows.filter(r=>selected.has(r.tx.transactionId)),destination=target.value;
             if(!chosen.length||!destination||chosen.some(r=>!r.destinations.includes(destination)))throw new Error('Select eligible receipts and a matching destination.');
             const receipts=chosen.flatMap(r=>r.receipts.map(receipt=>({transactionId:receipt.tx.transactionId,quantity:receipt.quantity}))).sort((a,b)=>a.transactionId.localeCompare(b.transactionId));
             const revision=Number(PharmFlowCloudWorkspace.activeManifestRevision),key=JSON.stringify([scope,receipts,destination,revision]);

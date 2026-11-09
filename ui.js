@@ -7102,7 +7102,7 @@ function openOrderStatusReportFromSnapshot(report){
                     <td>${row["Ordered Qty"]}</td>
                     <td>${row["Received Qty"]}</td>
                     <td>${diff>0?"+":""}${diff}</td>
-                    <td><span class="statusBadge">${esc(row.Status)}</span></td>
+                    <td><span class="statusBadge">${esc(row["Assignment Status"]||row.Status)}</span></td>
                   </tr>`;
               }).join("")}
             </tbody>
@@ -10069,7 +10069,7 @@ async function openCurrentMissingGTINPanel(){
     const overlay=document.createElement("div");overlay.id="currentMissingGTINOverlay";overlay.className="quickKpiOverlay";
     overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label","Missing GTIN — Current Workspace");
     const esc=escapeHTML,pharmacyId=IdentifierService.pharmacyId(),epoch=AuthState.identityEpoch;
-    overlay.innerHTML=`<div class="quickKpiPanel missingGTINPanel"><div class="quickKpiHeader"><h3>Missing GTIN — Current Workspace</h3><button type="button" class="quickKpiClose" data-close aria-label="Close">✕</button></div><div data-body class="quickKpiEmpty">Checking Global Database…</div><div class="missingGTINFooter"><span data-message role="status" aria-live="polite"></span><button type="button" class="gtinPrimaryAction" data-save disabled>Save All</button></div></div>`;
+    overlay.innerHTML=`<div class="quickKpiPanel missingGTINPanel"><div class="quickKpiHeader"><h3>Missing GTIN — Current Workspace</h3><button type="button" class="quickKpiClose" data-close aria-label="Close">✕</button></div><div data-body class="quickKpiEmpty">Checking Global Database…</div><div class="missingGTINFooter"><span data-message role="status" aria-live="polite"></span><button type="button" class="gtinPrimaryAction" data-save-selected disabled>Save Selected (0)</button><button type="button" class="gtinPrimaryAction" data-save disabled>Save All</button></div></div>`;
     document.body.appendChild(overlay);window.PharmFlowModalStack?.open(overlay);
     let busy=false;
     const close=()=>{if(busy)return;window.PharmFlowModalStack?.close(overlay);overlay.remove();};
@@ -10086,25 +10086,29 @@ async function openCurrentMissingGTINPanel(){
         const signature=IdentifierService.workspaceSignature();
         let pending=IdentifierService.pendingAdminRequest('BULK','workspace');
         const permitted=window.PharmFlowPermissions.allowed('GLOBAL',true)&&window.PharmFlowPermissions.allowed('RECEIVING',true);
-        overlay.querySelector('[data-body]').innerHTML=rows.length?`<div class="missingGTINTableWrap"><table class="quickKpiTable"><thead><tr><th>Item Code</th><th>Item Name</th><th>Group</th><th>Barcode / GTIN</th><th>Ordered</th><th>Status</th></tr></thead><tbody>${rows.map((r,n)=>`<tr data-mapping="${n}"><td>${esc(r.itemCode)}</td><td class="missingGTINName"><b>${esc(r.itemName)}</b></td><td><label class="pfnCreateGroup"><span class="sr-only">Group for ${esc(r.itemCode)}</span><select data-group aria-label="Group for ${esc(r.itemCode)}" ${r.exists||r.conflict||!permitted?'disabled':''}>${renderReceivingGroupOptions(r.groupName)}</select></label></td><td><input data-barcode aria-label="Barcode for ${esc(r.itemCode)}" autocomplete="off" spellcheck="false" ${r.conflict||!permitted?'disabled':''}></td><td>${toNumber(r.orderedQty,0)}</td><td><span data-status class="missingGTINStatus">${r.conflict?'Conflict':'Pending'}</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="quickKpiEmpty">No missing GTIN items in the current workspace.</div>';
+        overlay.querySelector('[data-body]').innerHTML=rows.length?`<div class="missingGTINTableWrap"><table class="quickKpiTable"><thead><tr><th>Select</th><th>Item Code</th><th>Item Name</th><th>Group</th><th>Barcode / GTIN</th><th>Ordered</th><th>Status</th></tr></thead><tbody>${rows.map((r,n)=>`<tr data-mapping="${n}"><td><input type="checkbox" data-selected aria-label="Select ${esc(r.itemCode)}" ${r.conflict||!permitted?'disabled':''}></td><td>${esc(r.itemCode)}</td><td class="missingGTINName"><b>${esc(r.itemName)}</b></td><td><label class="pfnCreateGroup"><span class="sr-only">Group for ${esc(r.itemCode)}</span><select data-group aria-label="Group for ${esc(r.itemCode)}" ${r.exists||r.conflict||!permitted?'disabled':''}>${renderReceivingGroupOptions(r.groupName)}</select></label></td><td><input data-barcode aria-label="Barcode for ${esc(r.itemCode)}" autocomplete="off" spellcheck="false" ${r.conflict||!permitted?'disabled':''}></td><td>${toNumber(r.orderedQty,0)}</td><td><span data-status class="missingGTINStatus">${r.conflict?'Conflict':'Pending'}</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="quickKpiEmpty">No missing GTIN items in the current workspace.</div>';
         const nodes=[...overlay.querySelectorAll('[data-mapping]')];
+        const saveSelected=overlay.querySelector('[data-save-selected]');
+        const eligible=(node,n)=>node.dataset.saved!=='1'&&!rows[n].conflict&&!!node.querySelector('[data-barcode]').value.trim()&&(rows[n].exists||!!node.querySelector('[data-group]').value);
+        const syncSelection=()=>{const count=nodes.filter((node,n)=>node.querySelector('[data-selected]').checked&&eligible(node,n)).length;saveSelected.textContent=`Save Selected (${count})`;saveSelected.disabled=!permitted||busy||!!pending||!count;};
+        overlay.addEventListener('input',syncSelection);overlay.addEventListener('change',syncSelection);
         for(let n=0;n<rows.length;n++){
             const restored=pending?.rows.find(row=>normalizeItemCode(row.itemCode)===rows[n].itemCode);
             if(restored){nodes[n].querySelector('[data-barcode]').value=restored.identifierDisplay;nodes[n].querySelector('[data-group]').value=restored.groupName||rows[n].groupName||'';}
             nodes[n].querySelector('[data-barcode]').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();nodes[n+1]?.querySelector('[data-barcode]')?.focus();}});
             nodes[n].addEventListener('input',()=>{nodes[n].querySelector('[data-status]').textContent=nodes[n].querySelector('[data-barcode]').value.trim()?'Ready':'Pending';});
         }
-        const lock=locked=>nodes.forEach((node,n)=>{node.querySelector('[data-barcode]').disabled=locked||node.dataset.saved==='1'||!permitted||rows[n].conflict;node.querySelector('[data-group]').disabled=locked||node.dataset.saved==='1'||!permitted||rows[n].exists||rows[n].conflict;});
+        const lock=locked=>nodes.forEach((node,n)=>{node.querySelector('[data-selected]').disabled=locked||node.dataset.saved==='1'||!permitted||rows[n].conflict;node.querySelector('[data-barcode]').disabled=locked||node.dataset.saved==='1'||!permitted||rows[n].conflict;node.querySelector('[data-group]').disabled=locked||node.dataset.saved==='1'||!permitted||rows[n].exists||rows[n].conflict;});
         if(pending){lock(true);message.textContent='Uncertain confirmation — retry the original batch.';save.textContent='Confirm Save All';}
         else if(!permitted)message.textContent='Global Database modification permission required.';
         save.disabled=!permitted||(!rows.length&&!pending);
-        save.addEventListener('click',async()=>{
+        const submit=async(selectedOnly=false)=>{
             if(busy)return;
             let submitted,writeConfirmed=false;
             try{
                 if(!current()||IdentifierService.workspaceSignature()!==signature)throw new Error('Workspace or account changed. Close and reopen Missing GTIN.');
                 submitted=pending?.rows||nodes.flatMap((node,n)=>{
-                    if(node.dataset.saved==='1')return [];
+                    if(node.dataset.saved==='1'||(selectedOnly&&(!node.querySelector('[data-selected]').checked||!eligible(node,n))))return [];
                     const identifierDisplay=node.querySelector('[data-barcode]').value.trim(),groupName=node.querySelector('[data-group]').value;
                     if(!identifierDisplay){if(!rows[n].exists&&groupName)throw new Error(`Barcode required for ${rows[n].itemCode}`);return [];}
                     if(rows[n].conflict)throw new Error(`Resolve Item Code conflict: ${rows[n].itemCode}`);
@@ -10114,13 +10118,13 @@ async function openCurrentMissingGTINPanel(){
                 if(!submitted.length)throw new Error('Enter at least one barcode.');
                 const keys=submitted.map(r=>normalizeIdentifier(r.identifierDisplay));
                 if(new Set(keys).size!==keys.length)throw new Error('Duplicate barcode in submission.');
-                busy=true;save.disabled=true;lock(true);message.textContent='Saving…';
+                busy=true;save.disabled=true;saveSelected.disabled=true;lock(true);message.textContent='Saving…';
                 await IdentifierService.runAdminOperation('BULK','workspace',submitted);
                 writeConfirmed=true;
-                nodes.forEach((node,n)=>{if(submitted.some(r=>r.itemCode===rows[n].itemCode)){node.dataset.saved='1';node.querySelector('[data-status]').textContent='Saved';}});pending=null;
+                nodes.forEach((node,n)=>{if(submitted.some(r=>r.itemCode===rows[n].itemCode)){node.dataset.saved='1';node.querySelector('[data-selected]').checked=false;node.querySelector('[data-status]').textContent='Saved';}});pending=null;
                 await IdentifierService.refreshWorkspaceIdentifiers();
-                // Refresh the established IndexedDB projection through its existing single-flight path.
-                await ensureGlobalMasterGTINReady({silent:true});
+                // Full compatibility-cache paging must not delay a confirmed mapping save.
+                Promise.resolve().then(()=>current()?ensureGlobalMasterGTINReady({silent:true}):undefined).catch(()=>{if(current()&&overlay.isConnected)message.textContent+=' Global cache refresh unavailable; reopen to verify.';});
                 recalculateStatistics();refreshDashboard();refreshHealthSummary();
                 message.textContent=`Saved ${submitted.length} mapping${submitted.length===1?'':'s'}.`;
                 lock(false);save.disabled=nodes.every(node=>node.dataset.saved==='1');save.textContent=save.disabled?'Saved':'Save All';
@@ -10135,8 +10139,11 @@ async function openCurrentMissingGTINPanel(){
                 message.textContent=(uncertain?'Uncertain confirmation — retry the original batch. ':'')+(error.message||'Save failed.');
                 nodes.forEach((node,n)=>{if(submitted?.some(r=>r.itemCode===rows[n].itemCode))node.querySelector('[data-status]').textContent=uncertain?'Uncertain confirmation':/conflict|mapped|Duplicate/i.test(error.message)?'Conflict':'Failed';});
                 lock(uncertain);save.textContent=uncertain?'Confirm Save All':'Save All';save.disabled=false;
-            }finally{busy=false;}
-        });
+            }finally{busy=false;syncSelection();}
+        };
+        save.addEventListener('click',()=>submit(false));
+        saveSelected.addEventListener('click',()=>submit(true));
+        syncSelection();
     }catch(error){message.textContent=error.message||'Unable to verify Global Database.';}
 }
 

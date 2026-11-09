@@ -1315,6 +1315,29 @@ function getPerOrderReceivingRows(orderNumber, options={}){
     return rows;
 }
 
+// Unassigned is a workspace scope, never an inferred Order association.
+function getUnassignedReceivingReportRows(){
+    const byCode=new Map(),seen=new Set();
+    for(const tx of AppState?.workspace?.receivingHistory||[]){
+        if(tx?.undone===true||tx?.unassigned!==true||normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||tx.orderNumber||''))continue;
+        if(tx.transactionId&&seen.has(tx.transactionId))continue;
+        if(tx.transactionId)seen.add(tx.transactionId);
+        const code=normalizeItemCode(tx.itemCode||'');if(!code)continue;
+        const row=byCode.get(code)||{code,name:tx.itemName||'',quantity:0};
+        row.quantity+=toNumber(tx.quantity,0);byCode.set(code,row);
+    }
+    if(!byCode.size)return [];
+    const workspace=new Map((AppState?.workspace?.orderData||[]).map(item=>[normalizeItemCode(item.itemCode),item]));
+    const ordered=new Set(getActiveReceivingOrderNumbers().flatMap(order=>getWorkspaceOrderSourceRows(order).filter(row=>toNumber(row.orderedQty,0)>0).map(row=>normalizeItemCode(row.itemCode))));
+    return [...byCode.values()].filter(row=>row.quantity>0).map(row=>{
+        const item=workspace.get(row.code)||{};
+        return {orderNumber:'',unassigned:true,'Order Number':'Unassigned','Item Number':row.code,'Item Name':row.name||item.itemName||'',
+            'Ordered Qty':0,'Received Qty':row.quantity,'Difference':row.quantity,'Issue Type':'Extra Item',issueKey:'manual',
+            'Assignment Status':ordered.has(row.code)?'Unassigned — order match available':'Unassigned — extra receipt',
+            Group:item.group_name||item.group||'',Category:item.category||'','Sub Category':item.sub_category||item.subCategory||''};
+    });
+}
+
 function getCurrentReceivingFilterKeys(){
     const set=
         typeof UI!=="undefined" &&
@@ -1363,13 +1386,14 @@ function buildMultiOrderReceivingReport(options={}){
         ? selectedOrders
         : getActiveReceivingOrderNumbers();
 
-    reportOrders.forEach(orderNumber=>{
+    const unassignedRows=getUnassignedReceivingReportRows();
+    [...reportOrders,...(unassignedRows.length?['']:[])].forEach(orderNumber=>{
         const meta=getReceivingOrderMetadata()
             .find(meta=>
                 normalizeOrderNumber(meta.orderNumber)===orderNumber
             ) || {orderNumber,orderDate:""};
 
-        const allRows=getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode});
+        const allRows=orderNumber?getPerOrderReceivingRows(orderNumber,{receivedMap,workspaceByCode}):unassignedRows;
 
         const rows=allRows.filter(row=>{
             const received=Number(row?.["Received Qty"]||0);
@@ -1421,14 +1445,14 @@ function buildMultiOrderReceivingReport(options={}){
         reportType:"MULTI_ORDER_RECEIVING",
         generatedAt:new Date().toISOString(),
         orderGroups:groups,
-        orders:groups.map(group=>({
+        orders:groups.filter(group=>group.orderNumber).map(group=>({
             orderNumber:group.orderNumber,
             orderDate:group.orderDate,
             fromWarehouse:group.fromWarehouse,
             toWarehouse:group.toWarehouse,
             sourceFile:group.sourceFile
         })),
-        orderId:groups.map(g=>g.orderNumber).join(" + "),
+        orderId:groups.map(g=>g.orderNumber).filter(Boolean).join(" + "),
         totalDiscrepancies:flatRows.length,
         rows:flatRows
     };
@@ -1505,6 +1529,7 @@ function buildLiveReceivingReport(options={}){
         orderedQty:row["Ordered Qty"],receivedQty:row["Received Qty"],
         group_name:row.Group,category:row.Category,sub_category:row["Sub Category"],manual:row.issueKey==="manual"
     })));
+    scopedItems.push(...getUnassignedReceivingReportRows().map(row=>({orderNumber:'',unassigned:true,assignmentStatus:row["Assignment Status"],itemCode:row["Item Number"],itemName:row["Item Name"],orderedQty:0,receivedQty:row["Received Qty"],manual:true,group_name:row.Group,category:row.Category,sub_category:row["Sub Category"]})));
     const allSourceItems=Array.isArray(options.items)?options.items:scopedItems;
     const sourceItems=options.classification && window.PharmFlowClassificationFilters
         ? window.PharmFlowClassificationFilters.filter(allSourceItems,options.classification)
@@ -1523,7 +1548,8 @@ function buildLiveReceivingReport(options={}){
 
         return {
             orderNumber:item.orderNumber||"",
-            "Order Number":item.orderNumber||"",
+            "Order Number":item.unassigned?"Unassigned":item.orderNumber||"",
+            "Assignment Status":item.assignmentStatus||"",
             "Item Number":item?.itemCode||"",
             "Item Name":item?.itemName||"",
             "Ordered Qty":ordered,
@@ -1565,6 +1591,8 @@ function buildLiveReceivingReport(options={}){
         "UNORDERED":0
     });
 
+    // Extra Items KPI counts unique codes; report Total counts Order/item rows.
+    counts.UNORDERED=new Set(rows.filter(row=>row.Status==='UNORDERED').map(row=>normalizeItemCode(row["Item Number"]))).size;
     return {
         reportType:"LIVE_RECEIVING",
         generatedAt:new Date().toISOString(),
@@ -1715,7 +1743,7 @@ ${(live.rows||[]).map(row=>{
       <td class="num">${row["Ordered Qty"]}</td>
       <td class="num">${row["Received Qty"]}</td>
       <td class="num">${diff>0?"+":""}${diff}</td>
-      <td class="status ${cls}">${esc(status)}</td>
+      <td class="status ${cls}">${esc(row["Assignment Status"]||status)}</td>
     </tr>`;
 }).join("")}
 </tbody>
@@ -1797,7 +1825,7 @@ function buildReceivingDiscrepancyReport(options={}){
     const activeOrders=getActiveReceivingOrderNumbers();
 
     if(
-        activeOrders.length &&
+        (activeOrders.length||getUnassignedReceivingReportRows().length) &&
         activeOrders.every(order=>{
             const file=getWorkspaceOrderFile(order);
             return !!(
@@ -1829,6 +1857,7 @@ function buildReceivingDiscrepancyReport(options={}){
             }
         });
 
+        manualExtraItems=new Set(multi.rows.filter(row=>row.issueKey==='manual').map(row=>normalizeItemCode(row["Item Number"]))).size;
         return {
             ...multi,
             shortageItems,
@@ -1900,7 +1929,7 @@ function exportReceivingSummaryExcel(){
     aoa.push([]);
     const headerRow=aoa.length+1;
     aoa.push(["Order Number","Item Number","Item Name","Ordered Qty","Received Qty","Difference","Issue Type","Group"]);
-    s.rows.forEach(r=>aoa.push([r.orderNumber||"",r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Group||""]));
+    s.rows.forEach(r=>aoa.push([r.orderNumber||r["Order Number"]||"",r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Group||""]));
     const ws=XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"]=[{wch:20},{wch:18},{wch:44},{wch:13},{wch:13},{wch:12},{wch:25},{wch:22}];
     ws["!freeze"]={xSplit:0,ySplit:headerRow};
@@ -1970,7 +1999,7 @@ function exportReceivingSummaryPDF(){
         doc.setFont("helvetica","normal");doc.setFontSize(8);
         const nameLines=doc.splitTextToSize(String(r["Item Name"]||""),cols[2].w-8).slice(0,2);
         const catLines=doc.splitTextToSize(String(r.Group||""),cols[7].w-4).slice(0,2);
-        doc.text(String(r.orderNumber||""),cols[0].x,y);
+        doc.text(String(r.orderNumber||r["Order Number"]||""),cols[0].x,y);
         doc.text(String(r["Item Number"]||""),cols[1].x,y);
         doc.text(nameLines,cols[2].x,y);
         doc.text(String(r["Ordered Qty"]),cols[3].x,y);

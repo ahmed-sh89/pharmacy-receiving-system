@@ -9,7 +9,7 @@ function harness(){
  getValidReceivingQuantity:Number,getActiveReceivingOrderNumbers:()=>Object.keys(source),getWorkspaceOrderSourceRows:o=>source[o],getItemByCode:()=>item,getSelectedReceivingOrderNumbers:()=>['A','B','C'],
  getReceivingOrderMetadata:()=>Object.keys(source).map(orderNumber=>({orderNumber})),IdentifierService:{pharmacyId:()=> 'P'},sessionStorage:{getItem:k=>c.saved.get(k)||null,setItem:(k,v)=>c.saved.set(k,v)},saved:new Map()};
  vm.createContext(c);
- for(const n of ['buildReceivedQuantityByOrder','getPerOrderReceivingRows','buildMultiOrderReceivingReport'])vm.runInContext(fn(report,n),c);
+ for(const n of ['getUnassignedReceivingReportRows','buildReceivedQuantityByOrder','getPerOrderReceivingRows','buildMultiOrderReceivingReport'])vm.runInContext(fn(report,n),c);
  for(const n of ['getReceivingOperationalItems','getReceivingEligibleOrders','getReceivingOrderRow','getReceivingAutoAllocationCandidates','buildReceivingAutoAllocationPlan','receiveAutoAllocatedItem','resolveReceivingTransactionOrder'])vm.runInContext(fn(receiving,n),c);
  for(const n of ['groupNeedsReviewRows','nrV2AllocationScope','nrV2ResolutionScope','nrV2ResolveGroupToOrderItem'])vm.runInContext(fn(ui,n),c);
  return {c,item,source};
@@ -107,4 +107,20 @@ test('two PC hydration/repeated ledger delivery converges on the same per-Order 
   assert.equal(c.AppState.workspace.receivingHistory.length,2);assert.equal(c.AppState.workspace.orderData[0].receivedQty,72);
  }
  assert.deepEqual(plain(one.c.buildMultiOrderReceivingReport().rows),plain(two.c.buildMultiOrderReceivingReport().rows));
+});
+
+test('unassigned receipts appear once in live/report exports without inventing Order attribution; signed reversals persist after refresh',()=>{
+ const {c}=harness();for(const name of ['getLiveReceivingItemStatus','buildLiveReceivingReport'])vm.runInContext(fn(report,name),c);
+ c.AppState.workspace.receivingHistory=[tx('A',62,'a'),{itemCode:'EXTRA',itemName:'Unordered',quantity:3,unassigned:true,transactionId:'u'}, {itemCode:'EXTRA',quantity:2,unassigned:true,transactionId:'u2'}, {itemCode:'EXTRA',quantity:-3,unassigned:true,transactionId:'cancel'}, {...tx('',1,'pending'),unassigned:true}];
+ const before=JSON.stringify(c.AppState.workspace.receivingHistory),live=c.buildLiveReceivingReport(),multi=c.buildMultiOrderReceivingReport();
+ assert.equal(live.rows.length,5);assert.equal(live.counts.UNORDERED,2);
+ const extra=live.rows.find(row=>row['Item Number']==='EXTRA');assert.equal(extra.orderNumber,'');assert.equal(extra['Order Number'],'Unassigned');assert.equal(extra['Received Qty'],2);assert.equal(extra['Ordered Qty'],0);assert.match(extra['Assignment Status'],/extra receipt/);
+ const pending=live.rows.find(row=>row.orderNumber===''&&row['Item Number']==='1012562');assert.match(pending['Assignment Status'],/order match available/);
+ assert.equal(c.buildReceivedQuantityByOrder().get('A||1012562'),62);
+ assert.equal(multi.orders.length,3);assert.equal(multi.orderGroups.length,4);assert.equal(multi.rows.filter(row=>row.unassigned).length,2);assert.equal(multi.orderId,'A + B + C');
+ assert.equal(JSON.stringify(c.AppState.workspace.receivingHistory),before);
+ assert.deepEqual(plain(c.buildLiveReceivingReport().rows),plain(live.rows));
+ let exported;c.XLSX={utils:{aoa_to_sheet:rows=>(exported=rows,{}),book_new:()=>({}),book_append_sheet(){}},writeFile(){}};
+ c.buildReceivingDiscrepancyReport=()=>multi;c.getReceivingReportFileBase=()=> 'test';c.showToast=()=>{};vm.runInContext(fn(report,'exportReceivingSummaryExcel'),c);c.exportReceivingSummaryExcel();
+ const exportedExtra=exported.find(row=>row[1]==='EXTRA');assert.equal(exportedExtra[0],'Unassigned');assert.equal(exportedExtra[3],0);assert.equal(exportedExtra[4],2);
 });

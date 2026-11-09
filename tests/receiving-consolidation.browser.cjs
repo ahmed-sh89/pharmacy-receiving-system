@@ -11,7 +11,7 @@ function fn(source,name){const at=source.indexOf(`function ${name}(`),start=sour
  window.UI={elements:{receivingTableBody:document.getElementById('receiving')},receivingFilters:{issues:new Set(['not_received','partial','received_any','over','manual']),search:'Daroxime 500'}};
  window.escapeHTML=v=>String(v??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));window.getReceivingRowClass=()=>'';window.renderReceivingDifference=(o,r)=>r-o;window.renderStatusBadge=v=>v;window.refreshReceivingCategoryFilter=window.refreshReceivingIssueCards=()=>{};
  });
- for(const name of ['buildReceivedQuantityByOrder','getPerOrderReceivingRows','getLiveReceivingItemStatus','buildLiveReceivingReport'])await page.addScriptTag({content:fn(report,name)});
+ for(const name of ['getUnassignedReceivingReportRows','buildReceivedQuantityByOrder','getPerOrderReceivingRows','getLiveReceivingItemStatus','buildLiveReceivingReport'])await page.addScriptTag({content:fn(report,name)});
  for(const name of ['normalizeReceivingSearchText','matchesReceivingSearch','createReceivingTableRow','refreshReceivingTable','getSelectedOrderDashboardMetrics','openOrderStatusReportFromSnapshot'])await page.addScriptTag({content:fn(ui,name)});
  await page.evaluate(()=>refreshReceivingTable());assert.equal(await page.locator('#receiving tr').count(),2);
  const a=await page.locator('#receiving tr').first().innerText();assert.match(a,/62\s*−\s*62\s*\+\s*0\s*Completed/);
