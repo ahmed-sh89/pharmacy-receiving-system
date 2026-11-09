@@ -3600,9 +3600,10 @@ function refreshHealthSummary(){
             .filter(code=>code && activeOrderCodes.has(code))
     );
 
+    const authoritativeProjection=window.IdentifierService?.currentWorkspaceProjection();
     setElementText(
         UI.elements.healthMappings,
-        matchedOrderCodes.size
+        authoritativeProjection?authoritativeProjection.filter(row=>!row.conflict&&row.identifiers.length>0).length:matchedOrderCodes.size
     );
 
     const missingMappings =
@@ -9482,6 +9483,17 @@ setTimeout(()=>{
     if(settingsMaster) renderV2IdentifierAdministration(settingsMaster);
 },600);
 
+function refreshReceivingReviewPanelTotals(overlay,groups){
+    const remaining=[...overlay.querySelectorAll('.needsReviewRow[data-i]')];
+    const count=remaining.length;
+    const units=remaining.reduce((sum,node)=>sum+Math.max(0,Number(groups[Number(node.dataset.i)]?.total_quantity||0)),0);
+    const countNode=overlay.querySelector('.pfnReviewCount');
+    if(countNode)countNode.textContent=String(count);
+    const totals=overlay.querySelector('.pfnReviewTotals');
+    if(totals)totals.innerHTML=`<span><b>${count}</b> Items</span><span><b>${units}</b> Units</span>`;
+    return count;
+}
+
 async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
     if(String(workflow).toUpperCase()==="EXPIRY") return openExpiryNeedsReviewPanel();
     const openingPharmacy=typeof AuthState!=="undefined"?AuthState?.context?.pharmacy_id:null;
@@ -9639,9 +9651,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
                     if(!await nrV2Delete(row.review_id)) throw new Error("Review changed; refresh Needs Review before retrying.");
                 }
                 section.remove(); await refreshNeedsReviewCounters();
-                const count=overlay.querySelectorAll(".needsReviewRow").length;
-                const countNode=overlay.querySelector(".pfnReviewCount");
-                if(countNode) countNode.textContent=String(count);
+                const count=refreshReceivingReviewPanelTotals(overlay,groups);
                 if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
                 showToast?.(`Review deleted — photos queued for cleanup`,"success");
             }catch(error){cancelReview.disabled=false;showToast?.(error?.message||"Unable to delete review","error");}
@@ -9701,8 +9711,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
                         if(!resolved){button.textContent="Processing — Close & reopen to refresh";showToast?.("Receipt is still processing. Do not press Resolve Review again.","warning");return;}
                     }
                     section.remove();await refreshNeedsReviewCounters();
-                    const count=overlay.querySelectorAll(".needsReviewRow").length,countNode=overlay.querySelector(".pfnReviewCount");
-                    if(countNode) countNode.textContent=String(count);
+                    const count=refreshReceivingReviewPanelTotals(overlay,groups);
                     if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
                     showToast?.(`Linked & received — ${group.total_quantity} units`,"success");
                 }catch(error){
@@ -10063,7 +10072,7 @@ async function openCurrentMissingGTINPanel(){
         const projection=await IdentifierService.refreshWorkspaceIdentifiers();
         if(!overlay.isConnected||!current())return;
         const rows=projection.filter(row=>row.conflict||row.identifiers.length===0);
-        recalculateStatistics();refreshDashboard();
+        recalculateStatistics();refreshDashboard();refreshHealthSummary();
         const signature=IdentifierService.workspaceSignature();
         let pending=IdentifierService.pendingAdminRequest('BULK','workspace');
         const permitted=window.PharmFlowPermissions.allowed('GLOBAL',true)&&window.PharmFlowPermissions.allowed('RECEIVING',true);
@@ -10101,7 +10110,7 @@ async function openCurrentMissingGTINPanel(){
                 await IdentifierService.refreshWorkspaceIdentifiers();
                 // Refresh the established IndexedDB projection through its existing single-flight path.
                 await ensureGlobalMasterGTINReady({silent:true});
-                recalculateStatistics();refreshDashboard();
+                recalculateStatistics();refreshDashboard();refreshHealthSummary();
                 message.textContent=`Saved ${submitted.length} mapping${submitted.length===1?'':'s'}.`;
                 lock(false);save.disabled=nodes.every(node=>node.dataset.saved==='1');save.textContent=save.disabled?'Saved':'Save All';
             }catch(error){
