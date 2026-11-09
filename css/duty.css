@@ -181,10 +181,11 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
    the existing employee columns; the layout never switches to four rows. */
 #page-duty .duty-kpi-wrap{container-type:inline-size;padding:0 4px}
 #page-duty .duty-mini-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;max-width:260px;min-width:0;margin:auto}
-#page-duty .duty-mini-kpis > span{display:flex;align-items:center;justify-content:center;gap:2px;min-width:0;padding:1px;border-radius:4px;font-size:clamp(9px,6.5cqi,11px);line-height:15px;white-space:nowrap}
-#page-duty .duty-kpi-label{min-width:0;font-style:normal}
-#page-duty .duty-mini-kpis b{flex-shrink:0;display:inline-block;padding:0 2px;border-radius:3px;background:#ffffff80;color:var(--hour-ink);font-size:inherit;font-variant-numeric:tabular-nums}
-#page-duty .duty-mini-kpis .duty-category-total{grid-column:1 / -1;gap:5px;padding:4px 2px;line-height:18px;font-size:11px;font-weight:750;--hour-bg:#285985;--hour-ink:#fff}
+#page-duty .duty-mini-kpis > span{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px;min-width:0;padding:1px;border-radius:4px;font-size:clamp(9px,5cqi,10px);line-height:15px;white-space:nowrap}
+#page-duty .duty-kpi-label{min-width:0;font-style:normal;font-size:inherit}
+#page-duty .duty-mini-kpis b{display:inline-block;padding:0;border-radius:3px;background:#ffffff80;color:var(--hour-ink);font-size:inherit;font-variant-numeric:tabular-nums}
+#page-duty .duty-mini-kpis .duty-category-total{grid-column:1 / -1;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px;padding:4px 2px;line-height:18px;font-size:11px;font-weight:750;--hour-bg:#285985;--hour-ink:#fff}
+#page-duty .duty-mini-kpis .duty-category-total .duty-kpi-label{justify-self:end;font-weight:750}
 #page-duty .duty-mini-kpis .duty-category-total b{padding:0;background:transparent;color:#fff;font-size:14px;font-weight:800}
 #page-duty .duty-category-basic{--hour-ink:#174f87;--hour-bg:#e0effe}
 #page-duty .duty-category-normal_ot{--hour-ink:#185e4d;--hour-bg:#dbf1e9}
@@ -444,8 +445,7 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 /* Only the date cell gets today's green accent; weekday/holiday content stays intact. */
 #page-duty .duty-vertical tbody th.duty-today{background:#edf7f1;box-shadow:inset 3px 0 #278466}
 #page-duty .duty-vertical th.duty-today .duty-date-button strong{color:#175c49}
-#page-duty .duty-today-badge{display:grid;align-content:center;justify-items:center;width:max-content;max-width:100%;padding:2px 7px;border:1px solid #74b593;border-left:3px solid #23785b;border-radius:6px;background:#dff3e7;color:#174a38;white-space:nowrap;font-size:11px;font-weight:750;line-height:14px}
-#page-duty .duty-today-badge small{font-size:9px;line-height:10px;font-weight:600;color:#376450}
+#page-duty .duty-today-badge{display:flex;align-items:center;width:max-content;max-width:100%;padding:5px 7px;border:1px solid #74b593;border-left:3px solid #23785b;border-radius:6px;background:#dff3e7;color:#174a38;white-space:nowrap;font-size:12px;font-weight:800;line-height:18px}
 /* Employee Filter: top-layer listbox, with stable native value/change adapter. */
 #page-duty .duty-employee-filter{position:relative}
 #page-duty .duty-employee-filter select[hidden]{display:none}

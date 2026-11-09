@@ -42,7 +42,7 @@
   if(todayTimer!==null){window.clearTimeout?.(todayTimer);todayTimer=null;}
   if(!host?.isConnected)return;
   const today=C.today(),badge=host.querySelector('[data-duty-today]');
-  if(badge){badge.querySelector('time').textContent=formatDate(today);badge.querySelector('time').dateTime=today;badge.querySelector('small').textContent=dayLabel.format(new Date(today+'T12:00Z'));badge.setAttribute('aria-label','Today, '+dayLabel.format(new Date(today+'T12:00Z'))+', '+today);}
+  if(badge){badge.querySelector('time').textContent=formatDate(today);badge.querySelector('time').dateTime=today;badge.setAttribute('aria-label','Today · '+formatDate(today));}
   for(const button of host.querySelectorAll('[data-s-column]')){
    const current=button.dataset.sColumn===today;
    button.closest('th').classList.toggle('duty-today',current);
@@ -74,7 +74,7 @@
    <form data-date-range popover="manual" role="dialog" aria-label="Schedule date range">${C.dateField({id:"duty-schedule-from",name:"from",label:"Start Date",value:S.range?.from||first,min:first,max:last})}${C.dateField({id:"duty-schedule-to",name:"to",label:"End Date",value:S.range?.to||last,min:first,max:last})}<p class="duty-range-error" role="alert"></p><div class="duty-popover-footer"><button type="button" data-range-cancel>Cancel</button><button type="submit" class="duty-primary">Apply</button></div></form></div>
    ${S.range?'<button type="button" data-s-action="full-month">Full Month</button>':''}
    </div><div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
-   <span class="duty-today-badge" data-duty-today><span>Today · <time></time></span><small></small></span><button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="exchange" title="Exchange selected shifts" disabled>Exchange</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
+   <span class="duty-today-badge" data-duty-today><span>Today · <time></time></span></span><button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="exchange" title="Exchange selected shifts" disabled>Exchange</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
    ${[['delete','Delete','Delete','M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7'],['undo','Undo','Ctrl+Z','M8 4L3 9l5 5M3 9h11a5 5 0 0 1 0 10h-3'],['redo','Redo','Ctrl+Y','M16 4l5 5-5 5m5-5H10a5 5 0 0 0 0 10h3']].map(([id,label,shortcut,path])=>`<button type="button" class="duty-icon duty-icon-${id}" data-s-action="${id}" aria-label="${label}" title="${label} (${shortcut})" ${id==='undo'&&(!past.length||!writable())||id==='redo'&&(!future.length||!writable())?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`).join('')}
    ${dropdown('status','Apply status to selection','Status…',Object.entries({...M.statuses,OTHER_LEAVE:'Unpaid Leave',EMPTY:'Clear Cell'}))}
    <button type="button" data-s-action="color">Cell Color</button></div></div>

@@ -13,7 +13,7 @@ function fixture(at='2026-11-08T20:59:59.000Z',month='2026-11'){
 }
 test('Saudi date rolls at midnight with one display-only timer; focus recovery preserves live cell selection and records',()=>{
  const f=fixture(),name=f.data.employees[0].code,cell=()=>f.host.querySelector(`[data-s-code="${name}"][data-s-date="2026-11-09"]`),before=JSON.stringify(f.data);
- assert.equal(f.host.querySelector('[aria-current=date]').dataset.sColumn,'2026-11-08');assert.match(f.host.querySelector('[data-duty-today]').textContent,/Today · 8 NovSunday/);
+ assert.equal(f.host.querySelector('[aria-current=date]').dataset.sColumn,'2026-11-08');assert.match(f.host.querySelector('[data-duty-today]').textContent,/^Today · 8 Nov$/);
  f.host.onclick({target:cell()});const td=cell();assert.equal(f.timers.size,1);assert.equal([...f.timers.values()][0].delay,1000);
  f.setClock('2026-11-08T21:00:00.000Z');[...f.timers.values()][0].fn();assert.equal(f.host.querySelector('[aria-current=date]').dataset.sColumn,'2026-11-09');assert.equal(cell(),td);assert.equal(td.getAttribute('aria-selected'),'true');assert.equal(JSON.stringify(f.data),before);assert.equal(f.timers.size,1);
  f.setClock('2026-11-09T21:01:00Z');f.listeners.focus();assert.equal(f.host.querySelector('[aria-current=date]').dataset.sColumn,'2026-11-10');f.window.DutySchedule.clear();assert.equal(f.timers.size,0);
