@@ -1,6 +1,6 @@
 # Missing GTIN timeout — Staging hotfix
 
-Date: 10 November 2026 (Saudi Arabia). Status: READY FOR TEST; authenticated Preview verification pending.
+Date: 10 November 2026 (Saudi Arabia). Status: HOTFIX READY FOR PRODUCT OWNER ACCEPTANCE. Production promotion remains unauthorized.
 
 Production base: `5b2cef8f2dfe7768876d74e9ab300485720fd8cf` (PR #54 merged). Production diagnostics were read-only; no Production function, index, data, configuration or timeout was changed. The deployed failure remains open until a separately authorized hotfix release.
 
@@ -33,10 +33,12 @@ Old/new scale JSON results are identical where the old query can finish. Actual 
 - Staging installed migration history: `20261109212134`, name `receiving_identifier_projection_set_lookup`; original source filename and SQL remain pinned in the repository.
 - Installed RPC: postgres owner, same uuid signature, deny anon/PUBLIC, allow authenticated. No synthetic Production calls or writes.
 
-Raw plan/timing/equivalence evidence is in this directory. Production EXPLAIN evidence masks the pharmacy UUID. Local SQL tests use simulated authorization; authenticated UI verification is recorded separately when completed.
+Authenticated Preview verification passed on source HEAD `14e757fb9dace1d03d365ae2f1518a4453715b01`: synthetic pharmacy A, two windows opening Manage Orders concurrently, 7 loaded = 6 matched + 1 missing, same values after Refresh, populated Missing GTIN row and rendered Save All controls without submitting. No receiving writes were performed. Version.json verified staging / tovkcakucyagvbzvlnks. All three GitHub workflows passed. See UI_VERIFICATION.json. The final delivery SHA is recorded in PR #55 metadata; subsequent changes are documentation only.
+
+Raw plan/timing/equivalence evidence is in this directory. Production EXPLAIN evidence masks the pharmacy UUID. Local SQL tests use simulated authorization; live UI authentication was provided securely by the owner. One transient registry permission-readiness warning appeared during Refresh, followed by successful authorized order/projection loading; no permission code or grants were changed.
 
 ## Next action and release requirements
 
-Create a dedicated Draft hotfix PR from the verified Production base, using the existing Receiving Staging Preview branch so no unrelated build configuration changes are required. Verify its exact HEAD, green CI and Staging Preview version/backend; test read-only concurrent Manage Orders and Refresh. Preserve the earlier accepted write workflows through the focused regression evidence, without modifying Staging receiving records.
+Draft hotfix PR #55 targets the verified Production base, using the existing Receiving Staging Preview branch so no unrelated build configuration changes are required. Next: Product Owner acceptance of the fixed read behavior. Earlier accepted write workflows remain covered by the focused regression evidence; Staging receiving records are unchanged.
 
 Production release is NOT authorized. A later release requires fresh main/HEAD and workload checks, recorded data fingerprints, application of this single approved function migration with automatic history, ACL/guard/definition verification, data preservation checks, protected merge/Pages deployment, and successful authenticated Missing GTIN smoke testing at Production scale. Do not replay either PR #54 migration, raise statement_timeout, restore a database backup or delete operational data.

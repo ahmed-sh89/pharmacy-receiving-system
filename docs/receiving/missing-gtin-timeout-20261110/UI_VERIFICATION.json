@@ -1,0 +1,17 @@
+{
+  "date_local": "2026-11-10",
+  "source_head": "14e757fb9dace1d03d365ae2f1518a4453715b01",
+  "preview": "https://pharmflow-test-git-feature-missing-gtin-7570d6-fhyh2xtskz-3504.vercel.app/",
+  "version_verified": {"environment": "staging", "supabaseRef": "tovkcakucyagvbzvlnks"},
+  "authentication": "Owner-provided secure form; synthetic pharmacy A; session retained after Refresh",
+  "concurrent_windows": 2,
+  "manage_orders": {"workspace_items": 7, "matched": 6, "missing": 1, "conflicts": 0},
+  "refresh": "Same authoritative counts and populated Missing GTIN panel",
+  "bulk_controls": "Group and barcode inputs and Save All rendered; no submission",
+  "timeouts": "None during executed Staging UI checks",
+  "receiving_writes": 0,
+  "runtime_limit": "A transient registry permission-readiness warning appeared during Refresh, followed by successful order/projection loading. No broad module smoke certification.",
+  "scale_limit": "Production-scale timing is from an isolated private synthetic Staging fixture with the same projection body; the real Staging UI retains its existing 22 Global items and 28 identifiers.",
+  "production": {"mutations": 0, "projection_md5": "41b0b649baafd6ed3bbf43459599bc23", "hotfix_migration_applied": false, "receipts": 4150, "units": 16509},
+  "staging_ledger": {"receipts": 12, "units": 27, "fingerprint": "059c856789678e928f6f228176bf641d"}
+}
