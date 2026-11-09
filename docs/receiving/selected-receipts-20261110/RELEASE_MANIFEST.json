@@ -1,7 +1,7 @@
 {
   "release": "receiving-selected-receipts-staging-20261110",
   "production_base": "70d3e2059317f460a9be482dac0445049cf9045d",
-  "approved_source": "958fe37abc81a0872d80f05c34d46168b6996184",
+  "approved_source": "da7374563d1491aa79ad745393216b4b34f02ed0",
   "purpose": "Pin the exact owner-requested Staging candidate; manual acceptance remains pending. Retain every historical protected path and unchanged Duty/deployment files. No file exemptions.",
   "protected_files": {
     ".github/workflows/accepted-release-checks.yml": "b7211072ec465835448892c218daf870276cfc92",
@@ -98,11 +98,13 @@
     "vite.config.js": "254e49a424a73fe9531e70608c857712c9f2d4ce"
   },
   "approved_changes": {
-    "index.html": "39a2e126f0ce21c343fd448294b0cd3dcfd32bd0",
+    "css/pharmflow-next.css": "34404f0a317e514094d52a914f5e9f56f4a4d866",
+    "css/receiving-allocation.css": "4abc43e1b943bcadd6fdd833c949d49d0f2bcc59",
+    "index.html": "7458d93deb5522076e0fa7c2f709824d63f108ae",
     "js/permissions.js": "4fc292814c203b889b14bdd40f35733263d5a16d",
-    "js/receiving-recovery.js": "c3cdf671b802167996f4c8504cf3e6ecc363fe2b",
+    "js/receiving-recovery.js": "539dfb0f7acc32b565c3a63ab35596aae6738b63",
     "js/reports.js": "d46b6acaf975d28adceec3169193f2e7de37317b",
     "supabase/migrations/20261109224205_receiving_exact_extra_receipt_cancellation.sql": "a1be0bce368d931ad63c5a818bf1c34241817fbf",
-    "ui.js": "9e1b27122026ec422f80e442f11609feda83c546"
+    "ui.js": "01454fed6b1cb8048b064792c18d19e02f9033ce"
   }
 }
