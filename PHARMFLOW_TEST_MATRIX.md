@@ -1,3 +1,9 @@
+## Duty final layout correction — 9 November 2026
+
+**READY FOR USER TEST**, existing PR #53; starting 6be3bb2. [Root-cause corrections, before/after geometry/screenshots at 75/80/90%, all-six-zoom results and explicit narrow fallback](docs/duty/LAYOUT_REFINEMENTS_20261109.md).
+
+28 focused PASS; full Duty 120 PASS / 1 historical snapshot FAIL / 1 optional SKIP; auth/session 42 PASS. Existing Exchange and Today/Reports Chromium runners PASS unchanged. New browser runner verifies 67/70/75/80/90/100% on 1366×768 and 1280×720 / OS 125%, plus 1024px fallback: no overlaps, compact pagination, contained Today badge, 2×2 KPIs, 26px Total within 64px KPI section, no measured text overflow, full-row immediate hover and selected distinction, zero writes. No historical failing checks altered/disabled. Owner Windows visual acceptance pending; original functional acceptance preserved.
+
 ## Duty final UI refinements — 9 November 2026
 
 Original interaction/Exchange/Ctrl+Drag/Undo/Redo/Refresh: **USER VERIFIED PASS** at 67b5ce0 (explicit Product Owner report). New range separation, Today display and Reports list: **STAGING READY FOR USER TEST**. [Actual tests, six zoom screenshots and three owner steps](docs/duty/UI_REFINEMENTS_20261109.md).

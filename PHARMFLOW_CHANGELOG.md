@@ -1,3 +1,9 @@
+## 9 November 2026 — Duty final layout correction — PR #53 Staging
+
+Corrected responsible layout owners from 6be3bb2: compact intrinsic staff paging; content-based toolbar/header tracks; removed 172px four-row KPI switch and consolidated shared numeric/padding rules; 2×2 metrics with a 26px prominent Total inside a 64px section; stronger Today badge contained in existing control row; distinct whole-row hover/selected/focus styling. No calculation, persistence, permission or backend change. [Before/after evidence, exact files and limits](docs/duty/LAYOUT_REFINEMENTS_20261109.md).
+
+28 focused PASS; Duty 120 PASS / 1 historical FAIL / 1 optional SKIP; auth/session 42 PASS. Three browser runners PASS, six zooms/two surfaces, zero UI writes. READY FOR USER TEST only. Production unchanged.
+
 ## 9 November 2026 — Duty final UI refinements — Staging PR #53
 
 Recorded Product Owner USER VERIFIED PASS for interaction, two/five-cell Exchange, Ctrl+Drag, Undo/Redo and Refresh persistence at 67b5ce0. Added independent blue selected-cell/range edges, Saudi Today date-cell accent and compact badge (midnight/wake updates), and styled accessible Reports employee list with name/code rows. Existing selection, atomic save and report/export data paths preserved; no backend or Production changes. [Evidence, exact files and owner steps](docs/duty/UI_REFINEMENTS_20261109.md).

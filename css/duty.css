@@ -2,8 +2,8 @@
 html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter:stable}
 #page-duty{--duty-ink:#17263d;--duty-blue:#2165a8;--duty-line:#d8e2ed;--duty-muted:#62738a;--pfn-table-header-bg:#f1f5fa;--pfn-table-header-ink:#546b86;color:var(--duty-ink);font-size:13px}
 #page-duty *{box-sizing:border-box}
-#page-duty .duty-shell{padding:2px 0 16px}
-#page-duty .duty-toolbar,#page-duty .duty-title-row,#page-duty .duty-actions,#page-duty .duty-month-picker,#page-duty .duty-tabs{display:flex;align-items:center;gap:9px}
+#page-duty .duty-shell{padding:2px 0 16px;container-type:inline-size}
+#page-duty .duty-title-row,#page-duty .duty-actions,#page-duty .duty-month-picker{display:flex;align-items:center;gap:9px}
 #page-duty .duty-title-row{justify-content:space-between;margin-bottom:16px;flex-wrap:wrap}
 #page-duty h2{margin:0 0 3px;font-size:23px;font-weight:700;letter-spacing:-.4px}
 #page-duty .duty-subtitle{color:var(--duty-muted);margin:0;font-size:12px}
@@ -15,13 +15,14 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty button:disabled{opacity:.5;cursor:default}
 #page-duty .duty-primary{background:#2165a8;color:white;border-color:#2165a8}
 #page-duty .duty-primary:hover{background:#194f86}
-#page-duty .duty-toolbar{display:grid;grid-template-columns:240px 420px minmax(0,1fr);align-items:center;gap:8px;min-height:52px;border:1px solid var(--duty-line);border-radius:9px;background:#fff;margin-bottom:4px;padding:4px 8px}
-#page-duty .duty-toolbar > .duty-actions{justify-content:flex-end;flex-wrap:nowrap;min-height:40px;white-space:nowrap}
-#page-duty .duty-toolbar > .duty-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;width:420px;height:40px}
-@media(max-width:1300px){#page-duty .duty-toolbar{grid-template-columns:240px minmax(0,1fr);grid-template-rows:40px 40px}#page-duty .duty-toolbar > .duty-tabs{grid-row:2;grid-column:1 / -1;justify-self:center}#page-duty .duty-toolbar > .duty-actions{grid-column:2;grid-row:1}}
-@media(max-width:600px){#page-duty .duty-toolbar{grid-template-columns:minmax(0,1fr);grid-template-rows:40px 40px 40px}#page-duty .duty-toolbar > .duty-actions{grid-column:1;grid-row:3;justify-content:flex-start}#page-duty .duty-toolbar > .duty-tabs{width:100%;grid-row:2}}
+/* Intrinsic header tracks follow the Duty content width, not browser zoom or
+   viewport breakpoints that ignore the sidebar. Narrow surfaces use auto rows. */
+#page-duty .duty-toolbar{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:6px;min-height:52px;border:1px solid var(--duty-line);border-radius:9px;background:#fff;margin-bottom:4px;padding:4px 8px;min-width:0}
+#page-duty .duty-toolbar > .duty-actions{justify-content:flex-end;flex-wrap:nowrap;min-width:0;white-space:nowrap}
+#page-duty .duty-toolbar > .duty-tabs{display:grid;grid-template-columns:repeat(4,max-content);gap:3px;justify-self:center;min-width:0}
+@container (max-width:920px){#page-duty .duty-toolbar{grid-template-columns:max-content minmax(0,1fr)}#page-duty .duty-toolbar > .duty-tabs{grid-row:2;grid-column:1 / -1}#page-duty .duty-toolbar > .duty-actions{grid-column:2;grid-row:1}}
+@container (max-width:550px){#page-duty .duty-toolbar{grid-template-columns:minmax(0,1fr)}#page-duty .duty-toolbar > .duty-actions{grid-column:1;grid-row:3;justify-content:flex-start;flex-wrap:wrap}#page-duty .duty-toolbar > .duty-tabs{justify-self:start;grid-column:1;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}}
 #page-duty .duty-count{color:#62738a;font-size:12px}
-#page-duty .duty-tabs{gap:3px}
 #page-duty .duty-tabs button{height:36px;min-height:36px;white-space:nowrap;font-size:12px;padding:6px 8px;border:0;box-shadow:none;background:transparent;color:#62738a;transition:background-color .16s ease,color .16s ease}
 #page-duty .duty-tabs button[aria-selected=true]{color:#1c5e9e;background:#eaf2fb}
 #page-duty .duty-meta{padding:10px 14px;border:1px solid var(--duty-line);border-top:0;background:#f7f9fc;display:flex;gap:18px;align-items:center;font-size:12px;color:#62738a}
@@ -78,13 +79,19 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 @media(max-width:1000px){#page-duty .duty-title-row{align-items:flex-start}#page-duty .duty-actions{flex-wrap:wrap}}
 #page-duty .duty-compact-title{font-size:16px;margin-right:5px}
 #page-duty .duty-stage-b .duty-banner{padding:6px 10px;margin:0 0 7px;font-size:11px}
-#page-duty .duty-schedule-controls{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:7px;align-items:center;margin:5px 0}
+/* One navigation group and one flexible action track. Only genuinely narrow
+   content uses two deliberate rows; no max-content group wrapping as a unit. */
+#page-duty .duty-schedule-controls{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 8px;align-items:center;margin:5px 0;min-width:0}
+#page-duty .duty-schedule-navigation{display:flex;align-items:center;gap:4px;min-width:0;flex-wrap:wrap}
+#page-duty .duty-selection-tools{display:flex;justify-content:flex-end;gap:3px;flex-wrap:wrap;min-width:0}
+@container (max-width:1040px){#page-duty .duty-schedule-controls{grid-template-columns:minmax(0,1fr)}#page-duty .duty-selection-tools{justify-content:flex-start}}
 /* Shared Schedule / Calendar control variant; reports and other modules keep their styles. */
 #page-duty :is(.duty-schedule-controls,.duty-calendar-settings) :is(button,input:not([type=checkbox]),select),#page-duty [data-duty-action=calendar]{font-family:inherit;font-size:12px;font-weight:600;min-height:34px;border:1px solid #ccd9e6;border-radius:7px;padding:6px 9px;line-height:20px;color:#234d75}
 #page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button:not(.duty-primary),#page-duty .duty-calendar-settings :is(input:not([type=checkbox]),select),#page-duty [data-duty-action=calendar]{background-color:#fff}
 #page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button:not(.duty-primary):not(:disabled):hover,#page-duty [data-duty-action=calendar]:not(:disabled):hover{background-color:#f0f6fc;border-color:#8baccd}
 #page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button.duty-primary{background-color:#2165a8;color:#fff;border-color:#2165a8}
 #page-duty :is(.duty-schedule-controls,.duty-calendar-settings) button.duty-primary:not(:disabled):hover{background-color:#194f86}
+#page-duty .duty-schedule-controls button{font-size:11px;padding:5px 7px;line-height:20px;min-height:32px;white-space:nowrap}
 #page-duty .duty-calendar-settings :is(input:not([type=checkbox]),select){height:34px}
 #page-duty .duty-calendar-settings :is(button,input,select):disabled{opacity:.5;cursor:default}
 #page-duty .duty-delete-action{display:inline-flex;align-items:center;gap:6px}
@@ -93,8 +100,8 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-segment{display:flex;border:1px solid #cad8e7;border-radius:7px;padding:2px;background:#eef3f9;gap:2px}
 #page-duty .duty-segment button{min-height:30px;border:0;background:transparent;padding:6px 12px;box-shadow:none;font-size:12px;white-space:nowrap}
 #page-duty .duty-segment button[aria-pressed=true]{background:#fff;color:#175a99;box-shadow:0 1px 3px #17263d15}
-#page-duty .duty-period{display:flex;align-items:center;gap:12px;font-size:13px;white-space:nowrap}
-#page-duty .duty-period button{font-size:21px;padding:2px 12px;min-height:34px}
+#page-duty .duty-period{display:inline-flex;align-items:center;gap:3px;width:max-content;min-width:0;flex:0 0 auto;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#page-duty .duty-period button{min-width:24px;min-height:30px;padding:2px 4px;font-size:16px;line-height:1}
 #page-duty .duty-inline-message{font-size:12px;color:#375d85;background:#eef5fd;padding:7px 10px;border-radius:5px;margin:5px 0}
 #page-duty .duty-scheduling-grid{min-height:0;border:1px solid #cbd8e6;border-radius:8px}
 #page-duty .duty-scheduling-grid th.duty-employee-col,#page-duty .duty-scheduling-grid td.duty-employee-col{width:178px;min-width:178px}
@@ -169,12 +176,16 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-date-button{display:grid;justify-items:start;gap:2px;width:100%;border:0;background:transparent;box-shadow:none;padding:3px 6px}
 #page-duty .duty-date-button strong{font-size:15px;color:#173b61}
 #page-duty .duty-date-button span,#page-duty .duty-date-button small{font-size:11px;font-weight:500}
-#page-duty .duty-staff-card{overflow:hidden;padding:0 0 4px;border:1px solid #c5d6e7;border-radius:7px;background:#F0F5FA;box-shadow:0 1px 2px #173b6110}
-#page-duty .duty-kpi-wrap{container-type:inline-size}
-#page-duty .duty-mini-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;max-width:260px;margin:auto}
-#page-duty .duty-mini-kpis span{padding:2px 1px;border-radius:4px;font-size:11px;line-height:16px;white-space:nowrap;letter-spacing:-.12px}
-#page-duty .duty-mini-kpis b{font-size:11px;font-variant-numeric:tabular-nums}
-#page-duty .duty-mini-kpis .duty-category-total{grid-column:1 / -1}
+#page-duty .duty-staff-card{overflow:hidden;padding:0 0 2px;border:1px solid #c5d6e7;border-radius:7px;background:#F0F5FA;box-shadow:0 1px 2px #173b6110}
+/* A stable 2 × 2 metric grid, then Total. Container units size text within
+   the existing employee columns; the layout never switches to four rows. */
+#page-duty .duty-kpi-wrap{container-type:inline-size;padding:0 4px}
+#page-duty .duty-mini-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;max-width:260px;min-width:0;margin:auto}
+#page-duty .duty-mini-kpis > span{display:flex;align-items:center;justify-content:center;gap:2px;min-width:0;padding:1px;border-radius:4px;font-size:clamp(9px,6.5cqi,11px);line-height:15px;white-space:nowrap}
+#page-duty .duty-kpi-label{min-width:0;font-style:normal}
+#page-duty .duty-mini-kpis b{flex-shrink:0;display:inline-block;padding:0 2px;border-radius:3px;background:#ffffff80;color:var(--hour-ink);font-size:inherit;font-variant-numeric:tabular-nums}
+#page-duty .duty-mini-kpis .duty-category-total{grid-column:1 / -1;gap:5px;padding:4px 2px;line-height:18px;font-size:11px;font-weight:750;--hour-bg:#285985;--hour-ink:#fff}
+#page-duty .duty-mini-kpis .duty-category-total b{padding:0;background:transparent;color:#fff;font-size:14px;font-weight:800}
 #page-duty .duty-category-basic{--hour-ink:#174f87;--hour-bg:#e0effe}
 #page-duty .duty-category-normal_ot{--hour-ink:#185e4d;--hour-bg:#dbf1e9}
 #page-duty .duty-category-friday_ot{--hour-ink:#504084;--hour-bg:#eee7fc}
@@ -221,11 +232,10 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-panel-body > .duty-dropdown{width:100%}
 #page-duty .duty-panel-body > .duty-dropdown > .duty-dropdown-trigger{width:100%;justify-content:space-between;min-height:38px;text-align:left}
 #page-duty .duty-panel-body .duty-dropdown-option{white-space:normal;text-align:left;line-height:1.5}
-#page-duty :is(.duty-mini-kpis,.duty-cell-categories) b{display:inline-block;padding:0 3px;margin-left:2px;border-radius:4px;background:#ffffff80;color:var(--hour-ink);font-variant-numeric:tabular-nums}
-#page-duty .duty-category-total b{color:#fff;background:transparent;font-size:13px;padding:0}
+#page-duty .duty-cell-categories b{display:inline-block;padding:0 3px;margin-left:2px;border-radius:4px;background:#ffffff80;color:var(--hour-ink);font-variant-numeric:tabular-nums}
+#page-duty .duty-auto-summary .duty-category-total b{color:#fff;background:transparent;font-size:13px;padding:0}
 #page-duty .duty-editor-note{display:grid;gap:4px;font-size:12px;font-weight:600}
 #page-duty :is(.duty-editor-note,.duty-manual-fields) input,#page-duty .duty-cell-editor select{min-height:32px;padding:4px 7px;border:1px solid #b9cde2;border-radius:6px;background:#f7fafd;color:#203b59;font-size:13px}
-#page-duty .duty-selection-tools{margin-left:auto;gap:4px;flex-wrap:wrap}
 #page-duty .duty-editor-status select{border:1px solid #ccd9e6;border-radius:6px;background:#fff;color:#294766}
 #page-duty .duty-work-fields{min-width:0;margin:0;padding:0;border:0}
 #page-duty .duty-editor-status{display:flex;gap:8px;align-items:center}
@@ -251,8 +261,8 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-active-month:focus-within{outline:2px solid #287cc6;outline-offset:2px}
 #page-duty .duty-active-month input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
 #page-duty .duty-active-month input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;cursor:pointer}
-#page-duty :is(.duty-month-picker,.duty-period) button{min-width:32px;min-height:32px;padding:2px 7px;font-size:18px;line-height:1}
-#page-duty :is(.duty-month-picker,.duty-period) button:disabled{cursor:default;opacity:.45}
+#page-duty .duty-month-picker button{min-width:32px;min-height:32px;padding:2px 7px;font-size:18px;line-height:1}
+#page-duty .duty-month-picker button:disabled,#page-duty .duty-period button:disabled{cursor:default;opacity:.45}
 #page-duty :is(.duty-field,.duty-editor-status) select{appearance:none;background:#f7fafd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23173F70' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 7px center;padding-right:25px;min-height:32px;cursor:pointer}
 #page-duty :is(input[type=date],input[type=time],input[type=month])::-webkit-calendar-picker-indicator{cursor:pointer}
 #page-duty [data-rule-staff]:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;border:1px solid #d8e2ed;border-radius:6px}
@@ -260,14 +270,12 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-list-row .duty-count{min-width:74px;text-align:right}
 #page-duty .duty-selection-count,#page-duty .duty-demo-badge{font-size:11px;color:#365a7e;padding:0 4px}
 
-@container (max-width: 172px){#page-duty .duty-mini-kpis{grid-template-columns:1fr}}
 
 
 #page-duty [hidden]{display:none}
-#page-duty .duty-staff-title{background:#174A79;color:#fff;padding:4px 5px;margin-bottom:4px}
+#page-duty .duty-staff-title{background:#174A79;color:#fff;padding:4px 5px;margin-bottom:3px}
 #page-duty .duty-staff-title .duty-name{color:#fff;font-size:14px;font-weight:700}
 #page-duty .duty-staff-title .duty-code{color:#e5effa;margin:1px 0 0}
-#page-duty .duty-kpi-wrap{padding:0 4px}
 #page-duty .duty-icon{display:inline-grid;place-items:center;width:34px;height:34px;padding:6px}
 #page-duty .duty-schedule-controls button.duty-icon{padding:6px}
 #page-duty .duty-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -436,8 +444,8 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 /* Only the date cell gets today's green accent; weekday/holiday content stays intact. */
 #page-duty .duty-vertical tbody th.duty-today{background:#edf7f1;box-shadow:inset 3px 0 #278466}
 #page-duty .duty-vertical th.duty-today .duty-date-button strong{color:#175c49}
-#page-duty .duty-today-badge{display:inline-flex;align-items:center;gap:6px;min-height:28px;box-sizing:border-box;max-width:100%;padding:3px 7px;border:1px solid #c7ddd4;border-left:3px solid #278466;border-radius:6px;background:#f2f8f5;color:#173f70;white-space:nowrap;font-size:11px;font-weight:700;line-height:18px}
-#page-duty .duty-today-badge small{font-size:10px;font-weight:500;color:#486c60}
+#page-duty .duty-today-badge{display:grid;align-content:center;justify-items:center;width:max-content;max-width:100%;padding:2px 7px;border:1px solid #74b593;border-left:3px solid #23785b;border-radius:6px;background:#dff3e7;color:#174a38;white-space:nowrap;font-size:11px;font-weight:750;line-height:14px}
+#page-duty .duty-today-badge small{font-size:9px;line-height:10px;font-weight:600;color:#376450}
 /* Employee Filter: top-layer listbox, with stable native value/change adapter. */
 #page-duty .duty-employee-filter{position:relative}
 #page-duty .duty-employee-filter select[hidden]{display:none}
@@ -448,11 +456,10 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-employee-trigger:hover{border-color:#7d9fbe;background:#f0f6fc}
 #page-duty .duty-employee-trigger:focus-visible,#page-duty .duty-employee-trigger[aria-expanded=true]{outline:2px solid #377cad;outline-offset:1px}
 #page-duty .duty-employee-list{position:fixed;inset:auto;margin:0;box-sizing:border-box;width:320px;max-width:calc(100vw - 16px);max-height:350px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:4px;border:1px solid #b9cfe2;border-radius:8px;background:#fff;color:#173f70;box-shadow:0 8px 28px #173f7026}
-#page-duty .duty-employee-list [role=option]{display:flex;align-items:center;gap:8px;width:100%;min-height:38px;box-sizing:border-box;padding:7px 9px;border:0;border-bottom:1px solid #e7eef5;border-radius:0;background:#fff;color:#173f70;text-align:left;cursor:pointer;font-family:inherit}
-#page-duty .duty-employee-list [role=option]:last-child{border-bottom:0}
-#page-duty .duty-employee-list [role=option]:hover{background:#f1f6fb}
-#page-duty .duty-employee-list [role=option][aria-selected=true]{background:#e7f0fa;color:#153f6a}
-#page-duty .duty-employee-list [role=option]:focus{outline:2px solid #377cad;outline-offset:-2px;border-radius:4px;background:#edf5fc}
+#page-duty .duty-employee-list [role=option]{display:flex;align-items:center;gap:8px;width:100%;min-height:38px;box-sizing:border-box;padding:7px 9px;border:1px solid #e1eaf2;border-radius:4px;background:#f8fbfe;color:#173f70;text-align:left;cursor:pointer;font-family:inherit}
+#page-duty .duty-employee-list [role=option][aria-selected=true]{background:#cfe2f7;border-color:#94b7db;box-shadow:inset 3px 0 #2165a8;color:#153f6a}
+#page-duty .duty-employee-list [role=option]:focus{outline:2px solid #377cad;outline-offset:-2px}
+#page-duty .duty-employee-list [role=option]:hover{background:#e0efff;border-color:#6e9ecb}
+#page-duty .duty-employee-list [role=option][aria-selected=true]:hover{background:#bcd5ef}
 #page-duty .duty-employee-list small{color:#678097;font-size:10px;font-weight:400}
 #page-duty .duty-employee-check{width:14px;flex-shrink:0;font-size:12px;color:#2165a8;text-align:center}
-@media(max-width:750px){#page-duty .duty-today-badge small{display:none}}
