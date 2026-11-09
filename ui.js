@@ -3600,9 +3600,18 @@ function refreshHealthSummary(){
             .filter(code=>code && activeOrderCodes.has(code))
     );
 
+    const identifierStatus=document.getElementById('pfnOrdersOverlay')?.dataset.identifiersStatus;
+    if(identifierStatus==='loading'||identifierStatus==='error'){
+        const value=identifierStatus==='loading'?'Checking…':'Unavailable';
+        setElementText(UI.elements.healthMappings,value);
+        setElementText(UI.elements.healthMissingBarcode,value);
+        setElementText(UI.elements.healthDuplicateGTIN,typeof getDuplicateGTINs==='function'?getDuplicateGTINs().length:0);
+        return;
+    }
+    const authoritativeProjection=window.IdentifierService?.currentWorkspaceProjection();
     setElementText(
         UI.elements.healthMappings,
-        matchedOrderCodes.size
+        authoritativeProjection?authoritativeProjection.filter(row=>!row.conflict&&row.identifiers.length>0).length:matchedOrderCodes.size
     );
 
     const missingMappings =
@@ -9482,6 +9491,17 @@ setTimeout(()=>{
     if(settingsMaster) renderV2IdentifierAdministration(settingsMaster);
 },600);
 
+function refreshReceivingReviewPanelTotals(overlay,groups){
+    const remaining=[...overlay.querySelectorAll('.needsReviewRow[data-i]')];
+    const count=remaining.length;
+    const units=remaining.reduce((sum,node)=>sum+Math.max(0,Number(groups[Number(node.dataset.i)]?.total_quantity||0)),0);
+    const countNode=overlay.querySelector('.pfnReviewCount');
+    if(countNode)countNode.textContent=String(count);
+    const totals=overlay.querySelector('.pfnReviewTotals');
+    if(totals)totals.innerHTML=`<span><b>${count}</b> Items</span><span><b>${units}</b> Units</span>`;
+    return count;
+}
+
 async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
     if(String(workflow).toUpperCase()==="EXPIRY") return openExpiryNeedsReviewPanel();
     const openingPharmacy=typeof AuthState!=="undefined"?AuthState?.context?.pharmacy_id:null;
@@ -9536,6 +9556,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
               ${handheld
                 ? `<div class="needsReviewHandheldReadOnly"><strong>Pending pharmacist review</strong><span>Linking and item resolution are available on the computer only.</span><button class="needsReviewCancel" type="button" data-cancel-review="${index}">Delete Review</button></div>`
                 : `<div class="needsReviewResolve">
+                    <div class="pfnResolverTabs" data-review-modes="${index}"><button type="button" class="isActive" data-existing-mode>Find Existing Item</button><button type="button" data-order-mode ${window.PharmFlowPermissions.allowed('GLOBAL',true)?'':'disabled'}>Find in Order — Quick Add</button></div>
                     <div class="needsReviewSearchRow">
                       <label>Find Item<input type="search" data-search="${index}" placeholder="Search by Item Code or Item Name" autocomplete="off" spellcheck="false"></label>
                       <button class="needsReviewClear" type="button" data-clear-review="${index}">Clear</button>
@@ -9596,7 +9617,20 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
         const selection=overlay.querySelector(`[data-selection="${index}"]`);
         const cancelReview=overlay.querySelector(`[data-cancel-review="${index}"]`);
         const clearReview=overlay.querySelector(`[data-clear-review="${index}"]`);
-        let selectedItem=null;
+        let selectedItem=null,reviewMode='existing',quickMaster=null;
+        const openedPharmacy=IdentifierService.pharmacyId(),openedEpoch=AuthState.identityEpoch;
+        const quickScope=group.rows.map(row=>row.review_id).sort().join(',');
+        const modes=section.querySelector('[data-review-modes]');
+        const switchMode=mode=>{
+            if(overlay.dataset.busy==='1'||IdentifierService.pendingAdminRequest('REVIEW',quickScope))return;
+            reviewMode=mode;selectedItem=null;quickMaster=null;search.value='';matches.innerHTML='';searchGeneration++;
+            modes.querySelector('[data-existing-mode]').classList.toggle('isActive',mode==='existing');
+            modes.querySelector('[data-order-mode]').classList.toggle('isActive',mode==='order');
+            search.placeholder=mode==='order'?'Search captured Order by Item Code or Item Name':'Search by Item Code or Item Name';
+            drawSelection();search.focus();
+        };
+        modes?.querySelector('[data-existing-mode]').addEventListener('click',()=>switchMode('existing'));
+        modes?.querySelector('[data-order-mode]').addEventListener('click',()=>switchMode('order'));
         overlay.querySelector(`[data-copy-identifier="${index}"]`)?.addEventListener("click",async event=>{
             try{
                 if(!navigator.clipboard?.writeText)throw new Error("Clipboard unavailable");
@@ -9625,9 +9659,7 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
                     if(!await nrV2Delete(row.review_id)) throw new Error("Review changed; refresh Needs Review before retrying.");
                 }
                 section.remove(); await refreshNeedsReviewCounters();
-                const count=overlay.querySelectorAll(".needsReviewRow").length;
-                const countNode=overlay.querySelector(".pfnReviewCount");
-                if(countNode) countNode.textContent=String(count);
+                const count=refreshReceivingReviewPanelTotals(overlay,groups);
                 if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
                 showToast?.(`Review deleted — photos queued for cleanup`,"success");
             }catch(error){cancelReview.disabled=false;showToast?.(error?.message||"Unable to delete review","error");}
@@ -9656,12 +9688,25 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
             try{model=buildReceivingResolverSelectionModel(selectedItem,group.total_quantity,nrV2ResolutionScope(group,selectedItem));}
             catch(error){selection.hidden=false;selection.textContent=error.message;setResolveMode(false);return;}
             setResolveMode(true);selection.hidden=false;
-            selection.innerHTML=renderReceivingResolverSelectedCard(model,esc,"data-change-review-item")+`<button type="button" class="gtinPrimaryAction" data-resolve>Resolve Review</button>`;
+            selection.innerHTML=renderReceivingResolverSelectedCard(model,esc,"data-change-review-item")+(reviewMode==='order'?`<label class="pfnCreateGroup"><span>Group${quickMaster?'':' *'}</span><select data-review-group aria-label="Group" ${quickMaster?'disabled':''}>${renderReceivingGroupOptions(quickMaster?.group_name)}</select></label><small>${quickMaster?'Existing approved Group is preserved.':'Select Group for the new Global Master item.'}</small>`:'')+`<button type="button" class="gtinPrimaryAction" data-resolve>${reviewMode==='order'?'Create, Link &amp; Resolve':'Resolve Review'}</button>`;
             selection.querySelector("[data-change-review-item]")?.addEventListener("click",()=>{selectedItem=null;drawSelection();if(search){search.value="";search.focus();}});
             selection.querySelector("[data-resolve]").addEventListener("click",async event=>{
+                if(overlay.dataset.busy==='1')return;
                 const button=event.currentTarget;button.disabled=true;overlay.dataset.busy="1";
+                section.querySelectorAll('[data-change-review-item],[data-review-group],[data-existing-mode],[data-order-mode]').forEach(node=>node.disabled=true);
                 try{
-                    const outcome=await nrV2ResolveGroupToOrderItem(group,selectedItem);
+                    if(openedPharmacy!==IdentifierService.pharmacyId()||openedEpoch!==AuthState.identityEpoch)throw new Error('Account or pharmacy changed. Reopen Needs Review.');
+                    let outcome;
+                    if(reviewMode==='order'){
+                        const groupName=selection.querySelector('[data-review-group]').value;
+                        const pending=IdentifierService.pendingAdminRequest('REVIEW',quickScope);
+                        if(!pending&&!quickMaster&&!groupName)throw new Error('Select Group for the new item.');
+                        const requestRows=pending?.rows||buildSavedReviewQuickAddRows(group,selectedItem,groupName);
+                        const reply=await IdentifierService.runAdminOperation('REVIEW',quickScope,requestRows);
+                        mergeCloudReceivingLedger(reply.receipts);rebuildStateIndexes();recalculateStatistics();saveWorkspaceSnapshot();
+                        AppEvents.emit('receiving:updated',{source:'saved-review-quick-add',synchronized:true});
+                        outcome={pending:false};
+                    }else outcome=await nrV2ResolveGroupToOrderItem(group,selectedItem);
                     if(outcome.pending){
                         button.textContent="Processing…";
                         const reviewIds=new Set(group.rows.map(row=>toSafeString(row?.review_id||"")).filter(Boolean));
@@ -9674,11 +9719,16 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
                         if(!resolved){button.textContent="Processing — Close & reopen to refresh";showToast?.("Receipt is still processing. Do not press Resolve Review again.","warning");return;}
                     }
                     section.remove();await refreshNeedsReviewCounters();
-                    const count=overlay.querySelectorAll(".needsReviewRow").length,countNode=overlay.querySelector(".pfnReviewCount");
-                    if(countNode) countNode.textContent=String(count);
+                    const count=refreshReceivingReviewPanelTotals(overlay,groups);
                     if(count===0) overlay.querySelector("[data-review-list]").innerHTML='<div class="needsReviewEmpty">Nothing needs review.</div>';
                     showToast?.(`Linked & received — ${group.total_quantity} units`,"success");
-                }catch(error){button.disabled=false;showToast?.(error?.message||"Unable to resolve review","error");}
+                }catch(error){
+                    button.disabled=false;
+                    const uncertain=reviewMode==='order'&&IdentifierService.pendingAdminRequest('REVIEW',quickScope);
+                    if(uncertain)button.textContent='Confirm Create, Link & Resolve';
+                    else section.querySelectorAll('[data-change-review-item],[data-review-group],[data-existing-mode],[data-order-mode]').forEach(node=>node.disabled=node.matches('[data-review-group]')&&!!quickMaster||node.matches('[data-order-mode]')&&!window.PharmFlowPermissions.allowed('GLOBAL',true));
+                    showToast?.((uncertain?'Uncertain confirmation — retry the original selection. ':'')+(error?.message||"Unable to resolve review"),"error");
+                }
                 finally{overlay.dataset.busy="";}
             });
         };
@@ -9687,8 +9737,23 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
             const q=toSafeString(search?.value||"").trim();
             if(selectedItem){selectedItem=null;drawSelection();}
             if(!q){matches.innerHTML="";return;}
-            matches.textContent="Searching Global Master…";
+            matches.textContent=reviewMode==='order'?'Searching captured Orders…':'Searching Global Master…';
             try{
+                if(reviewMode==='order'){
+                    const items=findReceivingQuickAddOrderMatches(q,nrV2AllocationScope(group));
+                    matches.innerHTML=items.length?items.map((item,n)=>`<button type="button" data-order-match="${n}"><span><strong>${esc(item.itemName)}</strong><small>Item Code ${esc(item.itemCode)} · Order ${esc(item.sourceOrder)}</small></span><b>Select</b></button>`).join(''):'<div class="needsReviewNoMatches">No matching item in the original captured Orders.</div>';
+                    matches.querySelectorAll('[data-order-match]').forEach(button=>button.addEventListener('click',async()=>{
+                        const item=items[Number(button.dataset.orderMatch)],selectionGeneration=++searchGeneration;
+                        try{
+                            const master=await IdentifierService.findGlobalItemByCode(item.itemCode);
+                            if(selectionGeneration!==searchGeneration||reviewMode!=='order'||!section.isConnected)return;
+                            quickMaster=master;
+                            const workspaceItem=getItemByCode(item.itemCode);
+                            if(!workspaceItem)throw new Error('Order item unavailable. Refresh Orders.');
+                            selectedItem={...workspaceItem,sourceOrder:item.sourceOrder,itemName:item.itemName};drawSelection();
+                        }catch(error){matches.textContent=error.message;}
+                    }));return;
+                }
                 const items=await searchReceivingMasterItems(q,nrV2AllocationScope(group));
                 if(generation!==searchGeneration||search.value.trim()!==q||!section.isConnected)return;
                 matches.innerHTML=items.length?items.map((item,itemIndex)=>`<button type="button" data-match="${itemIndex}" ${item.inActiveOrder?"":"disabled"}><span><strong>${esc(item.itemName)}</strong><small>Item Code ${esc(item.itemCode)} · Group ${esc(item.groupName||"—")}</small><small>${item.inActiveOrder?"In captured Active Orders":"Not in Active Order — this review cannot yet be resolved as an Extra Item"}</small></span></button>`).join(""):`<div class="needsReviewNoMatches">No matching Global Master item.</div>`;
@@ -9697,6 +9762,18 @@ async function openNeedsReviewPanel(workflow="RECEIVING",options={}){
         };
         search?.addEventListener("input",()=>{searchGeneration++;matches.innerHTML="";if(searchFrame)clearTimeout(searchFrame);searchFrame=setTimeout(drawMatches,250);});
         clearReview?.addEventListener("click",()=>{searchGeneration++;if(searchFrame)clearTimeout(searchFrame);if(search)search.value="";selectedItem=null;matches.innerHTML="";drawSelection();search?.focus();});
+        const pendingQuick=IdentifierService.pendingAdminRequest('REVIEW',quickScope);
+        if(pendingQuick&&search){
+            const captured=pendingQuick.rows[0],workspaceItem=getItemByCode(captured.itemCode);
+            if(workspaceItem){
+                reviewMode='order';quickMaster={group_name:captured.groupName};
+                selectedItem={...workspaceItem,itemName:captured.itemName,sourceOrder:captured.sourceOrder};drawSelection();
+                selection.querySelector('[data-resolve]').textContent='Confirm Create, Link & Resolve';
+                selection.querySelector('[data-change-review-item]').disabled=true;
+                modes.querySelectorAll('button').forEach(button=>button.disabled=true);
+            }
+        }
+
     });
 
     if(!handheld) overlay.querySelector("[data-review-detail=\"0\"]")?.focus();
@@ -9987,16 +10064,80 @@ function setupPhase263ActionDelegation(){
 /* =====================================================
    PHASE 2C.6.2 — DATA HEALTH + MULTI-ORDER CONTROL
 ===================================================== */
-function openCurrentMissingGTINPanel(){
-    const rows=typeof getItemsWithoutMapping==="function"?getItemsWithoutMapping():[];
+async function openCurrentMissingGTINPanel(){
     document.getElementById("currentMissingGTINOverlay")?.remove();
     const overlay=document.createElement("div");overlay.id="currentMissingGTINOverlay";overlay.className="quickKpiOverlay";
-    const esc=typeof escapeHTML==="function"?escapeHTML:(v=>String(v??""));
-    overlay.innerHTML=`<div class="quickKpiPanel"><div class="quickKpiHeader"><h3>Missing GTIN — Current Workspace</h3><button type="button" class="quickKpiClose" data-close>✕</button></div>${rows.length?`<table class="quickKpiTable"><thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th></tr></thead><tbody>${rows.map(i=>`<tr><td>${esc(i.itemCode)}</td><td><b>${esc(i.itemName)}</b></td><td>${toNumber(i.orderedQty,0)}</td></tr>`).join("")}</tbody></table>`:`<div class="quickKpiEmpty">No missing GTIN items in the current workspace.</div>`}</div>`;
-    document.body.appendChild(overlay);
-    window.PharmFlowModalStack?.open(overlay);
-    const close=()=>{window.PharmFlowModalStack?.close(overlay);overlay.remove();};
+    overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label","Missing GTIN — Current Workspace");
+    const esc=escapeHTML,pharmacyId=IdentifierService.pharmacyId(),epoch=AuthState.identityEpoch;
+    overlay.innerHTML=`<div class="quickKpiPanel missingGTINPanel"><div class="quickKpiHeader"><h3>Missing GTIN — Current Workspace</h3><button type="button" class="quickKpiClose" data-close aria-label="Close">✕</button></div><div data-body class="quickKpiEmpty">Checking Global Database…</div><div class="missingGTINFooter"><span data-message role="status" aria-live="polite"></span><button type="button" class="gtinPrimaryAction" data-save disabled>Save All</button></div></div>`;
+    document.body.appendChild(overlay);window.PharmFlowModalStack?.open(overlay);
+    let busy=false;
+    const close=()=>{if(busy)return;window.PharmFlowModalStack?.close(overlay);overlay.remove();};
     overlay.querySelector('[data-close]').onclick=close;overlay.onclick=e=>{if(e.target===overlay)close();};
+    const message=overlay.querySelector('[data-message]'),save=overlay.querySelector('[data-save]');
+    const current=()=>pharmacyId===IdentifierService.pharmacyId()&&epoch===AuthState.identityEpoch;
+    try{
+        const projection=await IdentifierService.refreshWorkspaceIdentifiers();
+        if(!overlay.isConnected||!current())return;
+        const rows=projection.filter(row=>row.conflict||row.identifiers.length===0);
+        const manageOrders=document.getElementById('pfnOrdersOverlay');
+        if(manageOrders)manageOrders.dataset.identifiersStatus='ready';
+        recalculateStatistics();refreshDashboard();refreshHealthSummary();
+        const signature=IdentifierService.workspaceSignature();
+        let pending=IdentifierService.pendingAdminRequest('BULK','workspace');
+        const permitted=window.PharmFlowPermissions.allowed('GLOBAL',true)&&window.PharmFlowPermissions.allowed('RECEIVING',true);
+        overlay.querySelector('[data-body]').innerHTML=rows.length?`<div class="missingGTINTableWrap"><table class="quickKpiTable"><thead><tr><th>Item Code</th><th>Item Name</th><th>Group</th><th>Barcode / GTIN</th><th>Ordered</th><th>Status</th></tr></thead><tbody>${rows.map((r,n)=>`<tr data-mapping="${n}"><td>${esc(r.itemCode)}</td><td class="missingGTINName"><b>${esc(r.itemName)}</b></td><td><label class="pfnCreateGroup"><span class="sr-only">Group for ${esc(r.itemCode)}</span><select data-group aria-label="Group for ${esc(r.itemCode)}" ${r.exists||r.conflict||!permitted?'disabled':''}>${renderReceivingGroupOptions(r.groupName)}</select></label></td><td><input data-barcode aria-label="Barcode for ${esc(r.itemCode)}" autocomplete="off" spellcheck="false" ${r.conflict||!permitted?'disabled':''}></td><td>${toNumber(r.orderedQty,0)}</td><td><span data-status class="missingGTINStatus">${r.conflict?'Conflict':'Pending'}</span></td></tr>`).join('')}</tbody></table></div>`:'<div class="quickKpiEmpty">No missing GTIN items in the current workspace.</div>';
+        const nodes=[...overlay.querySelectorAll('[data-mapping]')];
+        for(let n=0;n<rows.length;n++){
+            const restored=pending?.rows.find(row=>normalizeItemCode(row.itemCode)===rows[n].itemCode);
+            if(restored){nodes[n].querySelector('[data-barcode]').value=restored.identifierDisplay;nodes[n].querySelector('[data-group]').value=restored.groupName||rows[n].groupName||'';}
+            nodes[n].querySelector('[data-barcode]').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();nodes[n+1]?.querySelector('[data-barcode]')?.focus();}});
+            nodes[n].addEventListener('input',()=>{nodes[n].querySelector('[data-status]').textContent=nodes[n].querySelector('[data-barcode]').value.trim()?'Ready':'Pending';});
+        }
+        const lock=locked=>nodes.forEach((node,n)=>{node.querySelector('[data-barcode]').disabled=locked||node.dataset.saved==='1'||!permitted||rows[n].conflict;node.querySelector('[data-group]').disabled=locked||node.dataset.saved==='1'||!permitted||rows[n].exists||rows[n].conflict;});
+        if(pending){lock(true);message.textContent='Uncertain confirmation — retry the original batch.';save.textContent='Confirm Save All';}
+        else if(!permitted)message.textContent='Global Database modification permission required.';
+        save.disabled=!permitted||(!rows.length&&!pending);
+        save.addEventListener('click',async()=>{
+            if(busy)return;
+            let submitted,writeConfirmed=false;
+            try{
+                if(!current()||IdentifierService.workspaceSignature()!==signature)throw new Error('Workspace or account changed. Close and reopen Missing GTIN.');
+                submitted=pending?.rows||nodes.flatMap((node,n)=>{
+                    if(node.dataset.saved==='1')return [];
+                    const identifierDisplay=node.querySelector('[data-barcode]').value.trim(),groupName=node.querySelector('[data-group]').value;
+                    if(!identifierDisplay){if(!rows[n].exists&&groupName)throw new Error(`Barcode required for ${rows[n].itemCode}`);return [];}
+                    if(rows[n].conflict)throw new Error(`Resolve Item Code conflict: ${rows[n].itemCode}`);
+                    if(!rows[n].exists&&!groupName)throw new Error(`Select Group for ${rows[n].itemCode}`);
+                    return [{itemCode:rows[n].itemCode,itemName:rows[n].itemName,groupName,identifierDisplay}];
+                });
+                if(!submitted.length)throw new Error('Enter at least one barcode.');
+                const keys=submitted.map(r=>normalizeIdentifier(r.identifierDisplay));
+                if(new Set(keys).size!==keys.length)throw new Error('Duplicate barcode in submission.');
+                busy=true;save.disabled=true;lock(true);message.textContent='Saving…';
+                await IdentifierService.runAdminOperation('BULK','workspace',submitted);
+                writeConfirmed=true;
+                nodes.forEach((node,n)=>{if(submitted.some(r=>r.itemCode===rows[n].itemCode)){node.dataset.saved='1';node.querySelector('[data-status]').textContent='Saved';}});pending=null;
+                await IdentifierService.refreshWorkspaceIdentifiers();
+                // Refresh the established IndexedDB projection through its existing single-flight path.
+                await ensureGlobalMasterGTINReady({silent:true});
+                recalculateStatistics();refreshDashboard();refreshHealthSummary();
+                message.textContent=`Saved ${submitted.length} mapping${submitted.length===1?'':'s'}.`;
+                lock(false);save.disabled=nodes.every(node=>node.dataset.saved==='1');save.textContent=save.disabled?'Saved':'Save All';
+            }catch(error){
+                if(writeConfirmed){
+                    message.textContent=`Saved ${submitted.length} mapping${submitted.length===1?'':'s'}. Identifier refresh unavailable — close and reopen to verify.`;
+                    lock(false);save.disabled=nodes.every(node=>node.dataset.saved==='1');save.textContent=save.disabled?'Saved':'Save All';
+                    return;
+                }
+                pending=IdentifierService.pendingAdminRequest('BULK','workspace');
+                const uncertain=!!pending;
+                message.textContent=(uncertain?'Uncertain confirmation — retry the original batch. ':'')+(error.message||'Save failed.');
+                nodes.forEach((node,n)=>{if(submitted?.some(r=>r.itemCode===rows[n].itemCode))node.querySelector('[data-status]').textContent=uncertain?'Uncertain confirmation':/conflict|mapped|Duplicate/i.test(error.message)?'Conflict':'Failed';});
+                lock(uncertain);save.textContent=uncertain?'Confirm Save All':'Save All';save.disabled=false;
+            }finally{busy=false;}
+        });
+    }catch(error){message.textContent=error.message||'Unable to verify Global Database.';}
 }
 
 async function requestRemoveActiveOrderFile(fileId){

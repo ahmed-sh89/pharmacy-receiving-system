@@ -1,0 +1,27 @@
+{
+  "reviews": [
+    {
+      "id": "2953500d-db95-40d6-ae00-1fd97d6be25e",
+      "status": "RESOLVED",
+      "barcode": "9901109000001",
+      "receiptCount": 1,
+      "resolvedCode": "MG1109-R1",
+      "originalOrder": "SYNTH-MGTIN-1109-A",
+      "receivedUnits": 5,
+      "savedQuantity": 5
+    },
+    {
+      "id": "be3d2272-a488-45b2-baa7-cec51487e499",
+      "status": "RESOLVED",
+      "barcode": "9901109000002",
+      "receiptCount": 1,
+      "resolvedCode": "MG1109-A1",
+      "originalOrder": "SYNTH-MGTIN-1109-A",
+      "receivedUnits": 2,
+      "savedQuantity": 2
+    }
+  ],
+  "newGlobalItems": 3,
+  "committedOperations": 3,
+  "originalReceiptsUnchanged": true
+}

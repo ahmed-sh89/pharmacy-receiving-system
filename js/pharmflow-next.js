@@ -226,7 +226,8 @@
   async function loadManageOrders(overlay){
     if(overlay.ordersLoad)return overlay.ordersLoad;
     const scope=assignmentScope();
-    overlay.dataset.ordersReady='false';overlay.dataset.ordersError='';
+    overlay.dataset.ordersReady='false';overlay.dataset.ordersError='';overlay.dataset.identifiersStatus='loading';
+    if(typeof refreshHealthSummary==='function')refreshHealthSummary();
     refreshOpenManageOrders();
     overlay.ordersLoad=(async()=>{
       try{
@@ -238,8 +239,17 @@
         if(PharmFlowCloudWorkspace?.manifestAuthorityScope!==scope || PharmFlowCloudWorkspace?.lastManifestPullError)throw Error('Unable to load Active Orders. Please retry.');
         syncAssignmentAuthority();
         overlay.dataset.ordersReady='true';
+        try{
+          await window.IdentifierService.refreshWorkspaceIdentifiers();
+          if(scope!==assignmentScope())return;
+          overlay.dataset.identifiersStatus='ready';
+        }catch(error){
+          if(scope!==assignmentScope())return;
+          overlay.dataset.identifiersStatus='error';
+        }
+        if(typeof refreshHealthSummary==='function')refreshHealthSummary();
       }catch(error){
-        if(scope===assignmentScope())overlay.dataset.ordersError=error?.message||'Unable to load Active Orders.';
+        if(scope===assignmentScope()){overlay.dataset.ordersError=error?.message||'Unable to load Active Orders.';overlay.dataset.identifiersStatus='error';if(typeof refreshHealthSummary==='function')refreshHealthSummary();}
       }finally{
         overlay.ordersLoad=null;
         if(overlay.isConnected)refreshOpenManageOrders();

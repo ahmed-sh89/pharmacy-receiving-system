@@ -1,0 +1,122 @@
+[
+  {
+    "root": "candidate",
+    "file": "receiving-order-attribution",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "receiving-order-attribution",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "active-orders-authority",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "active-orders-authority",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "order-import-authority",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "order-import-authority",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "receiving-duplicate-line-allocation",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "receiving-duplicate-line-allocation",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "security-session-boundaries",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "security-session-boundaries",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "security-production-artifact",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "security-production-artifact",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "sec001-excel-security",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "sec001-excel-security",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "auth-request-timeout",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "auth-request-timeout",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "receiving-master-resolution",
+    "status": "FAIL"
+  },
+  {
+    "root": "baseline",
+    "file": "receiving-master-resolution",
+    "status": "FAIL"
+  },
+  {
+    "root": "candidate",
+    "file": "receiving-consolidation-review",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "receiving-consolidation-review",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "receiving-safety-gates",
+    "status": "PASS"
+  },
+  {
+    "root": "baseline",
+    "file": "receiving-safety-gates",
+    "status": "PASS"
+  },
+  {
+    "root": "candidate",
+    "file": "needs-review-auto-allocation",
+    "status": "FAIL"
+  },
+  {
+    "root": "baseline",
+    "file": "needs-review-auto-allocation",
+    "status": "FAIL"
+  }
+]
