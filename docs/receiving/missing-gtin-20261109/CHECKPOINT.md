@@ -1,7 +1,7 @@
 # Missing GTIN / saved-review Quick Add — current Staging checkpoint
 
-Date: 9 November 2026. Status: **STAGING FUNCTIONAL PASS — FINAL ZOOM VERIFICATION BLOCKED**.
-No READY FOR USER ACCEPTANCE claim while this visual requirement remains unverified.
+Date: 9 November 2026. Status: **USER VERIFIED — PASS; CI baseline correction verified locally, pending commit/push authorization**.
+Product Owner visual acceptance on 9 November supersedes the earlier unavailable browser-zoom measurement.
 
 Branch: `feature/missing-gtin-bulk-staging-20261109`.
 Production base and last read-only main verification: `7e9cad2177131e80735016fde35014deb3c5a390` (unchanged).
@@ -22,6 +22,12 @@ Applied Staging migrations only:
 
 Latest targeted run: 52 PASS, 0 FAIL. Production-equivalent and Preview builds PASS. Related baseline comparison retains two historical failing files; no whole-suite-green claim. See FINAL_REPORT.md and regression-comparison.json for exact validation limits.
 
-Final normal desktop screenshots are in evidence/. The two round-1 *-100.jpg files predate summary fixes. Browser zoom shortcuts did not change the measured viewport width (1363 CSS px) or panel width (1040 CSS px). Therefore requested 75/80% screenshots are BLOCKED, not PASS. Live browser network fault injection and physical TC26 testing were unavailable; these limitations are explicit in the report.
+Final normal desktop screenshots are in evidence/. Earlier automated 75/80% zoom verification was unavailable; the Product Owner subsequently accepted the visual design. Existing functional acceptance, 52 focused tests, Production SQL Compatibility PASS and historical regression disposition PASS are preserved without repetition.
 
-Next: owner visual review at actual Chrome 75–80%; record acceptance only after explicit owner confirmation. Keep PR Draft and Production completely untouched.
+CI remediation: the historical Duty manifest freezes Production 7f0bcc1 and was incorrectly applied to every later PR. Keep that historical record unchanged. The current Receiving RELEASE_MANIFEST pins verified Production 7e9cad2177131e80735016fde35014deb3c5a390 and accepted source 6fe902bf13335fc2c161dc5868cccf6ee2922070. All historical protected paths remain checked; Duty runtime files and the new migrations are also pinned (90 paths total). Approved changes are exact Git blobs, not excluded paths. Mutation diagnostics reject changes to Duty, deployment and approved Receiving bytes.
+
+Local validation: corrected isolation 3 PASS; Production-equivalent build PASS; complete existing Duty readiness command 123 PASS / 0 FAIL / 1 pre-existing SKIP (previously 120 PASS / 1 FAIL / 1 SKIP). No operational source, SQL or workflow changes in this correction.
+
+GitHub: active ruleset 26077274 verified through read-only API. Requires PR, zero approving reviews, strict up-to-date PharmFlow security checks from integration 15368; blocks deletion and non-fast-forward. Merge/squash/rebase allowed. Existing required check SUCCESS on accepted HEAD. Classic branch-protection details remain inaccessible because the integration lacks repository Administration read permission. No settings changed or bypass used.
+
+Next: obtain commit/push approval required by AGENTS.md section 11, then commit only the isolation test, current release manifest and this checkpoint on PR #54 branch. Verify resulting GitHub checks and reverify main. Owner may supply read-only classic protection settings evidence or an authorized Administration-read connection to close that verification limit. Keep PR Draft; no merge, Production deployment, or database actions authorized.
