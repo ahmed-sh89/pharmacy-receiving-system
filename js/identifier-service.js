@@ -97,6 +97,50 @@ const IdentifierService={
         if(tx.transaction_id!==`QUICK_ADD_V1:${capture.operationId}`||tx.order_number!==capture.params.p_source_order||normalizeItemCode(tx.item_code)!==normalizeItemCode(capture.params.p_item_code)||Number(tx.quantity)!==capture.params.p_quantity||toSafeString(tx.gtin).trim()!==capture.params.p_identifier_display) throw new Error("Quick Add receipt confirmation does not match the captured selection.");
         return reply;
     },
+    workspaceProjection:null,
+    workspaceSignature(){
+        return JSON.stringify((AppState.workspace.orderData||[]).map(i=>[normalizeItemCode(i.itemCode),i.itemName,i.orderedQty,i.orderNumbers]));
+    },
+    currentWorkspaceProjection(){
+        const p=this.workspaceProjection;
+        return p&&p.pharmacyId===this.pharmacyId()&&p.signature===this.workspaceSignature()?p.rows:null;
+    },
+    async refreshWorkspaceIdentifiers(){
+        const pharmacyId=this.pharmacyId(),signature=this.workspaceSignature();
+        const result=await authRpc("get_pharmflow_workspace_identifiers_v1",{p_pharmacy_id:pharmacyId});
+        if(this.pharmacyId()!==pharmacyId||this.workspaceSignature()!==signature)throw new Error("Workspace changed. Reopen Missing GTIN.");
+        if(result?.pharmacyId!==pharmacyId||!Array.isArray(result.rows))throw new Error("Identifier projection is unavailable.");
+        this.workspaceProjection={pharmacyId,signature,rows:result.rows};
+        return result.rows;
+    },
+    adminRequestKey(kind,scope){return `pharmflow.identifier-admin:${this.pharmacyId()}:${kind}:${scope}`;},
+    pendingAdminRequest(kind,scope){
+        const raw=sessionStorage.getItem(this.adminRequestKey(kind,scope));
+        return raw?JSON.parse(raw):null;
+    },
+    async runAdminOperation(kind,scope,rows){
+        const pharmacyId=this.pharmacyId(),epoch=AuthState.identityEpoch,userId=AuthState.user?.id;
+        window.PharmFlowPermissions.require("RECEIVING",true);
+        window.PharmFlowPermissions.require("GLOBAL",true);
+        const key=this.adminRequestKey(kind,scope);
+        let capture=this.pendingAdminRequest(kind,scope);
+        if(capture&&(capture.userId!==userId||JSON.stringify(capture.rows)!==JSON.stringify(rows)))throw new Error("Uncertain confirmation: retry the original selection before changing it.");
+        if(!capture){capture={operationId:crypto.randomUUID(),pharmacyId,userId,rows};sessionStorage.setItem(key,JSON.stringify(capture));}
+        const rpc=kind==="BULK"?"map_pharmflow_workspace_identifiers_v1":"quick_add_pharmflow_saved_review_v1";
+        let reply;
+        try{reply=await authRpc(rpc,{p_pharmacy_id:pharmacyId,p_operation_id:capture.operationId,p_rows:capture.rows});}
+        catch(error){if(error.serverRejected&&error.httpStatus<500){sessionStorage.removeItem(key);error.confirmedNoWrites=true;}throw error;}
+        if(this.pharmacyId()!==pharmacyId||AuthState.identityEpoch!==epoch||AuthState.user?.id!==userId)throw new Error("Account or pharmacy changed. Reopen to synchronize the original result.");
+        if(reply?.success!==true||reply.pharmacyId!==pharmacyId||reply.operationId!==capture.operationId)throw new Error("Uncertain confirmation: retry the original selection.");
+        if(kind==="BULK"){
+            if(!Array.isArray(reply.mappings)||reply.mappings.length!==rows.length||rows.some((row,index)=>normalizeItemCode(reply.mappings[index]?.itemCode)!==normalizeItemCode(row.itemCode)))throw new Error("Mapping confirmation mismatch. Retry the original selection.");
+        }else{
+            const expected=rows.flatMap(row=>row.allocations.map(a=>({...a,itemCode:row.itemCode})));
+            if(reply.status!=="RESOLVED"||!Array.isArray(reply.receipts)||reply.receipts.length!==expected.length||expected.some(a=>!reply.receipts.some(t=>t.transaction_id===a.transactionId&&t.order_number===a.orderNumber&&Number(t.quantity)===a.quantity&&normalizeItemCode(t.item_code)===normalizeItemCode(a.itemCode))))throw new Error("Review receipt confirmation mismatch. Retry the original selection.");
+        }
+        sessionStorage.removeItem(key);
+        return reply;
+    },
     receivingProvenance(mapping){
         if(!mapping||!["GLOBAL","PHARMACY"].includes(mapping.mappingScope)||!mapping.identifierId||!mapping.mappingRevision||!mapping.identifierKey||!mapping.itemCode) throw new Error("Confirmed mapping provenance required");
         return {contractVersion:4,kind:mapping.mappingScope==="GLOBAL"?"GLOBAL_LEARNED":"PHARMACY_LEARNED",mappingId:mapping.identifierId,

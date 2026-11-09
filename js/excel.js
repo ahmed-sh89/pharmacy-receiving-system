@@ -1521,6 +1521,10 @@ function registerImportedFile(
 ===================================================== */
 
 function getItemsWithoutMapping(){
+    // A pharmacy/workspace-bound server projection supersedes stale local cache.
+    const projection=window.IdentifierService?.currentWorkspaceProjection();
+    if(projection)return projection.filter(row=>row.conflict||row.identifiers.length===0);
+
 
     const mappedCodes =
         new Set(

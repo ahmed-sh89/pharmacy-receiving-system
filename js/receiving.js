@@ -862,6 +862,29 @@ function receivePinnedReceivingLink(capture,identifier,parsed,resolution){
     return transactions;
 }
 
+function renderReceivingGroupOptions(selected=''){
+    return `<option value="">Select Group</option>`+['Beauty','FMCG','HomeHealth','Medicine','Mom & Baby','Supplement'].map(group=>`<option value="${escapeHTML(group)}" ${group===selected?'selected':''}>${escapeHTML(group)}</option>`).join('');
+}
+
+function buildSavedReviewQuickAddRows(group,item,groupName){
+    const scope=nrV2ResolutionScope(group,item);
+    const plan=buildReceivingAutoAllocationPlan(item,group.total_quantity,scope).map(a=>({...a}));
+    let cursor=0;
+    return group.rows.map(row=>{
+        let left=Number(row.pending_quantity),allocations=[];
+        if(!Number.isInteger(left)||left<1)throw new Error('Invalid saved quantity. Refresh Needs Review.');
+        while(left>0){
+            const target=plan[cursor];if(!target)throw new Error('Saved quantity does not match the allocation.');
+            const quantity=Math.min(left,target.quantity);
+            allocations.push({orderNumber:target.orderNumber,quantity});
+            left-=quantity;target.quantity-=quantity;if(!target.quantity)cursor++;
+        }
+        const base=nrV2ResolutionTransactionId(row.review_id);
+        allocations=allocations.map((a,n)=>({...a,transactionId:allocations.length===1?base:`${base}:A${n+1}`}));
+        return {reviewId:row.review_id,sourceOrder:item.sourceOrder,itemCode:item.itemCode,itemName:item.itemName,groupName,allocations};
+    });
+}
+
 function findReceivingQuickAddOrderMatches(query,scope=[]){
     const q=toSafeString(query).trim().toLowerCase(),parts=q.split(/\s+/).filter(Boolean),seen=new Set(),matches=[];
     if(!q)return matches;

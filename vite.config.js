@@ -67,7 +67,9 @@ const startupStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'fix/startup-handheld-staging-20261108';
 const dutyStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'fix/duty-exchange-staging-20261109-v2';
-const stagingPreview = startupStagingPreview || dutyStagingPreview;
+const receivingAdminStagingPreview = process.env.VERCEL_ENV === 'preview'
+  && process.env.VERCEL_GIT_COMMIT_REF === 'feature/missing-gtin-bulk-staging-20261109';
+const stagingPreview = startupStagingPreview || dutyStagingPreview || receivingAdminStagingPreview;
 const stagingRef = 'tovkcakucyagvbzvlnks';
 function startupStagingConfiguration(){
   return {
