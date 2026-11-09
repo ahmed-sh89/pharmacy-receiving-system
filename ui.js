@@ -3600,6 +3600,14 @@ function refreshHealthSummary(){
             .filter(code=>code && activeOrderCodes.has(code))
     );
 
+    const identifierStatus=document.getElementById('pfnOrdersOverlay')?.dataset.identifiersStatus;
+    if(identifierStatus==='loading'||identifierStatus==='error'){
+        const value=identifierStatus==='loading'?'Checking…':'Unavailable';
+        setElementText(UI.elements.healthMappings,value);
+        setElementText(UI.elements.healthMissingBarcode,value);
+        setElementText(UI.elements.healthDuplicateGTIN,typeof getDuplicateGTINs==='function'?getDuplicateGTINs().length:0);
+        return;
+    }
     const authoritativeProjection=window.IdentifierService?.currentWorkspaceProjection();
     setElementText(
         UI.elements.healthMappings,
@@ -10072,6 +10080,8 @@ async function openCurrentMissingGTINPanel(){
         const projection=await IdentifierService.refreshWorkspaceIdentifiers();
         if(!overlay.isConnected||!current())return;
         const rows=projection.filter(row=>row.conflict||row.identifiers.length===0);
+        const manageOrders=document.getElementById('pfnOrdersOverlay');
+        if(manageOrders)manageOrders.dataset.identifiersStatus='ready';
         recalculateStatistics();refreshDashboard();refreshHealthSummary();
         const signature=IdentifierService.workspaceSignature();
         let pending=IdentifierService.pendingAdminRequest('BULK','workspace');

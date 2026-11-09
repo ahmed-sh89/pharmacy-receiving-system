@@ -105,13 +105,21 @@ const IdentifierService={
         const p=this.workspaceProjection;
         return p&&p.pharmacyId===this.pharmacyId()&&p.signature===this.workspaceSignature()?p.rows:null;
     },
+    workspaceProjectionRead:null,
     async refreshWorkspaceIdentifiers(){
-        const pharmacyId=this.pharmacyId(),signature=this.workspaceSignature();
-        const result=await authRpc("get_pharmflow_workspace_identifiers_v1",{p_pharmacy_id:pharmacyId});
-        if(this.pharmacyId()!==pharmacyId||this.workspaceSignature()!==signature)throw new Error("Workspace changed. Reopen Missing GTIN.");
-        if(result?.pharmacyId!==pharmacyId||!Array.isArray(result.rows))throw new Error("Identifier projection is unavailable.");
-        this.workspaceProjection={pharmacyId,signature,rows:result.rows};
-        return result.rows;
+        const pharmacyId=this.pharmacyId(),signature=this.workspaceSignature(),epoch=AuthState.identityEpoch,userId=AuthState.user?.id;
+        const key=JSON.stringify([pharmacyId,signature,epoch,userId]);
+        if(this.workspaceProjectionRead?.key===key)return this.workspaceProjectionRead.promise;
+        const request={key};
+        request.promise=(async()=>{
+            const result=await authRpc("get_pharmflow_workspace_identifiers_v1",{p_pharmacy_id:pharmacyId});
+            if(this.pharmacyId()!==pharmacyId||this.workspaceSignature()!==signature||AuthState.identityEpoch!==epoch||AuthState.user?.id!==userId)throw new Error("Workspace or account changed. Reopen Missing GTIN.");
+            if(result?.pharmacyId!==pharmacyId||!Array.isArray(result.rows))throw new Error("Identifier projection is unavailable.");
+            this.workspaceProjection={pharmacyId,signature,rows:result.rows};
+            return result.rows;
+        })();
+        this.workspaceProjectionRead=request;
+        try{return await request.promise;}finally{if(this.workspaceProjectionRead===request)this.workspaceProjectionRead=null;}
     },
     adminRequestKey(kind,scope){return `pharmflow.identifier-admin:${this.pharmacyId()}:${kind}:${scope}`;},
     pendingAdminRequest(kind,scope){
