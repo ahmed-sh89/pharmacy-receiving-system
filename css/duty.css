@@ -152,7 +152,8 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 /* Vertical Duty workspace. */
 #page-duty .duty-vertical{border-top:1px solid var(--duty-line);border-radius:9px}
 #page-duty .duty-vertical table{width:100%;font-size:13px}
-#page-duty .duty-vertical th,#page-duty .duty-vertical td{height:auto;padding:5px;border-right:1px solid #b9cde0;border-bottom:1px solid #b9cde0}
+/* Same 1px geometry: employee separators are clearer than daily row lines. */
+#page-duty .duty-vertical th,#page-duty .duty-vertical td{height:auto;padding:5px;border-right:1px solid #91abc4;border-bottom:1px solid #cbd9e6}
 #page-duty .duty-vertical thead th{background:#eaf1f9;vertical-align:top;padding:8px 5px 6px}
 #page-duty .duty-vertical .duty-code{margin:2px 0 5px;font-size:11px}
 #page-duty .duty-vertical .duty-date-heading{left:0;z-index:5;vertical-align:middle;text-align:center;background:#dce9f6;color:#174a79;font-size:16px;font-weight:750}
@@ -160,7 +161,6 @@ html:has(#page-duty.active),html:has(body[data-duty-synthetic]){scrollbar-gutter
 #page-duty .duty-vertical td{position:relative;height:64px;background:#fff;vertical-align:middle}
 #page-duty .duty-vertical td:nth-child(odd){background:#f0f5fb}
 #page-duty .duty-vertical thead th:nth-child(odd):not(.duty-date-heading){background:#e3edf8}
-#page-duty .duty-vertical :is(th,td):nth-child(n+2){border-right-color:#bacbdd}
 #page-duty .duty-vertical td.duty-leave{background:#e7f1f4}
 #page-duty .duty-vertical .duty-holiday-row :is(th,td){background:#fff2d9}
 #page-duty .duty-vertical .duty-friday-row :is(th,td){background:#cddff4;border-top:1px solid #829fc1;border-bottom:1px solid #829fc1}

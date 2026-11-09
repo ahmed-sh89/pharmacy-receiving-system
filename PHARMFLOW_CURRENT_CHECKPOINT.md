@@ -1,18 +1,14 @@
 # PharmFlow current checkpoint — 9 November 2026
 
-## Duty final layout — READY FOR USER TEST
+## Duty final grid separators — READY FOR USER TEST — 9 November 2026
 
-Existing Draft PR #53 only, branch `fix/duty-exchange-staging-20261109-v2`; starting source verified `6be3bb2ba474c1bf24c821d50026b48e4931e5cb`. Production main remains `c68a940fecd9d40b57b625769e9a4654991b6010`. No Production/backend/operational change authorized or performed.
+Existing Draft PR #53 only, branch `fix/duty-exchange-staging-20261109-v2`; starting HEAD `c47a9c05339875bc2a4efbbcef23181a98994358`. Production main `c68a940fecd9d40b57b625769e9a4654991b6010` unchanged. Prior Duty interaction, Exchange, Ctrl+Drag/range separation, Today, toolbar/paging, KPI/Total and Reports styling are now explicitly **USER VERIFIED PASS**.
 
-Original interaction, two/five-cell Exchange, Ctrl+Drag, Undo/Redo and Refresh persistence remain USER VERIFIED PASS; preserve that accepted state. New four layout refinements remain READY FOR USER TEST, not USER VERIFIED/DONE.
+Consolidated owning 1px grid borders: vertical #91abc4, daily horizontal #cbd9e6; removed redundant employee-border override. Application changes only CSS and cache key. Calendar Settings behavior accepted unchanged: reverse saved Public Holiday configuration there with Save, not Schedule Undo.
 
-Root corrections consolidate the relevant CSS owners: intrinsic compact pagination (109→74px), content-based header/navigation/action tracks, removal of the 172px single-column KPI switch, one 2×2 metric grid plus emphasized full-width Total (21→26px) inside a smaller KPI section (67→64px), and distinct CSS hover/selection/focus row states. Today date logic, calculations, saving/auth, calendar/business rules and internal schedule scrolling unchanged. JS changed only toolbar/metric markup; index changes cache keys.
+New Chromium before/after at 75/80/90/100% PASS: exact unchanged 180-cell/grid/header/KPI/scroll geometry and special-day backgrounds; no overflow, 0 writes. Existing Exchange/interaction and Today/Reports browser runners PASS. Full Duty 120 PASS / 1 retained historical snapshot FAIL / 1 optional SKIP (122); auth/session/security regressions 63 PASS. Both builds PASS. No backend/calculation/data/Production changes. Final source/READY Preview/CI identity pinned in PR #53.
 
-Measured before/after at 67/70/75/80/90/100% on two Windows-equivalent desktop/OS surfaces. 1366×768 uses one 34px control row at all six zooms. Narrow 1280×720 / OS 125% uses explicit two-row fallback below 1040px content; no overlap or page horizontal scroll. Grid table minimum unchanged; full six-column visibility follows available width. [Root causes, exact limits/files, 14 before/after screenshots, raw measurements and owner checks](docs/duty/LAYOUT_REFINEMENTS_20261109.md).
-
-Actual tests: 28 focused PASS; full Duty 120 PASS / 1 retained historical snapshot FAIL / 1 optional SKIP (122 total); auth/session 42 PASS. Both existing browser runners and new two-surface layout runner PASS, 0 UI writes and unchanged synthetic data. Builds PASS. No existing test disabled; no full-suite-green claim. Final source SHA, ready Preview/Staging identity and final CI pinned in PR #53.
-
-Next: owner visually accepts the four refinements. Stop after Staging; do not promote Production.
+[Exact root cause, files, tests, before/after evidence and owner checks](docs/duty/GRID_SEPARATORS_20261109.md). Next: owner visual acceptance. Only after acceptance, separate read-only Production release readiness review; no merge/deploy authorized.
 
 ## Retained accepted Production releases
 
