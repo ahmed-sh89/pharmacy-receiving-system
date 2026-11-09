@@ -1,0 +1,58 @@
+[
+  {
+    "name": "rls_enabled_no_policy",
+    "level": "INFO",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy",
+    "findings": [
+      {
+        "detail": "Table \\`pharmflow_receiving_admin_private.requests\\` has RLS enabled, but no policies exist",
+        "metadata": {
+          "name": "requests",
+          "type": "table",
+          "schema": "pharmflow_receiving_admin_private"
+        },
+        "observed_at": "2026-11-09T14:45:19.185Z"
+      }
+    ]
+  },
+  {
+    "name": "authenticated_security_definer_function_executable",
+    "level": "WARN",
+    "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable",
+    "findings": [
+      {
+        "detail": "Function `public.get_pharmflow_workspace_identifiers_v1(p_pharmacy_id uuid)` can be executed by the `authenticated` role as a `SECURITY DEFINER` function via `/rest/v1/rpc/get_pharmflow_workspace_identifiers_v1`. Revoke `EXECUTE` or switch it to `SECURITY INVOKER` if that is not intentional.",
+        "metadata": {
+          "name": "get_pharmflow_workspace_identifiers_v1",
+          "schema": "public",
+          "language": "plpgsql",
+          "arguments": "p_pharmacy_id uuid",
+          "security_definer": true
+        },
+        "observed_at": "2026-11-09T14:45:19.185Z"
+      },
+      {
+        "detail": "Function `public.map_pharmflow_workspace_identifiers_v1(p_pharmacy_id uuid, p_operation_id uuid, p_rows jsonb)` can be executed by the `authenticated` role as a `SECURITY DEFINER` function via `/rest/v1/rpc/map_pharmflow_workspace_identifiers_v1`. Revoke `EXECUTE` or switch it to `SECURITY INVOKER` if that is not intentional.",
+        "metadata": {
+          "name": "map_pharmflow_workspace_identifiers_v1",
+          "schema": "public",
+          "language": "plpgsql",
+          "arguments": "p_pharmacy_id uuid, p_operation_id uuid, p_rows jsonb",
+          "security_definer": true
+        },
+        "observed_at": "2026-11-09T14:45:19.185Z"
+      },
+      {
+        "detail": "Function `public.quick_add_pharmflow_saved_review_v1(p_pharmacy_id uuid, p_operation_id uuid, p_rows jsonb)` can be executed by the `authenticated` role as a `SECURITY DEFINER` function via `/rest/v1/rpc/quick_add_pharmflow_saved_review_v1`. Revoke `EXECUTE` or switch it to `SECURITY INVOKER` if that is not intentional.",
+        "metadata": {
+          "name": "quick_add_pharmflow_saved_review_v1",
+          "schema": "public",
+          "language": "plpgsql",
+          "arguments": "p_pharmacy_id uuid, p_operation_id uuid, p_rows jsonb",
+          "security_definer": true
+        },
+        "observed_at": "2026-11-09T14:45:19.185Z"
+      }
+    ]
+  }
+]

@@ -10100,7 +10100,7 @@ async function openCurrentMissingGTINPanel(){
         save.disabled=!permitted||(!rows.length&&!pending);
         save.addEventListener('click',async()=>{
             if(busy)return;
-            let submitted;
+            let submitted,writeConfirmed=false;
             try{
                 if(!current()||IdentifierService.workspaceSignature()!==signature)throw new Error('Workspace or account changed. Close and reopen Missing GTIN.');
                 submitted=pending?.rows||nodes.flatMap((node,n)=>{
@@ -10116,6 +10116,7 @@ async function openCurrentMissingGTINPanel(){
                 if(new Set(keys).size!==keys.length)throw new Error('Duplicate barcode in submission.');
                 busy=true;save.disabled=true;lock(true);message.textContent='Saving…';
                 await IdentifierService.runAdminOperation('BULK','workspace',submitted);
+                writeConfirmed=true;
                 nodes.forEach((node,n)=>{if(submitted.some(r=>r.itemCode===rows[n].itemCode)){node.dataset.saved='1';node.querySelector('[data-status]').textContent='Saved';}});pending=null;
                 await IdentifierService.refreshWorkspaceIdentifiers();
                 // Refresh the established IndexedDB projection through its existing single-flight path.
@@ -10124,6 +10125,11 @@ async function openCurrentMissingGTINPanel(){
                 message.textContent=`Saved ${submitted.length} mapping${submitted.length===1?'':'s'}.`;
                 lock(false);save.disabled=nodes.every(node=>node.dataset.saved==='1');save.textContent=save.disabled?'Saved':'Save All';
             }catch(error){
+                if(writeConfirmed){
+                    message.textContent=`Saved ${submitted.length} mapping${submitted.length===1?'':'s'}. Identifier refresh unavailable — close and reopen to verify.`;
+                    lock(false);save.disabled=nodes.every(node=>node.dataset.saved==='1');save.textContent=save.disabled?'Saved':'Save All';
+                    return;
+                }
                 pending=IdentifierService.pendingAdminRequest('BULK','workspace');
                 const uncertain=!!pending;
                 message.textContent=(uncertain?'Uncertain confirmation — retry the original batch. ':'')+(error.message||'Save failed.');
