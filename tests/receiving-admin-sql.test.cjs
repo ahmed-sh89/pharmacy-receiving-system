@@ -32,6 +32,7 @@ select set_config('test.uid','${uid}',false);
 `);
 await db.exec(fs.readFileSync('tests/fixtures/receiving-admin/canonical-functions.sql','utf8'));
 await db.exec(fs.readFileSync(migration,'utf8'));
+await db.exec(fs.readFileSync('supabase/migrations/20261109211140_receiving_identifier_projection_set_lookup.sql','utf8'));
 await db.exec(`insert into pharmflow_orders values('${pid}','TEST-A','uploaded'),('${pid}','TEST-B','uploaded');
 insert into pharmflow_order_source_items values('${pid}','TEST-A','NEW','Synthetic NEW',10),('${pid}','TEST-A','OTHER','Synthetic OTHER',10),('${pid}','TEST-B','NEW','Synthetic NEW',10);
 insert into pharmflow_active_order_manifest_v1 values('${pid}','{"active":true,"orderData":[{"itemCode":"NEW","itemName":"Synthetic NEW","orderedQty":20,"orderNumbers":["TEST-A","TEST-B"]},{"itemCode":"OTHER","itemName":"Synthetic OTHER","orderedQty":10,"orderNumbers":["TEST-A"]}]}');
