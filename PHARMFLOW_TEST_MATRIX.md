@@ -1,3 +1,39 @@
+## Duty KPI / Today polish — READY FOR USER TEST — 9 November 2026
+
+PR #53 only, branch fix/duty-exchange-staging-20261109-v2. Verified start d97d60417f53659d34782953a67c48c3b2a542db; Production main c68a940fecd9d40b57b625769e9a4654991b6010 unchanged. Existing USER VERIFIED acceptance retained.
+
+Consolidated label/value grid spacing; symmetric Total tracks center number independently, unchanged 26px bar. Today now one line without weekday, 12px bold, Saudi date/highlight unchanged. No business/persistence/backend/data changes. Four-zoom Chromium before/after PASS: exact cell/header/KPI/grid geometry, centered Total ≤0.1px, text gaps, no overflow, zero writes. 24 focused PASS; both existing browser runners PASS; full Duty 120 PASS / 1 historical FAIL / 1 optional SKIP. Preview build PASS. [Exact files, root causes and visual evidence](docs/duty/KPI_TODAY_POLISH_20261109.md). Final source/READY Preview/CI identity pinned in PR #53.
+
+Next: owner visual acceptance. Stop at Staging; no Production merge/deploy.
+
+## Duty final grid separators — READY FOR USER TEST — 9 November 2026
+
+Existing Draft PR #53 only, branch `fix/duty-exchange-staging-20261109-v2`; starting HEAD `c47a9c05339875bc2a4efbbcef23181a98994358`. Production main `c68a940fecd9d40b57b625769e9a4654991b6010` unchanged. Prior Duty interaction, Exchange, Ctrl+Drag/range separation, Today, toolbar/paging, KPI/Total and Reports styling are now explicitly **USER VERIFIED PASS**.
+
+Consolidated owning 1px grid borders: vertical #91abc4, daily horizontal #cbd9e6; removed redundant employee-border override. Application changes only CSS and cache key. Calendar Settings behavior accepted unchanged: reverse saved Public Holiday configuration there with Save, not Schedule Undo.
+
+New Chromium before/after at 75/80/90/100% PASS: exact unchanged 180-cell/grid/header/KPI/scroll geometry and special-day backgrounds; no overflow, 0 writes. Existing Exchange/interaction and Today/Reports browser runners PASS. Full Duty 120 PASS / 1 retained historical snapshot FAIL / 1 optional SKIP (122); auth/session/security regressions 63 PASS. Both builds PASS. No backend/calculation/data/Production changes. Final source/READY Preview/CI identity pinned in PR #53.
+
+[Exact root cause, files, tests, before/after evidence and owner checks](docs/duty/GRID_SEPARATORS_20261109.md). Next: owner visual acceptance. Only after acceptance, separate read-only Production release readiness review; no merge/deploy authorized.
+
+## Duty final layout correction — 9 November 2026
+
+**READY FOR USER TEST**, existing PR #53; starting 6be3bb2. [Root-cause corrections, before/after geometry/screenshots at 75/80/90%, all-six-zoom results and explicit narrow fallback](docs/duty/LAYOUT_REFINEMENTS_20261109.md).
+
+28 focused PASS; full Duty 120 PASS / 1 historical snapshot FAIL / 1 optional SKIP; auth/session 42 PASS. Existing Exchange and Today/Reports Chromium runners PASS unchanged. New browser runner verifies 67/70/75/80/90/100% on 1366×768 and 1280×720 / OS 125%, plus 1024px fallback: no overlaps, compact pagination, contained Today badge, 2×2 KPIs, 26px Total within 64px KPI section, no measured text overflow, full-row immediate hover and selected distinction, zero writes. No historical failing checks altered/disabled. Owner Windows visual acceptance pending; original functional acceptance preserved.
+
+## Duty final UI refinements — 9 November 2026
+
+Original interaction/Exchange/Ctrl+Drag/Undo/Redo/Refresh: **USER VERIFIED PASS** at 67b5ce0 (explicit Product Owner report). New range separation, Today display and Reports list: **STAGING READY FOR USER TEST**. [Actual tests, six zoom screenshots and three owner steps](docs/duty/UI_REFINEMENTS_20261109.md).
+
+4 new UI/clock tests PASS; complete Duty 118 PASS / 1 retained historical FAIL / 1 optional SKIP; related auth/session 42 PASS. Existing Exchange and new UI Chromium runners PASS. Midnight/month/range/Friday/Holiday/keyboard/scroll/outside/Escape/focus/geometry checks PASS, zero synthetic UI writes. No failing check disabled. Actual Windows owner UI acceptance remains pending.
+
+## Duty interaction / Exchange — 9 November 2026
+
+Status: **STAGING READY FOR USER TEST**, not USER VERIFIED/DONE. [Actual test matrix, result boundaries and owner steps](docs/duty/EXCHANGE_STAGING_20261109.md#actual-verification).
+
+New lifecycle, one-request bidirectional save, complete payload/manual metadata, invalid/third selections, failed exchange and stale Undo tests PASS. Isolated SQL rollback, rules and permission tests PASS. Real Chromium pointer/drag, repeated navigation, idle-resume and document reload PASS using synthetic mocked server. Windows native zoom and hosted multi-PC acceptance pending. Duty suite retains one independently reproduced historical snapshot failure and one optional skip; related suite retains one independently reproduced historical CSS expectation failure. No failing check hidden or disabled.
+
 ## Final focused Staging refinements — 28 October 2026
 
 READY FOR USER TEST — PRODUCTION UNCHANGED. Repeated-fingerprint blocker replaced with transactional V2 revision/count-once export and chunked XLSX Worker. Export Data moved beside Create; normal Loading text simplified with capsule unchanged; System Owner display Administrator only. 35 focused tests/builds and full-size 56,588/78,164 SQL/XLSX integrity checks PASS. Windows/browser-scale acceptance remains pending. Staging migration `20261028022820_owner_export_revision_stream_v2` only; actual Master 17/22 preserved, fixtures rolled back, SEC-007 unchanged. Production proposals/rollback refreshed, no promotion. Full evidence: `docs/staging-final-20261028/IMPLEMENTATION.md`.

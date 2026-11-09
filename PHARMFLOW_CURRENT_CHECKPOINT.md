@@ -1,6 +1,16 @@
-# PharmFlow current checkpoint — 8 November 2026
+# PharmFlow current checkpoint — 9 November 2026
 
-## PR #49 — CLOSED — USER VERIFIED
+## Duty KPI / Today polish — READY FOR USER TEST — 9 November 2026
+
+PR #53 only, branch fix/duty-exchange-staging-20261109-v2. Verified start d97d60417f53659d34782953a67c48c3b2a542db; Production main c68a940fecd9d40b57b625769e9a4654991b6010 unchanged. Existing USER VERIFIED acceptance retained.
+
+Consolidated label/value grid spacing; symmetric Total tracks center number independently, unchanged 26px bar. Today now one line without weekday, 12px bold, Saudi date/highlight unchanged. No business/persistence/backend/data changes. Four-zoom Chromium before/after PASS: exact cell/header/KPI/grid geometry, centered Total ≤0.1px, text gaps, no overflow, zero writes. 24 focused PASS; both existing browser runners PASS; full Duty 120 PASS / 1 historical FAIL / 1 optional SKIP. Preview build PASS. [Exact files, root causes and visual evidence](docs/duty/KPI_TODAY_POLISH_20261109.md). Final source/READY Preview/CI identity pinned in PR #53.
+
+Next: owner visual acceptance. Stop at Staging; no Production merge/deploy.
+
+## Retained accepted Production releases
+
+
 
 **PR #49 RELEASE CLOSURE: CLOSED — USER VERIFIED.** Product Owner Production acceptance recorded 8 November 2026. The previous operational acceptance blocker is resolved; no deployment or operational tests repeated for this documentation closure.
 
@@ -36,14 +46,5 @@ Closure changes **only `PHARMFLOW_CURRENT_CHECKPOINT.md` and `PHARMFLOW_CHANGELO
 
 Rollback remains a protected revert PR plus official Pages deployment; **actual rollback/restore was not tested**. No database rollback is required for the frontend-only release.
 
-## Separate unresolved incident / exact next action
 
-**DUTY-SCHEDULE-INTERACTION-001 — OPEN.** Intermittent Duty cell selection/editing can stop responding after navigation or the in-app Session Paused reload, and can also occur without that overlay; browser Refresh restores interaction. Its root cause is not established here. It remains separate from PR #49, was not fixed in this release and is not closed by the operational acceptance above.
-
-Next: undertake only a separately scoped/authorized investigation of that Duty incident. Do not reopen the accepted PR #49 release, repeat deployment/tests, or make speculative Production fixes.
-
-## Security Release #47 — retained accepted state
-
-Security Release #47 remains **CLOSED — USER VERIFIED** for its prior operational acceptance, not comprehensive security certification. Approved head `0ba04efc5f2272ef6f496914693c31f130a2c6b2`; deployed release SHA `76a14f0f77c55bea8e6df76a5695f428ab1ccfbb`. Migrations `20261108123709_security_session_boundaries.sql` then `20261108124636_security_live_session_request_gate.sql` were previously applied atomically; password Edge handlers v8/v6. No replay or backend change in PR #49.
-
-Residual risks remain: SEC-005 accepted CSP/framing limitations; SEC-006 partially verified comprehensive breached-password screening; SEC-013 vendor PostgreSQL patch/backport dependency. Prior security and historical full-suite verification limits remain; no new penetration/cross-pharmacy certification. [Security closure](docs/security/20261108/CLOSURE.md).
+Security Release #47 remains CLOSED — USER VERIFIED with its previously documented residual risks and verification boundaries: [closure](docs/security/20261108/CLOSURE.md). No replay, reopened audit or new certification.

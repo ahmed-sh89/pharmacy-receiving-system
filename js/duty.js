@@ -54,7 +54,7 @@
   const result=await readMonth(month);if(key!==scope()||month!==state.month)throw Error('Duty context changed. Reopen this month.');state.data=result;state.lastRead=Date.now();return result;
  }
  async function save(changes,reason){
-  if(!state.demo){const key=scope(),month=state.month;const result=await authRpc('save_pharmflow_duty_schedule_v2',{p_pharmacy_id:context().pharmacy_id,p_month:month+'-01',p_changes:changes,p_reason:reason});if(key!==scope()||month!==state.month||result.pharmacy_id!==context()?.pharmacy_id||!permitted())throw Error('Duty context changed. Reopen this month.');state.data=result;state.lastRead=Date.now();return result;}
+  if(!state.demo){const key=scope(),month=state.month;if(!key||!permitted(true)||!state.data||state.transitioning)throw Error('Duty is not ready for editing.');const result=await authRpc('save_pharmflow_duty_schedule_v2',{p_pharmacy_id:context().pharmacy_id,p_month:month+'-01',p_changes:changes,p_reason:reason});if(key!==scope()||month!==state.month||result.pharmacy_id!==context()?.pharmacy_id||!permitted())throw Error('Duty context changed. Reopen this month.');state.data=result;state.lastRead=Date.now();return result;}
   const proposed=new Map();
   for(const c of changes){const month=c.date.slice(0,7);if(!proposed.has(month))proposed.set(month,structuredClone(demoMonth(month).entries));const entries=proposed.get(month),i=entries.findIndex(e=>e.code===c.code&&e.date===c.date),old=entries[i];if((old?.revision||0)!==c.expected_revision)throw Error('DUTY_CONFLICT');if(demoMonth(month).month?.status==='Completed')throw Error('Duty month is completed');const employee=demoMonth(month).employees.find(e=>e.code===c.code),value={...c,revision:(old?.revision||0)+1,identity:old?.identity||{name:employee.name,position_key:employee.position_key}};if(i<0)entries.push(value);else entries[i]=value;}
   M.validateOverlaps([...demos].flatMap(([month,d])=>proposed.get(month)||d.entries));for(const [month,entries] of proposed)demoMonth(month).entries=entries;return demoMonth(state.month);
@@ -242,6 +242,13 @@
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&active())load();});
  window.addEventListener('storage',e=>{if(e.key===AUTH_STORAGE_KEY){reset();if(active())load(true);}});
  setInterval(()=>{if(active()&&document.visibilityState==='visible')load();},15000);
- AppEvents.on('route:changed',event=>{if(pendingConfirm)pendingConfirm(false);closePanel();DutySchedule.clear();if(event.routeName==='duty')load(true);});
+ AppEvents.on('route:changed',event=>{
+  if(pendingConfirm)pendingConfirm(false);closePanel();
+  if(event.routeName!=='duty'){DutySchedule.clear();return;}
+  // A cleared scheduler must be mounted even when the authoritative data is
+  // unchanged. Redundant activations retain the live grid, selection and scroll.
+  if(!DutySchedule.isMounted?.(root.querySelector('#duty-schedule-body'),state.month)){DutySchedule.clear();render();}
+  load(true);
+ });
  render();
 })();

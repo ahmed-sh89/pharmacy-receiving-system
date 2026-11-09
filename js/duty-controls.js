@@ -67,5 +67,5 @@
  }
  root.addEventListener?.('resize',()=>{if(viewportHost?.isConnected)fitViewport(viewportHost);});
  root.visualViewport?.addEventListener('resize',()=>{if(viewportHost?.isConnected)fitViewport(viewportHost);});
- root.DutyControls={dateField,bindCalendars,openPopover,fitViewport};
+ root.DutyControls={today,dateField,bindCalendars,openPopover,fitViewport};
 })(typeof window==='undefined'?globalThis:window);

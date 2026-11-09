@@ -2,8 +2,8 @@
 (function(){
  'use strict';
  const M=window.DutyModel,C=window.DutyControls,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const S={range:null,group:'pharmacists',staffPage:0,custom:new Set(),month:'',selected:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
- let host,data,options,scopeVersion=0,drag=null,skipClick=false;
+ const S={range:null,group:'pharmacists',staffPage:0,custom:new Set(),month:'',selected:[],ranges:[],anchor:null,cursor:null,clipboard:[],busy:false,confirming:false,notice:'',editing:null};
+ let host,data,options,scopeVersion=0,drag=null,skipClick=false,todayTimer=null;
  const palette=[['blue','Blue'],['mint','Mint'],['violet','Violet'],['rose','Rose'],['','Clear Color']];
  const past=[],future=[],localRevisions=new Map();
  const holidayFirst=()=>options.demo||data.holiday_first===true;
@@ -36,9 +36,29 @@
   if(S.month!==config.month){S.scroll={left:0,top:0};S.month=config.month;S.range=null;clearSelection();S.editing=null;S.notice='';}
   render();
  }
- function clearSelection(){S.selected=[];S.anchor=null;S.cursor=null;S.rowAnchor=null;}
+ // Display-only local clock: patch the date indicators without replacing cells,
+ // moving focus, changing selection, or making schedule/network writes.
+ function refreshToday(){
+  if(todayTimer!==null){window.clearTimeout?.(todayTimer);todayTimer=null;}
+  if(!host?.isConnected)return;
+  const today=C.today(),badge=host.querySelector('[data-duty-today]');
+  if(badge){badge.querySelector('time').textContent=formatDate(today);badge.querySelector('time').dateTime=today;badge.setAttribute('aria-label','Today · '+formatDate(today));}
+  for(const button of host.querySelectorAll('[data-s-column]')){
+   const current=button.dataset.sColumn===today;
+   button.closest('th').classList.toggle('duty-today',current);
+   if(current)button.setAttribute('aria-current','date');else button.removeAttribute('aria-current');
+  }
+  // Saudi Arabia currently uses UTC+03 throughout the year. Re-read the real
+  // local date after midnight and after wake/focus (including a clock change).
+  if(window.setTimeout){todayTimer=window.setTimeout(refreshToday,Math.max(1000,Date.parse(today+'T00:00:00+03:00')+86400000-Date.now()));todayTimer?.unref?.();}
+ }
+ window.addEventListener?.('focus',refreshToday);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshToday();});
+ function clearSelection(){S.ranges=[];S.selected=[];S.anchor=null;S.cursor=null;S.rowAnchor=null;}
  function render(){
   if(!host?.isConnected)return;
+  if(drag?.frame)cancelAnimationFrame(drag.frame);
+  drag=null;skipClick=false;
   const scroll=host.querySelector('.duty-grid-scroll'),scrollPosition=scroll?{left:scroll.scrollLeft||0,top:scroll.scrollTop||0}:S.scroll||{left:0,top:0};
   const days=dates(),count=staffList().length,pages=Math.max(1,Math.ceil(count/6));
   S.staffPage=Math.min(S.staffPage,pages-1);
@@ -46,26 +66,26 @@
   const rosterOptions=roster();
   const monthDays=M.days(S.month),first=monthDays[0].date,last=monthDays.at(-1).date;
   const groups=[['pharmacists','Pharmacists'],['support','Labor + Beauty'],['custom','Custom']];
-  host.innerHTML=`<div class="duty-schedule-controls">
+  host.innerHTML=`<div class="duty-schedule-controls"><div class="duty-schedule-navigation">
    ${dropdown('staff','Staff',groups.find(([id])=>id===S.group)[1],groups,S.group)}
    ${S.group==='custom'?dropdown('custom','Choose staff','Choose staff',rosterOptions.map(e=>[e.code,e.name]),S.custom):''}
    <div class="duty-period" aria-label="Staff pages"><button type="button" data-s-action="staff-back" aria-label="Previous staff page" ${S.staffPage?'':'disabled'}>‹</button><span>${S.staffPage+1}/${pages}</span><button type="button" data-s-action="staff-next" aria-label="Next staff page" ${S.staffPage+1<pages?'':'disabled'}>›</button></div>
    <div class="duty-date-range"><button type="button" class="duty-dropdown-trigger" data-range-trigger aria-haspopup="dialog" aria-expanded="false">${S.range?formatDate(S.range.from)+' – '+formatDate(S.range.to):'Date Range'}</button>
    <form data-date-range popover="manual" role="dialog" aria-label="Schedule date range">${C.dateField({id:"duty-schedule-from",name:"from",label:"Start Date",value:S.range?.from||first,min:first,max:last})}${C.dateField({id:"duty-schedule-to",name:"to",label:"End Date",value:S.range?.to||last,min:first,max:last})}<p class="duty-range-error" role="alert"></p><div class="duty-popover-footer"><button type="button" data-range-cancel>Cancel</button><button type="submit" class="duty-primary">Apply</button></div></form></div>
    ${S.range?'<button type="button" data-s-action="full-month">Full Month</button>':''}
-   <div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
-   <button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
+   </div><div class="duty-actions duty-selection-tools" role="group" aria-label="Schedule actions">
+   <span class="duty-today-badge" data-duty-today><span>Today · <time></time></span></span><button type="button" data-s-action="apply-shift">Apply Shift</button><button type="button" data-s-action="exchange" title="Exchange selected shifts" disabled>Exchange</button><button type="button" data-s-action="copy">Copy</button><button type="button" data-s-action="paste">Paste</button>
    ${[['delete','Delete','Delete','M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 10v7M14 10v7'],['undo','Undo','Ctrl+Z','M8 4L3 9l5 5M3 9h11a5 5 0 0 1 0 10h-3'],['redo','Redo','Ctrl+Y','M16 4l5 5-5 5m5-5H10a5 5 0 0 0 0 10h3']].map(([id,label,shortcut,path])=>`<button type="button" class="duty-icon duty-icon-${id}" data-s-action="${id}" aria-label="${label}" title="${label} (${shortcut})" ${id==='undo'&&(!past.length||!writable())||id==='redo'&&(!future.length||!writable())?'disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`).join('')}
    ${dropdown('status','Apply status to selection','Status…',Object.entries({...M.statuses,OTHER_LEAVE:'Unpaid Leave',EMPTY:'Clear Cell'}))}
    <button type="button" data-s-action="color">Cell Color</button></div></div>
    <div class="duty-grid-scroll duty-vertical" tabindex="0" role="region" aria-label="Duty schedule"><table aria-label="Duty schedule" style="min-width:${78+staff.length*148}px">
     <colgroup><col style="width:78px">${staff.map(()=>'<col>').join('')}</colgroup><thead><tr><th scope="col" class="duty-date-heading">Duty</th>
-    ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title" title="${esc(e.name)} · ${esc(e.display_code||e.code)}"><span class="duty-name">${esc(M.scheduleLabel(e))}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}">${label} <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
+    ${staff.map(e=>`<th scope="col"><div class="duty-staff-card"><div class="duty-staff-title" title="${esc(e.name)} · ${esc(e.display_code||e.code)}"><span class="duty-name">${esc(M.scheduleLabel(e))}</span><span class="duty-code">${esc(e.display_code||e.code)}${e.active?'':' · inactive'}</span></div><div class="duty-kpi-wrap"><div class="duty-mini-kpis">${Object.entries(categoryLabels).map(([k,label])=>`<span class="duty-category-${k}"><em class="duty-kpi-label">${label}</em> <b>${M.hours(totals[e.code]?.[k]||0)}</b></span>`).join('')}</div></div></div></th>`).join('')}</tr></thead>
     <tbody>${staff.length?days.map(d=>`<tr class="${holiday(d.date)&&(holidayFirst()||!d.friday)?'duty-holiday-row':d.friday?'duty-friday-row':''}"><th scope="row"><button class="duty-date-button" type="button" data-s-column="${d.date}" aria-label="Select ${d.date}"><strong>${formatDate(d.date)}</strong><span>${dayLabel.format(new Date(d.date+'T12:00Z'))}</span>${holiday(d.date)?`<small>${esc(holiday(d.date).name||'Holiday')}</small>`:''}</button></th>${staff.map(e=>cell(e,d)).join('')}</tr>`).join(''):`<tr><td class="duty-empty">${options.loading?'Loading Duty…':'No employees in this view'}</td></tr>`}</tbody></table></div>
    <div class="duty-footnote"><span role="status">${esc(S.notice||(options.loading?'Loading selected month…':'Double-click to edit · Drag to select a range'))}</span></div>`;
   const grid=host.querySelector('.duty-grid-scroll');
   grid.scrollTo?.(scrollPosition);
-  bind();C.bindCalendars(host);C.fitViewport(host);updateSelection();
+  bind();C.bindCalendars(host);C.fitViewport(host);updateSelection();refreshToday();
  }
  function cell(e,d){
   const p=payload(e.code,d.date),n=hoursFor(e.code,d.date,p);
@@ -80,12 +100,60 @@
    ${p.note?'<span class="duty-note-dot" aria-hidden="true">•</span>':''}
    ${categories?`<div class="duty-cell-categories">${categories}</div>`:''}</td>`;
  }
+ // Keep explicit gesture ranges: adjacent/overlapping ranges must never be inferred
+ // from their union, and a third gesture must not silently select an arbitrary pair.
+ function rectangle(from,to){
+  const staff=employees(),ds=dates(),a=staff.findIndex(e=>e.code===from.code),b=staff.findIndex(e=>e.code===to.code),x=ds.findIndex(d=>d.date===from.date),y=ds.findIndex(d=>d.date===to.date);
+  if([a,b,x,y].some(i=>i<0))return [];
+  const cells=[];
+  for(let i=Math.min(a,b);i<=Math.max(a,b);i++)for(let j=Math.min(x,y);j<=Math.max(x,y);j++)cells.push({code:staff[i].code,date:ds[j].date});
+  return cells;
+ }
+ function setRanges(ranges){
+  if(S.notice==='Select two equal ranges to exchange shifts.')S.notice='';
+  S.ranges=ranges.filter(r=>r.length);
+  S.selected=[...new Map(S.ranges.flat().map(c=>[key(c.code,c.date),c])).values()];
+ }
+ function selectRectangle(from,to,base=[]){
+  setRanges([...base,rectangle(from,to)]);S.anchor=from;S.cursor=to;S.rowAnchor=null;updateSelection();
+ }
  function select(code,date,range,toggle=false){
   S.rowAnchor=null;
-  if(toggle){const i=S.selected.findIndex(c=>c.code===code&&c.date===date);if(i<0)S.selected.push({code,date});else S.selected.splice(i,1);S.anchor={code,date};}
-  else if(range&&S.anchor){const staff=employees(),ds=dates(),a=staff.findIndex(e=>e.code===S.anchor.code),b=staff.findIndex(e=>e.code===code),x=ds.findIndex(d=>d.date===S.anchor.date),y=ds.findIndex(d=>d.date===date);if(a<0||b<0)return;S.selected=[];for(let i=Math.min(a,b);i<=Math.max(a,b);i++)for(let j=Math.min(x,y);j<=Math.max(x,y);j++)S.selected.push({code:staff[i].code,date:ds[j].date});}
-  else {S.selected=[{code,date}];S.anchor={code,date};}
-  S.cursor={code,date};updateSelection();
+  const target={code,date};
+  if(toggle){
+   if(selected(code,date))setRanges(S.ranges.map(r=>r.filter(c=>c.code!==code||c.date!==date)));
+   else setRanges([...S.ranges,[target]]);
+   S.anchor=target;
+  }else if(range&&S.anchor){selectRectangle(S.anchor,target);return;}
+  else {setRanges([[target]]);S.anchor=target;}
+  S.cursor=target;updateSelection();
+ }
+ function exchangeRanges(){
+  if(S.ranges.length!==2)return null;
+  const shaped=S.ranges.map(r=>{
+   const codes=[...new Set(r.map(c=>c.code))],ds=[...new Set(r.map(c=>c.date))].sort();
+   const ordered=rectangle({code:codes[0],date:ds[0]},{code:codes.at(-1),date:ds.at(-1)});
+   const keys=new Set(r.map(c=>key(c.code,c.date)));
+   return ordered.length===r.length&&ordered.every(c=>keys.has(key(c.code,c.date)))?{cells:ordered,width:codes.length,height:ds.length}:null;
+  });
+  const [a,b]=shaped;
+  if(!a||!b||a.width!==b.width||a.height!==b.height)return null;
+  const keys=new Set(a.cells.map(c=>key(c.code,c.date)));
+  if(b.cells.some(c=>keys.has(key(c.code,c.date))))return null;
+  if([...a.cells,...b.cells].some(c=>!writableDate(c.date)||!data.employees.some(e=>e.code===c.code)))return null;
+  return [a.cells,b.cells];
+ }
+ async function exchange(){
+  const ranges=exchangeRanges();
+  if(!ranges){S.notice='Select two equal ranges to exchange shifts.';render();return;}
+  const [a,b]=ranges,changes=[];
+  for(let i=0;i<a.length;i++){
+   // Only payloads travel. Identity/date/revision belong to each destination.
+   // Automatic hours are projected at that destination; explicit manual keys stay explicit.
+   changes.push({...a[i],payload:M.normalize(payload(b[i].code,b[i].date))},
+    {...b[i],payload:M.normalize(payload(a[i].code,a[i].date))});
+  }
+  await save(changes,'Exchange Duty shifts');
  }
  function selectRows(date,extend=false,toggle=false){
   const staff=employees(),days=dates(),target=days.findIndex(d=>d.date===date);
@@ -96,6 +164,7 @@
   else for(let i=start<0?target:Math.min(start,target);i<=(start<0?target:Math.max(start,target));i++)chosen.add(days[i].date);
   if(start<0)S.rowAnchor=date;
   S.selected=staff.flatMap(e=>days.filter(d=>chosen.has(d.date)).map(d=>({code:e.code,date:d.date})));
+  S.ranges=S.selected.length?[S.selected.slice()]:[];
   S.anchor={code:staff[0].code,date:S.rowAnchor};
   S.cursor={code:staff[0].code,date};
   updateSelection();
@@ -106,20 +175,28 @@
  function updateSelection(){
   const keys=new Set(S.selected.map(c=>key(c.code,c.date)));
   const cells=[...host.querySelectorAll('[data-s-code]')];
+  const rangeKeys=S.ranges.map(range=>new Set(range.map(c=>key(c.code,c.date))));
+  const rangeFor=td=>td?.hasAttribute('data-s-code')?rangeKeys.findIndex(keys=>keys.has(key(td.dataset.sCode,td.dataset.sDate))):-1;
   const isSelected=td=>td?.hasAttribute('data-s-code')&&keys.has(key(td.dataset.sCode,td.dataset.sDate));
   for(const td of cells){
    const {sCode:code,sDate:date}=td.dataset,active=isSelected(td),row=td.parentElement;
+   td.classList.toggle('duty-range-b',active&&S.ranges[1]?.some(c=>c.code===code&&c.date===date));
    td.classList.toggle('duty-selected',active);td.setAttribute('aria-selected',String(active));
-   td.classList.toggle('duty-edge-top',active&&!isSelected(row.previousElementSibling?.children[td.cellIndex]));
-   td.classList.toggle('duty-edge-bottom',active&&!isSelected(row.nextElementSibling?.children[td.cellIndex]));
-   td.classList.toggle('duty-edge-left',active&&!isSelected(td.previousElementSibling));
-   td.classList.toggle('duty-edge-right',active&&!isSelected(td.nextElementSibling));
+   const sameRange=other=>isSelected(other)&&rangeFor(other)===rangeFor(td);
+   td.classList.toggle('duty-edge-top',active&&!sameRange(row.previousElementSibling?.children[td.cellIndex]));
+   td.classList.toggle('duty-edge-bottom',active&&!sameRange(row.nextElementSibling?.children[td.cellIndex]));
+   td.classList.toggle('duty-edge-left',active&&!sameRange(td.previousElementSibling));
+   td.classList.toggle('duty-edge-right',active&&!sameRange(td.nextElementSibling));
    td.tabIndex=(S.cursor?code===S.cursor.code&&date===S.cursor.date:td===cells[0])?0:-1;
   }
   const hasSelection=!!S.selected.length&&!S.editing;
   const canEdit=hasSelection&&S.selected.every(c=>writableDate(c.date));
   const tools=host.querySelector('.duty-selection-tools');
   tools.querySelector('[data-s-action="apply-shift"]').disabled=!canEdit||!data.shift_presets?.length;
+  tools.querySelector('[data-s-action="exchange"]').disabled=!canEdit||!exchangeRanges();
+  const notice=host.querySelector('.duty-footnote [role=status]');
+  if((S.ranges.length>2||(S.ranges.length===2&&canEdit&&!exchangeRanges()))&&notice)notice.textContent='Select two equal ranges to exchange shifts.';
+  else if(notice)notice.textContent=S.notice||(options.loading?'Loading selected month…':'Double-click to edit · Ctrl + Drag to add a range');
   tools.querySelector('[data-s-action="copy"]').disabled=!hasSelection;
   tools.querySelector('[data-s-action="paste"]').disabled=!canEdit||!S.clipboard.length;
   tools.querySelector('[data-s-action="delete"]').disabled=!canEdit;
@@ -528,6 +605,7 @@
     }
     switch(button?.dataset.sAction){
      case 'apply-shift':applyShift();break;
+     case 'exchange':await exchange();break;
      case 'copy':copy();break;
      case 'paste':await paste();break;
      case 'delete':await deleteSelection();break;
@@ -552,7 +630,7 @@
    if(!target||!grid.contains(target)||target===drag.last)return;
    drag.last=target;
    if(drag.row)selectRows(target.querySelector('[data-s-column]').dataset.sColumn,true);
-   else select(target.dataset.sCode,target.dataset.sDate,true);
+   else selectRectangle({code:drag.start.dataset.sCode,date:drag.start.dataset.sDate},{code:target.dataset.sCode,date:target.dataset.sDate},drag.base);
   };
   const scrollDrag=()=>{
    if(!drag?.moved)return;
@@ -572,8 +650,8 @@
    skipClick=false;
    const dateButton=event.target.closest('[data-s-column]'),target=dateButton?.closest('tr')||event.target.closest('[data-s-code]');
    if(!target||event.button!==0||event.pointerType!=='mouse'||S.editing||S.busy||S.confirming)return;
-   if(event.ctrlKey||event.metaKey){event.preventDefault();return;}
-   drag={id:event.pointerId,start:target,last:target,row:!!dateButton,moved:false,x:event.clientX,y:event.clientY};
+   if(event.ctrlKey||event.metaKey)event.preventDefault();
+   drag={base:event.ctrlKey||event.metaKey?S.ranges.map(r=>r.slice()):[],id:event.pointerId,start:target,last:target,row:!!dateButton,moved:false,x:event.clientX,y:event.clientY};
   };
   const finishDrag=event=>{
    if(!drag||drag.id!==event.pointerId)return;
@@ -591,7 +669,7 @@
     if(!target||target===drag.start||!grid.contains(target))return;
     drag.moved=true;host.setPointerCapture(event.pointerId);
     if(drag.row)selectRows(drag.start.querySelector('[data-s-column]').dataset.sColumn);
-    else select(drag.start.dataset.sCode,drag.start.dataset.sDate,false);
+    else selectRectangle({code:drag.start.dataset.sCode,date:drag.start.dataset.sDate},{code:drag.start.dataset.sCode,date:drag.start.dataset.sDate},drag.base);
     drag.frame=requestAnimationFrame(scrollDrag);
    }
    extendDrag(target);
@@ -665,10 +743,11 @@
    if(next&&nextDate){e.preventDefault();select(next,nextDate,e.shiftKey);focus(next,nextDate,true);}
   };
  }
- window.DutySchedule={mount,rememberScroll,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>{if(S.editing&&!host?.querySelector('.duty-cell-editor')?.isConnected)S.editing=null;return !!S.editing||S.busy||S.confirming||!!(drag?.moved&&host?.hasPointerCapture?.(drag.id));},clear(keepClipboard=false){
+ window.DutySchedule={mount,rememberScroll,isMounted:(el,month)=>host===el&&!!host?.isConnected&&S.month===month,calendar:dayType,rules(d,config){host=null;data=d;options=config;S.month=config.month;hourRules();},isEditing:()=>{if(S.editing&&!host?.querySelector('.duty-cell-editor')?.isConnected)S.editing=null;return !!S.editing||S.busy||S.confirming||!!(drag?.moved&&host?.hasPointerCapture?.(drag.id));},clear(keepClipboard=false){
   if(drag?.frame)cancelAnimationFrame(drag.frame);
+  if(todayTimer!==null){window.clearTimeout?.(todayTimer);todayTimer=null;}
   drag=null;skipClick=false;presetGroup='all';scopeVersion++;clearHistory();
   if(!keepClipboard){S.clipboard=[];S.custom.clear();S.staffPage=0;S.group='pharmacists';S.range=null;}
-  Object.assign(S,{scroll:{left:0,top:0},range:null,editing:null,selected:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
+  Object.assign(S,{scroll:{left:0,top:0},range:null,editing:null,selected:[],ranges:[],anchor:null,cursor:null,month:'',notice:'',busy:false,confirming:false});
  }};
 })();

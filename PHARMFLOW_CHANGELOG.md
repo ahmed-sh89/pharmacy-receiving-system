@@ -1,3 +1,39 @@
+## Duty KPI / Today polish — READY FOR USER TEST — 9 November 2026
+
+PR #53 only, branch fix/duty-exchange-staging-20261109-v2. Verified start d97d60417f53659d34782953a67c48c3b2a542db; Production main c68a940fecd9d40b57b625769e9a4654991b6010 unchanged. Existing USER VERIFIED acceptance retained.
+
+Consolidated label/value grid spacing; symmetric Total tracks center number independently, unchanged 26px bar. Today now one line without weekday, 12px bold, Saudi date/highlight unchanged. No business/persistence/backend/data changes. Four-zoom Chromium before/after PASS: exact cell/header/KPI/grid geometry, centered Total ≤0.1px, text gaps, no overflow, zero writes. 24 focused PASS; both existing browser runners PASS; full Duty 120 PASS / 1 historical FAIL / 1 optional SKIP. Preview build PASS. [Exact files, root causes and visual evidence](docs/duty/KPI_TODAY_POLISH_20261109.md). Final source/READY Preview/CI identity pinned in PR #53.
+
+Next: owner visual acceptance. Stop at Staging; no Production merge/deploy.
+
+## Duty final grid separators — READY FOR USER TEST — 9 November 2026
+
+Existing Draft PR #53 only, branch `fix/duty-exchange-staging-20261109-v2`; starting HEAD `c47a9c05339875bc2a4efbbcef23181a98994358`. Production main `c68a940fecd9d40b57b625769e9a4654991b6010` unchanged. Prior Duty interaction, Exchange, Ctrl+Drag/range separation, Today, toolbar/paging, KPI/Total and Reports styling are now explicitly **USER VERIFIED PASS**.
+
+Consolidated owning 1px grid borders: vertical #91abc4, daily horizontal #cbd9e6; removed redundant employee-border override. Application changes only CSS and cache key. Calendar Settings behavior accepted unchanged: reverse saved Public Holiday configuration there with Save, not Schedule Undo.
+
+New Chromium before/after at 75/80/90/100% PASS: exact unchanged 180-cell/grid/header/KPI/scroll geometry and special-day backgrounds; no overflow, 0 writes. Existing Exchange/interaction and Today/Reports browser runners PASS. Full Duty 120 PASS / 1 retained historical snapshot FAIL / 1 optional SKIP (122); auth/session/security regressions 63 PASS. Both builds PASS. No backend/calculation/data/Production changes. Final source/READY Preview/CI identity pinned in PR #53.
+
+[Exact root cause, files, tests, before/after evidence and owner checks](docs/duty/GRID_SEPARATORS_20261109.md). Next: owner visual acceptance. Only after acceptance, separate read-only Production release readiness review; no merge/deploy authorized.
+
+## 9 November 2026 — Duty final layout correction — PR #53 Staging
+
+Corrected responsible layout owners from 6be3bb2: compact intrinsic staff paging; content-based toolbar/header tracks; removed 172px four-row KPI switch and consolidated shared numeric/padding rules; 2×2 metrics with a 26px prominent Total inside a 64px section; stronger Today badge contained in existing control row; distinct whole-row hover/selected/focus styling. No calculation, persistence, permission or backend change. [Before/after evidence, exact files and limits](docs/duty/LAYOUT_REFINEMENTS_20261109.md).
+
+28 focused PASS; Duty 120 PASS / 1 historical FAIL / 1 optional SKIP; auth/session 42 PASS. Three browser runners PASS, six zooms/two surfaces, zero UI writes. READY FOR USER TEST only. Production unchanged.
+
+## 9 November 2026 — Duty final UI refinements — Staging PR #53
+
+Recorded Product Owner USER VERIFIED PASS for interaction, two/five-cell Exchange, Ctrl+Drag, Undo/Redo and Refresh persistence at 67b5ce0. Added independent blue selected-cell/range edges, Saudi Today date-cell accent and compact badge (midnight/wake updates), and styled accessible Reports employee list with name/code rows. Existing selection, atomic save and report/export data paths preserved; no backend or Production changes. [Evidence, exact files and owner steps](docs/duty/UI_REFINEMENTS_20261109.md).
+
+Duty 118 PASS / 1 historical FAIL / 1 optional SKIP; related auth/session 42 PASS. Both Chromium runners PASS; UI runner 0 writes; six zoom screenshots reviewed. New UI acceptance remains pending.
+
+## 9 November 2026 — Duty interaction / Exchange / Ctrl+Drag — Staging
+
+Fixed reproduced cleared-scheduler/unchanged-data re-entry failure without replacing an already-live grid. Added compact bidirectional Exchange and explicit Ctrl+Drag range tracking with shape/overlap/third-range validation. Reuses existing atomic pharmacy-scoped revision-checked save RPC; no migration. Manual metadata and destination automatic calculations preserved; one-action Undo/Redo. Preview allowlist restricted to dedicated branch. Production unchanged; owner verification pending.
+
+Duty 114 PASS / 1 historical FAIL / 1 optional SKIP; related 61 PASS / 1 historical FAIL; security 66 PASS. Both historical failures reproduced on untouched main. Chromium synthetic integration and SQL-engine atomicity checks PASS; hosted two-PC/native Windows acceptance pending. [Details](docs/duty/EXCHANGE_STAGING_20261109.md).
+
 ## 8 November 2026 — PR #49 CLOSED — USER VERIFIED
 
 **PR #49 RELEASE CLOSURE: CLOSED — USER VERIFIED.** Product Owner confirms actual Production acceptance on 8 November 2026: application fully loaded and usable approximately **7 seconds after Refresh**, versus previously reported **30–60 seconds**; Receiving, Orders, Reports, Expiry, Duty and Administrator open successfully. These are owner-observed approximate operational timings. This acceptance resolves the prior partial smoke/closure blocker; the earlier agent `Invalid login credentials` attempt is retained as its actual result, not relabeled agent-authenticated PASS.
