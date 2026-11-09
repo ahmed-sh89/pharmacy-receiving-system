@@ -1,0 +1,12 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"error\":{\"name\":\"HttpException\",\"message\":\"Failed to run sql query: ERROR:  57014: canceling statement due to statement timeout\\nCONTEXT:  PL/pgSQL function pharmflow_receiving_item_code_v1(text) line 5 at IF\\nSQL statement \\\"WITH codes AS (\\n SELECT public.pharmflow_receiving_item_code_v1(x->>'itemCode') code,\\n min(x->>'itemName') name, sum(coalesce((x->>'orderedQty')::numeric,0)) qty,\\n jsonb_agg(x->'orderNumbers') memberships\\n FROM pharmflow_identifier_perf_nostats_20261110.pharmflow_active_order_manifest_v1 m,\\n LATERAL jsonb_array_elements(coalesce(m.manifest->'orderData','[]')) x\\n WHERE m.pharmacy_id=p_pharmacy_id AND coalesce((m.manifest->>'active')::boolean,false)\\n GROUP BY 1), items AS (\\n SELECT c.*, (SELECT count(*) FROM pharmflow_identifier_perf_nostats_20261110.pharmflow_global_items_v2 g WHERE public.pharmflow_receiving_item_code_v1(g.item_code)=c.code) matches,\\n (SELECT to_jsonb(g) FROM pharmflow_identifier_perf_nostats_20261110.pharmflow_global_items_v2 g WHERE public.pharmflow_receiving_item_code_v1(g.item_code)=c.code ORDER BY g.item_code LIMIT 1) master\\n FROM codes c)\\n SELECT coalesce(jsonb_agg(jsonb_build_object('itemCode',i.code,'itemName',i.name,'orderedQty',i.qty,'orderMemberships',i.memberships,\\n 'exists',i.matches=1,'conflict',i.matches>1,'groupName',i.master->>'group_name',\\n 'identifiers',coalesce((SELECT jsonb_agg(g.identifier_display ORDER BY g.identifier_display) FROM pharmflow_identifier_perf_nostats_20261110.pharmflow_global_item_identifiers_v2 g\\n WHERE g.item_code=i.master->>'item_code' AND NOT EXISTS(SELECT 1 FROM pharmflow_identifier_perf_nostats_20261110.pharmflow_pharmacy_gtin_v1 p WHERE p.pharmacy_id=p_pharmacy_id AND p.identifier_key=g.identifier_key AND public.pharmflow_receiving_item_code_v1(p.item_code)<>i.code)),'[]'::jsonb)\\n ||coalesce((SELECT jsonb_agg(p.identifier_display ORDER BY p.identifier_display) FROM pharmflow_identifier_perf_nostats_20261110.pharmflow_pharmacy_gtin_v1 p WHERE p.pharmacy_id=p_pharmacy_id AND public.pharmflow_receiving_item_code_v1(p.item_code)=i.code),'[]'::jsonb)) ORDER BY i.code),'[]'::jsonb)             FROM items i\\\"\\nPL/pgSQL function pharmflow_identifier_perf_nostats_20261110.old_projection(uuid) line 4 at SQL statement\\n\"}}"
+    }
+  ],
+  "structuredContent": {
+    "error_code": "INVALID_ARGUMENT"
+  },
+  "isError": true
+}
