@@ -26,3 +26,13 @@ test('Save All retains partial-entry validation and duplicate rejection; eligibl
 test('read-only mapping controls cannot submit Selected',async()=>{const h=await panel(false);assert.equal(h.document.querySelector('[data-save-selected]').disabled,true);assert.equal(h.document.querySelector('[data-save]').disabled,true);assert.ok(h.nodes.every(row=>row.querySelector('[data-selected]').disabled));});
 
 test('multiple completed selected rows save together and leave an unselected completed row untouched',async()=>{const h=await panel();for(const n of [0,2]){h.nodes[n].querySelector('[data-selected]').checked=true;h.nodes[n].querySelector('[data-barcode]').value='CODE'+n;}h.nodes[1].querySelector('[data-barcode]').value='UNSELECTED';h.document.querySelector('[data-barcode]').dispatchEvent(new h.window.Event('input',{bubbles:true}));assert.equal(h.document.querySelector('[data-save-selected]').textContent,'Save Selected (2)');h.document.querySelector('[data-save-selected]').click();await h.settle();assert.deepEqual(h.writes[0].map(row=>row.itemCode),['A','C']);assert.equal(h.nodes[1].querySelector('[data-barcode]').value,'UNSELECTED');});
+
+test('Missing GTIN selection stays within the original six-column layout and matched input styles',async()=>{
+ const h=await panel();assert.equal(h.document.querySelectorAll('thead th').length,6);for(const row of h.nodes){assert.equal(row.querySelectorAll('td').length,6);assert.ok(row.querySelector('td:first-child .missingGTINCode [data-selected]'));}
+ const actions=h.document.querySelector('.missingGTINActions');assert.ok(actions.querySelector('[data-save]'));assert.ok(actions.querySelector('[data-save-selected]'));
+ const css=fs.readFileSync('css/pharmflow-next.css','utf8'),production=require('node:child_process').execFileSync('git',['show','70d3e2059317f460a9be482dac0445049cf9045d:css/pharmflow-next.css'],{encoding:'utf8'});
+ const columns=source=>source.match(/#currentMissingGTINOverlay th:nth-child[^\n]+/)[0];assert.equal(columns(css),columns(production));
+ assert.doesNotMatch(css,/#currentMissingGTINOverlay input(?:,|\{)/);assert.match(css,/#currentMissingGTINOverlay \[data-barcode\],#currentMissingGTINOverlay select\{/);
+ assert.match(css,/\.missingGTINStatus\{[^}]*white-space:nowrap/);assert.match(css,/#currentMissingGTINOverlay \[data-selected\]\{[^}]*width:1em;.*min-height:0/);
+ assert.equal((css.match(/#currentMissingGTINOverlay \.missingGTINTableWrap\{/g)||[]).length,1);
+});

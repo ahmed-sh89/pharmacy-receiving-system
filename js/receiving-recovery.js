@@ -169,6 +169,32 @@ function getReceivingUnassignedSummary(rows=getExtraCorrectionReceipts()){
     return {items:new Set(unassigned.map(row=>row.code)).size,units:unassigned.reduce((sum,row)=>sum+row.quantity,0)};
 }
 
+// Reuse the existing confirmation surface. Receipt choice exists only while
+// confirming a multi-receipt item; opaque transaction IDs stay internal.
+async function confirmExtraReceiptRemoval(group){
+    const receipts=group.receipts.filter(receipt=>receipt.quantity>0);
+    if(!receipts.length)return null;
+    const answer=pharmFlowConfirm({title:'Remove Receipt?',message:`${group.tx.itemName||group.code} · ${receipts.length===1?receipts[0].quantity+' units':'Choose the receipt to remove.'} The original receipt stays in audit history.`,confirmText:'Confirm',tone:'danger'});
+    let choice=null,label=null;
+    const button=document.getElementById('btnConfirmOK');
+    if(receipts.length>1){
+        label=document.createElement('label');label.className='receivingReceiptChoice';label.textContent='Receipt';
+        choice=document.createElement('select');choice.setAttribute('aria-label','Receipt to remove');
+        choice.innerHTML='<option value="">Choose receipt</option>'+receipts.map((receipt,n)=>{
+            const date=new Date(receipt.tx.dateTime||'');
+            const time=Number.isFinite(date.getTime())?' · '+date.toLocaleString(undefined,{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:true}):'';
+            return `<option value="${n}">Receipt ${n+1} · ${receipt.quantity} units${escapeHTML(time)} · ${escapeHTML(receipt.order||'Unassigned')}</option>`;
+        }).join('');
+        label.appendChild(choice);document.getElementById('confirmMessage')?.appendChild(label);
+        if(button)button.disabled=true;
+        choice.onchange=()=>{if(button)button.disabled=choice.value==='';};
+    }
+    try{
+        if(!await answer)return null;
+        return receipts.length===1?receipts[0]:(choice.value===''?null:receipts[Number(choice.value)]||null);
+    }finally{label?.remove();if(button)button.disabled=false;}
+}
+
 function renderExtraReceivingCorrection(body){
     const rows=getExtraCorrectionItems(),selected=new Set();let operation=null;
     const writable=typeof isPharmacyAdmin==='function'&&isPharmacyAdmin()&&window.PharmFlowPermissions?.allowed('RECEIVING',true)&&!isLikelyZebraDevice?.();
@@ -190,18 +216,17 @@ function renderExtraReceivingCorrection(body){
         const query=body.querySelector('[data-search]').value.trim().toLowerCase(),filter=body.querySelector('[data-filter]').value||'All';
         const visible=rows.filter(r=>(filter==='All'||r.types.includes(filter))&&(!query||`${r.code} ${r.tx.itemName} ${r.order}`.toLowerCase().includes(query)));
         const selectable=visible.filter(r=>writable&&r.destinations.length);
-        list.innerHTML=visible.length?`<table class="quickKpiTable"><thead><tr><th><input data-select-all type="checkbox" aria-label="Select eligible visible receipts" ${selectable.length?'':'disabled'}></th><th>Item Code</th><th>Item Name</th><th>Received</th><th>Current assignment</th><th>Type</th><th>Receipt action</th></tr></thead><tbody>${visible.map(r=>`<tr><td><input data-receipt="${escapeHTML(r.tx.transactionId)}" aria-label="Select receipt ${escapeHTML(r.code)} ${escapeHTML(r.tx.transactionId)}" type="checkbox" ${selected.has(r.tx.transactionId)?'checked':''} ${writable&&r.destinations.length?'':'disabled'}></td><td>${escapeHTML(r.code)}</td><td><b>${escapeHTML(r.tx.itemName)}</b></td><td>${r.quantity}</td><td>${escapeHTML(r.order||'Unassigned')}</td><td>${r.type}</td><td>${writable?`<select data-cancel-choice="${escapeHTML(r.tx.transactionId)}" aria-label="Receipt to remove for ${escapeHTML(r.code)}"><option value="">Choose exact receipt</option>${r.receipts.map(receipt=>`<option value="${escapeHTML(receipt.tx.transactionId)}">${escapeHTML(receipt.tx.dateTime||'')} · ${receipt.quantity} units · ${escapeHTML(receipt.tx.transactionId)}</option>`).join('')}</select><button type="button" data-remove-receipt="${escapeHTML(r.tx.transactionId)}">Remove Receipt</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="tableEmptyState">No Extra or Unassigned receipts.</div>';
+        list.innerHTML=visible.length?`<table class="quickKpiTable"><thead><tr><th><input data-select-all type="checkbox" aria-label="Select eligible visible receipts" ${selectable.length?'':'disabled'}></th><th>Item Code</th><th>Item Name</th><th>Received</th><th>Current assignment</th><th>Type</th></tr></thead><tbody>${visible.map(r=>`<tr><td><input data-receipt="${escapeHTML(r.tx.transactionId)}" aria-label="Select ${escapeHTML(r.code)}" type="checkbox" ${selected.has(r.tx.transactionId)?'checked':''} ${writable&&r.destinations.length?'':'disabled'}></td><td>${escapeHTML(r.code)}</td><td><div class="receivingExtraItem"><b>${escapeHTML(r.tx.itemName)}</b>${writable?`<button class="secondaryButton receivingExtraRemove" type="button" data-remove-receipt="${escapeHTML(r.tx.transactionId)}">Remove</button>`:''}</div></td><td>${r.quantity}</td><td>${escapeHTML(r.order||'Unassigned')}</td><td>${r.type}</td></tr>`).join('')}</tbody></table>`:'<div class="tableEmptyState">No Extra or Unassigned receipts.</div>';
         list.querySelectorAll('[data-remove-receipt]').forEach(button=>{
             let cancellation=null;
             button.onclick=async()=>{
                 if(button.disabled)return;
                 const group=rows.find(row=>row.tx.transactionId===button.dataset.removeReceipt);
-                const choice=[...list.querySelectorAll('[data-cancel-choice]')].find(input=>input.dataset.cancelChoice===button.dataset.removeReceipt);
-                const receipt=group?.receipts.find(row=>row.tx.transactionId===choice?.value);
-                if(!receipt){message.textContent='Choose the exact receipt to remove.';return;}
-                if(!window.confirm(`Remove this receipt?\n${receipt.code} — ${receipt.tx.itemName}\n${receipt.quantity} units · ${receipt.order||'Unassigned'}\nReceipt: ${receipt.tx.transactionId}\nThe original receipt and cancellation remain in audit history.`))return;
                 button.disabled=true;
                 try{
+                    assertReceivingRecoveryScope(renderScope);
+                    const receipt=await confirmExtraReceiptRemoval(group);
+                    if(!receipt)return;
                     const scope=renderScope,revision=Number(PharmFlowCloudWorkspace.activeManifestRevision);
                     const key=JSON.stringify([scope,receipt.tx.transactionId,receipt.quantity,revision]);
                     if(cancellation?.key!==key)cancellation={key,id:crypto.randomUUID()};

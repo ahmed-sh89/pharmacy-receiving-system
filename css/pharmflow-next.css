@@ -1692,17 +1692,20 @@ body:not(.zebraDevice) #quickGTINResolver [data-quick-group]:focus-visible{borde
 
 
 /* Receiving identifier administration: scoped to the established panels. */
-#currentMissingGTINOverlay .missingGTINPanel{width:min(1180px,96vw);max-width:1180px;display:flex;flex-direction:column;max-height:88vh;gap:14px}
-#currentMissingGTINOverlay .missingGTINTableWrap{overflow:auto;min-height:0}
+#currentMissingGTINOverlay .missingGTINPanel{width:min(1180px,96vw);max-width:1180px;display:flex;flex-direction:column;max-height:88vh;gap:14px;overflow:hidden}
+#currentMissingGTINOverlay .missingGTINTableWrap{min-height:0}
 #currentMissingGTINOverlay .quickKpiTable{table-layout:fixed;min-width:850px}
 #currentMissingGTINOverlay th:nth-child(1){width:11%}#currentMissingGTINOverlay th:nth-child(2){width:29%}#currentMissingGTINOverlay th:nth-child(3){width:17%}#currentMissingGTINOverlay th:nth-child(4){width:23%}#currentMissingGTINOverlay th:nth-child(5){width:7%}#currentMissingGTINOverlay th:nth-child(6){width:13%}
 #currentMissingGTINOverlay .missingGTINName{overflow-wrap:anywhere;line-height:1.5;color:#173f70}
-#currentMissingGTINOverlay input,#currentMissingGTINOverlay select{box-sizing:border-box;width:100%;min-height:38px;border:1px solid #b8d0e5;border-radius:9px;background:#fff;padding:8px 10px;color:#173f70;font:inherit}
-#currentMissingGTINOverlay input:focus,#currentMissingGTINOverlay select:focus{outline:2px solid #2780c5;outline-offset:2px}
-#currentMissingGTINOverlay input:disabled,#currentMissingGTINOverlay select:disabled{background:#f0f5fa;color:#526c83}
-#currentMissingGTINOverlay .missingGTINFooter{display:flex;justify-content:space-between;align-items:center;gap:18px;border-top:1px solid #dae5f0;padding-top:12px;color:#315979;font-size:12px}
-#currentMissingGTINOverlay .missingGTINFooter button{width:auto;min-width:112px;flex-shrink:0;margin:0}
-#currentMissingGTINOverlay .missingGTINStatus{font-size:11px;color:#315979;overflow-wrap:anywhere}
+#currentMissingGTINOverlay [data-barcode],#currentMissingGTINOverlay select{box-sizing:border-box;width:100%;min-height:38px;border:1px solid #b8d0e5;border-radius:9px;background:#fff;padding:8px 10px;color:#173f70;font:inherit}
+#currentMissingGTINOverlay [data-barcode]:focus,#currentMissingGTINOverlay select:focus{outline:2px solid #2780c5;outline-offset:2px}
+#currentMissingGTINOverlay [data-barcode]:disabled,#currentMissingGTINOverlay select:disabled{background:#f0f5fa;color:#526c83}
+#currentMissingGTINOverlay .missingGTINFooter{display:flex;justify-content:space-between;align-items:center;gap:14px;border-top:1px solid #dae5f0;padding-top:12px;color:#315979;font-size:12px}
+#currentMissingGTINOverlay .missingGTINFooter button{width:auto;flex-shrink:0;margin:0;padding:8px 14px;font:inherit;font-weight:700;white-space:nowrap}
+#currentMissingGTINOverlay .missingGTINActions{display:flex;align-items:center;gap:8px}
+#currentMissingGTINOverlay .missingGTINCode{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+#currentMissingGTINOverlay [data-selected]{box-sizing:border-box;width:1em;height:1em;min-height:0;margin:0;padding:0;flex:none;accent-color:#1769aa}
+#currentMissingGTINOverlay .missingGTINStatus{font-size:11px;color:#315979;white-space:nowrap}
 #currentMissingGTINOverlay .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .needsReviewResolve .pfnResolverTabs{display:flex;gap:10px;flex-wrap:wrap}
 .needsReviewResolve .pfnResolverTabs button{flex:1;min-height:38px;padding:9px 12px;border:1px solid #b8d0e5;border-radius:9px;background:#f0f5fa;color:#173f70;font:inherit;font-size:12px;font-weight:750}
@@ -1711,9 +1714,7 @@ body:not(.zebraDevice) #quickGTINResolver [data-quick-group]:focus-visible{borde
 .needsReviewResolve .pfnResolverTabs button:focus-visible{outline:2px solid #2780c5;outline-offset:2px}
 .needsReviewSelection .pfnCreateGroup{margin:12px 0 6px}
 
-#currentMissingGTINOverlay .missingGTINPanel{overflow:hidden}
 #currentMissingGTINOverlay [data-body]{min-height:0;overflow:auto}
-#currentMissingGTINOverlay .missingGTINTableWrap{overflow:visible}
 /* Shared unknown/review entry controls use the existing Receiving form treatment. */
 #quickGTINResolver .gtinResolutionPanel > .gtinResolutionLabel{display:grid;gap:6px;margin:0 22px 14px;color:#315979;font-size:12px;font-weight:750}
 #quickGTINResolver [data-unknown-order]{box-sizing:border-box;width:100%;min-height:38px;border:1px solid #b8d0e5;border-radius:9px;background:#fff;padding:8px 10px;color:#173f70;font:inherit}

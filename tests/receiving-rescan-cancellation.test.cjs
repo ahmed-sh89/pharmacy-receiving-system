@@ -1,0 +1,14 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{parseHTML}=require('linkedom');
+const receiving=fs.readFileSync('js/receiving.js','utf8'),cloud=fs.readFileSync('cloud-workspace.js','utf8');
+function fn(source,name){const at=source.indexOf('function '+name+'(');assert.ok(at>=0,name);return (source.slice(at-6,at)==='async '?'async ':'')+source.slice(at,source.indexOf('\n}',at)+2);}
+test('cancelled Extra rescans as recognised/not-in-order when authoritative Order has no matching item; cancelling the dialog cannot post another receipt',async()=>{
+ const {document}=parseHTML('<html><body></body></html>'),mapping={found:true,itemCode:'EXTRA',itemName:'Test item',source:'GLOBAL_V2'},failures=[];
+ const ordered={itemCode:'ORDERED',itemName:'Ordered item',orderedQty:5,receivedQty:0,orderNumbers:['A']};
+ const history=[{transactionId:'original',orderId:'A',itemCode:'EXTRA',quantity:3},{transactionId:'reversal',orderId:'A',itemCode:'EXTRA',quantity:-3,correctsTransactionId:'original',source:'ORDER_ALLOCATION'}];
+ const c={document,AppState:{workspace:{orderData:[ordered],receivingHistory:history}},window:{PharmFlowPermissions:{require(){}}},IdentifierService:{resolve:async()=>mapping},normalizeItemCode:v=>String(v||''),normalizeIdentifier:String,normalizeOrderNumber:v=>v||'',toSafeString:v=>String(v||''),toNumber:(v,f=0)=>Number.isFinite(Number(v))?Number(v):f,getSelectedReceivingOrderNumbers:()=>['A'],getActiveReceivingOrderSetForCloud:()=>new Set(['A']),getValidReceivingQuantity:q=>q||1,isLikelyZebraDevice:()=>false,setScanBoxState(){},focusScannerInput(){},setTimeout:fn=>fn(),escapeHTML:String,crypto:{randomUUID:()=> 'new-receipt'},handleReceivingFailure:message=>failures.push(message),receiveOrderItem:()=>{throw Error('Scan alone must never post receiving');},recordUnassignedReceiving:()=>{throw Error('Scan alone must never post Unassigned');}};
+ vm.createContext(c);for(const name of ['receiveParsedBarcode','getReceivingItemByItemCode','quickResolveUnrecognizedGTIN','openKnownNotInOrderPC'])vm.runInContext(fn(receiving,name),c);vm.runInContext(fn(cloud,'rebuildReceivingQuantitiesFromLedger'),c);
+ const before=JSON.stringify(history);c.rebuildReceivingQuantitiesFromLedger();assert.equal(ordered.receivedQty,0);assert.equal(ordered.orderedQty,5);
+ const result=c.receiveParsedBarcode({gtin:'SAME-BARCODE',quantity:1});for(let n=0;n<10;n++)await Promise.resolve();
+ assert.match(document.body.textContent,/RECOGNISED · NOT IN ORDER/);assert.match(document.body.textContent,/Test item/);assert.equal(document.querySelector('[data-extra-order] option').getAttribute('value'),'');
+ document.querySelector('[data-close]').onclick();assert.equal(await result,false);assert.equal(JSON.stringify(history),before);assert.equal(mapping.found,true);assert.equal(mapping.itemCode,'EXTRA');assert.deepEqual(failures,[]);
+});
