@@ -16,7 +16,7 @@ test('single-receipt Remove has no picker, explicit Cancel/Confirm and sends exa
  c.pharmFlowConfirm=async options=>{assert.equal(options.confirmText,'Confirm');assert.match(options.message,/Fictional X.*10 units/);assert.doesNotMatch(options.message,/Receipt:|transaction|UUID/);return confirmed;};
  c.authRpc=async(name,args)=>{assert.equal(name,'cancel_pharmflow_extra_receipt_v1');assert.equal(args.p_transaction_id,'u');assert.equal(args.p_expected_quantity,10);assert.equal(args.p_expected_revision,7);calls++;};
  c.renderExtraReceivingCorrection(d.getElementById('body'));assert.equal(d.querySelectorAll('thead th').length,6);assert.equal(d.querySelectorAll('[data-cancel-choice]').length,0);assert.doesNotMatch(d.getElementById('body').textContent,/Choose exact receipt|Receipt action/);
- const button=d.querySelector('[data-remove-receipt="u"]');assert.equal(button.textContent,'Remove');await button.onclick();assert.equal(calls,0);confirmed=true;await button.onclick();assert.equal(calls,1);assert.equal(refreshes,1);
+ const button=d.querySelector('[data-remove-receipt="u"]');assert.equal(button.textContent,'Remove');assert.ok(button.classList.contains('dangerOutlineButton'));assert.match(fs.readFileSync('css/style.css','utf8'),/\.dangerOutlineButton\s*\{[^}]*background: white;/);await button.onclick();assert.equal(calls,0);confirmed=true;await button.onclick();assert.equal(calls,1);assert.equal(refreshes,1);
 });
 test('multi-receipt choice appears only inside confirmation, hides IDs and returns just the chosen receipt',async()=>{
  const {c,document:d}=fixture();d.body.insertAdjacentHTML('beforeend','<p id="confirmMessage"></p><button id="btnConfirmOK">Confirm</button>');

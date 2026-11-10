@@ -114,13 +114,30 @@ test('unassigned receipts appear once in live/report exports without inventing O
  c.AppState.workspace.receivingHistory=[tx('A',62,'a'),{itemCode:'EXTRA',itemName:'Unordered',quantity:3,unassigned:true,transactionId:'u'}, {itemCode:'EXTRA',quantity:2,unassigned:true,transactionId:'u2'}, {itemCode:'EXTRA',quantity:-3,unassigned:true,transactionId:'cancel'}, {...tx('',1,'pending'),unassigned:true}];
  const before=JSON.stringify(c.AppState.workspace.receivingHistory),live=c.buildLiveReceivingReport(),multi=c.buildMultiOrderReceivingReport();
  assert.equal(live.rows.length,5);assert.equal(live.counts.UNORDERED,2);
- const extra=live.rows.find(row=>row['Item Number']==='EXTRA');assert.equal(extra.orderNumber,'');assert.equal(extra['Order Number'],'Unassigned');assert.equal(extra['Received Qty'],2);assert.equal(extra['Ordered Qty'],0);assert.match(extra['Assignment Status'],/extra receipt/);
- const pending=live.rows.find(row=>row.orderNumber===''&&row['Item Number']==='1012562');assert.match(pending['Assignment Status'],/order match available/);
+ const extra=live.rows.find(row=>row['Item Number']==='EXTRA');assert.equal(extra.orderNumber,'');assert.equal(extra['Order Number'],'');assert.equal(extra['Received Qty'],2);assert.equal(extra['Ordered Qty'],0);assert.equal(extra['Assignment Status'],'Extra Items');
+ const pending=live.rows.find(row=>row.orderNumber===''&&row['Item Number']==='1012562');assert.equal(pending.unassigned,true);
  assert.equal(c.buildReceivedQuantityByOrder().get('A||1012562'),62);
  assert.equal(multi.orders.length,3);assert.equal(multi.orderGroups.length,4);assert.equal(multi.rows.filter(row=>row.unassigned).length,2);assert.equal(multi.orderId,'A + B + C');
  assert.equal(JSON.stringify(c.AppState.workspace.receivingHistory),before);
  assert.deepEqual(plain(c.buildLiveReceivingReport().rows),plain(live.rows));
  let exported;c.XLSX={utils:{aoa_to_sheet:rows=>(exported=rows,{}),book_new:()=>({}),book_append_sheet(){}},writeFile(){}};
  c.buildReceivingDiscrepancyReport=()=>multi;c.getReceivingReportFileBase=()=> 'test';c.showToast=()=>{};vm.runInContext(fn(report,'exportReceivingSummaryExcel'),c);c.exportReceivingSummaryExcel();
- const exportedExtra=exported.find(row=>row[1]==='EXTRA');assert.equal(exportedExtra[0],'Unassigned');assert.equal(exportedExtra[3],0);assert.equal(exportedExtra[4],2);
+ const exportedExtra=exported.find(row=>row[1]==='EXTRA');assert.equal(exportedExtra[0],'');assert.equal(exportedExtra[3],0);assert.equal(exportedExtra[4],2);
+});
+
+test('Extra KPI drill-down, email, Excel and PDF use outstanding dated pharmacy receipts with no invented Order',()=>{
+ const {c,source}=harness(),{document}=require('linkedom').parseHTML('<html><body><table><tbody id="rows"></tbody></table></body></html>');
+ c.document=document;c.AuthState={context:{pharmacy_id:'P'}};c.PharmFlowCloudWorkspace={hydratedPharmacyId:'P'};
+ c.AppState.workspace.receivingHistory=[{transactionId:'u',itemCode:'1011925',itemName:'Adol Extra 24 Tab',quantity:1,unassigned:true,dateTime:'2026-11-10T01:00:00Z',pharmacy_id:'P'},{transactionId:'cancelled',itemCode:'CANCELLED',quantity:3,unassigned:true,dateTime:'2026-11-09T01:00:00Z'},{transactionId:'reversal',itemCode:'CANCELLED',quantity:-3,correctsTransactionId:'cancelled',unassigned:true,dateTime:'2026-11-10T01:00:00Z'},{transactionId:'foreign',itemCode:'FOREIGN',quantity:9,unassigned:true,pharmacy_id:'OTHER',dateTime:'2026-11-10T01:00:00Z'}];
+ c.UI={elements:{receivingTableBody:document.getElementById('rows')},receivingFilters:{issues:new Set(['manual']),search:''}};c.refreshReceivingCategoryFilter=()=>{};c.refreshReceivingIssueCards=()=>{};c.createReceivingTableRow=item=>{const row=document.createElement('tr');row.textContent=item.itemName;return row;};
+ for(const name of ['normalizeReceivingSearchText','matchesReceivingSearch','refreshReceivingTable'])vm.runInContext(fn(ui,name),c);
+ for(const name of ['getCurrentReceivingFilterKeys','buildReceivingDiscrepancyReport','buildLiveReceivingReport','getLiveReceivingItemStatus','buildReceivingEmailDifferencesReport','exportReceivingSummaryExcel','exportReceivingSummaryPDF'])vm.runInContext(fn(report,name),c);
+ c.getWorkspaceOrderFile=order=>({sourceRows:source[order]});c.refreshReceivingTable();assert.equal(c.UI.receivingVisibleItems.length,1);assert.match(document.getElementById('rows').textContent,/Adol Extra/);
+ const view=c.buildReceivingDiscrepancyReport({visibleOnly:true});assert.equal(view.manualExtraItems,1);assert.equal(view.rows.length,1);assert.equal(view.rows[0]['Received Date'],'2026-11-10');assert.equal(view.rows[0].orderNumber,'');
+ const email=c.buildReceivingEmailDifferencesReport(view);assert.equal(email.rows.length,1);assert.equal(email.rows[0]['Received Date'],'2026-11-10');assert.equal(email.rows[0]['Received Qty'],1);assert.equal(email.orders.length,0);
+ let excel;const pdf=[];c.XLSX={utils:{aoa_to_sheet:rows=>(excel=rows,{}),book_new:()=>({}),book_append_sheet(){}},writeFile(){}};c.getReceivingReportFileBase=()=> 'test';c.showToast=()=>{};
+ c.window.jspdf={jsPDF:class{constructor(){this.internal={pageSize:{getWidth:()=>842,getHeight:()=>595}};}setFont(){}setFontSize(){}setDrawColor(){}line(){}save(){}addPage(){}splitTextToSize(s){return [s];}text(s){pdf.push(s);}}};c.exportReceivingSummaryExcel();c.exportReceivingSummaryPDF();assert.equal(excel.find(row=>row[1]==='1011925')[8],'2026-11-10');assert.ok(pdf.some(x=>Array.isArray(x)&&x.includes('Received: 2026-11-10')));
+ assert.equal(c.getUnassignedReceivingReportRows({fromDate:'2026-11-11'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({toDate:'2026-11-09'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({pharmacyId:'OTHER'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({orderNumbers:['A']}).length,0);
+ c.UI.receivingFilters.search='No match';c.refreshReceivingTable();assert.equal(c.UI.receivingVisibleItems.length,0);assert.equal(c.buildReceivingDiscrepancyReport({visibleOnly:true}).rows.length,0);
+ c.UI.receivingFilters.search='';c.UI.receivingFilters.issues=new Set(['over']);c.refreshReceivingTable();assert.equal(c.UI.receivingVisibleItems.length,0);assert.equal(c.buildReceivingDiscrepancyReport({visibleOnly:true}).rows.length,0);
 });

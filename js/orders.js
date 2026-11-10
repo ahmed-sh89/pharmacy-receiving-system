@@ -734,16 +734,20 @@ function buildFinalizedDiscrepancyEmailHTML(report){
     // Percentage hints share the available width; auto layout honors intact codes
     // and quantities, while names and statuses wrap only at word boundaries.
     const headers=[["Code","16%"],["Item Name","28%"],["Ordered","12%"],["Received","12%"],["Diff","10%"],["Status","22%"]];
-    const sections=model.groups.map(group=>{
+    const orderless=group=>group.unassigned===true||!String(group.orderNumber||'').trim()||/^(UNASSIGNED|UNORDERED)$/i.test(String(group.orderNumber));
+    const extraRows=model.groups.filter(orderless).flatMap(group=>group.rows.filter(row=>row.kind==='extra'));
+    const sections=[...model.groups.filter(group=>!orderless(group)),...(extraRows.length?[{extraSection:true,rows:extraRows}]:[])].map(group=>{
+        const sectionHeaders=group.extraSection?[["Received Date","20%"],["Code","18%"],["Item Name","42%"],["Received Quantity","20%"]]:headers;
         const date=group.orderDate||(report?.orders||[]).find(order=>String(order.orderNumber||"").trim()===String(group.orderNumber||"").trim())?.orderDate;
         const rows=group.rows.map((row,index)=>{
             const bg=index%2?"#eaf4fb":"#f6fbff",{ink,tint}=palette[row.kind];
             const cell=(content,extra="")=>`<td align="center" valign="middle" bgcolor="${bg}" style="${centered}padding:6px 3px;background-color:${bg};border-bottom:1px solid #e1ebf3;${extra}">${content}</td>`;
+            if(group.extraSection)return `<tr>${cell(font(esc(formatReceivingEmailOrderDate(row["Received Date"]||row.receivedAt||""))),"white-space:nowrap")}${cell(font(esc(row["Item Number"])),"white-space:nowrap")}${cell(`<span dir="auto">${font(esc(row["Item Name"]),14)}</span>`,"white-space:normal;overflow-wrap:normal")}${cell(font(esc(row["Received Qty"]??0),13,"#103d66",true),"white-space:nowrap")}</tr>`;
             const diff=(row.difference>0?"+":"")+row.difference;
             return `<tr>${cell(font(esc(row["Item Number"])),"white-space:nowrap")}${cell(`<span dir="auto">${font(esc(row["Item Name"]),14)}</span>`,"white-space:normal;overflow-wrap:normal")}${cell(font(esc(row["Ordered Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(font(esc(row["Received Qty"]??0),13,"#103d66",true),"white-space:nowrap")}${cell(`<table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" bgcolor="${tint}" style="border-collapse:separate;background-color:${tint};border-radius:5px"><tr><td align="center" bgcolor="${tint}" style="${centered}padding:3px 6px;white-space:nowrap;background-color:${tint};border-radius:5px">${font(esc(diff),14,ink,true)}</td></tr></table>`)}${cell(font(row.label,13,ink,600),"white-space:normal;overflow-wrap:normal")}</tr>`;
         }).join("");
         return `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="${interior}" style="background-color:${interior}"><tr><td align="center" height="22" bgcolor="${interior}" style="height:22px;font-size:1px;line-height:22px;background-color:${interior}">&nbsp;</td></tr></table>
-          <table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="${interior}" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:${interior};border-radius:10px"><tr>${bar(`<span dir="ltr" style="color:#FFFFFF;font-weight:700">${esc(group.orderNumber||"Extra / Unassigned")} &nbsp;|&nbsp; ${esc(formatReceivingEmailOrderDate(date))}</span>`)}</tr><tr><td align="center" dir="ltr" bgcolor="${interior}" style="${centered}padding:12px;background-color:${interior}"><table width="100%" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;border-collapse:collapse;table-layout:auto;border:1px solid #cbddea"><thead><tr>${headers.map(([label,width])=>`<th scope="col" align="center" valign="middle" bgcolor="#dceefb" ${width?`width="${width}"`:""} style="${centered}padding:9px 3px;background-color:#dceefb;border-bottom:1px solid #b7d3e8;white-space:normal;overflow-wrap:normal">${font(label,13,"#103d66",true)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></td></tr></table>`;
+          <table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d4e9" cellpadding="0" cellspacing="0" bgcolor="${interior}" style="width:100%;table-layout:fixed;border-collapse:collapse;border:1px solid #b8d4e9;background-color:${interior};border-radius:10px"><tr>${bar(`<span dir="ltr" style="color:#FFFFFF;font-weight:700">${group.extraSection?"Extra Items":`${esc(group.orderNumber||"Extra / Unassigned")} &nbsp;|&nbsp; ${esc(formatReceivingEmailOrderDate(date))}`}</span>`)}</tr><tr><td align="center" dir="ltr" bgcolor="${interior}" style="${centered}padding:12px;background-color:${interior}"><table width="100%" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;border-collapse:collapse;table-layout:auto;border:1px solid #cbddea"><thead><tr>${sectionHeaders.map(([label,width])=>`<th scope="col" align="center" valign="middle" bgcolor="#dceefb" ${width?`width="${width}"`:""} style="${centered}padding:9px 3px;background-color:#dceefb;border-bottom:1px solid #b7d3e8;white-space:normal;overflow-wrap:normal">${font(label,13,"#103d66",true)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></td></tr></table>`;
     }).join("");
     const message=(text,closing=false)=>`<table role="presentation" align="center" width="100%" border="1" bordercolor="#97c3e3" cellpadding="0" cellspacing="0" bgcolor="#d5eaf8" style="width:100%;border-collapse:collapse;background-color:#d5eaf8;border:1px solid #97c3e3;border-radius:10px"><tr><td align="center" dir="rtl" bgcolor="#d5eaf8" style="${centered}padding:${closing?14:20}px 18px;background-color:#d5eaf8">${font(text,closing?18:20,"#173d63",true,closing?32:41)}</td></tr></table>`;
     const spacer=`<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="${interior}" style="background-color:${interior}"><tr><td align="center" height="26" bgcolor="${interior}" style="height:26px;font-size:1px;line-height:26px;background-color:${interior}">&nbsp;</td></tr></table>`;
@@ -795,7 +799,8 @@ function buildFinalizedDiscrepancyEmailText(report){
     lines.push(Object.entries(model.counts).filter(([,value])=>value>0)
         .map(([key,value])=>model.labels[key]+": "+formatReceivingEmailKpiValue(key,value)).join(" | "), "");
 
-    groups.forEach(group=>{
+    const isOrderless=group=>group.unassigned===true||!String(group.orderNumber||'').trim()||/^(UNASSIGNED|UNORDERED)$/i.test(String(group.orderNumber));
+    groups.filter(group=>!isOrderless(group)).forEach(group=>{
         lines.push(
             "الطلبية "+(group.orderNumber||"-")+" | التاريخ "+(group.orderDate||"-"),
             "",
@@ -816,6 +821,8 @@ function buildFinalizedDiscrepancyEmailText(report){
 
         lines.push("");
     });
+    const extras=groups.filter(isOrderless).flatMap(group=>group.rows.filter(row=>row.kind==='extra'));
+    if(extras.length){lines.push('Extra Items','Received Date | Code | Item Name | Received Quantity');for(const row of extras)lines.push([row['Received Date']||row.receivedAt||'—',row['Item Number'],row['Item Name'],row['Received Qty']].join(' | '));lines.push('');}
     lines.push("خالص الشكر والتقدير.");
     return lines.join("\r\n");
 }

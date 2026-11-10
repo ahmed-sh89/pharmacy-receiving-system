@@ -1718,4 +1718,6 @@ body:not(.zebraDevice) #quickGTINResolver [data-quick-group]:focus-visible{borde
 /* Shared unknown/review entry controls use the existing Receiving form treatment. */
 #quickGTINResolver .gtinResolutionPanel > .gtinResolutionLabel{display:grid;gap:6px;margin:0 22px 14px;color:#315979;font-size:12px;font-weight:750}
 #quickGTINResolver [data-unknown-order]{box-sizing:border-box;width:100%;min-height:38px;border:1px solid #b8d0e5;border-radius:9px;background:#fff;padding:8px 10px;color:#173f70;font:inherit}
-#quickGTINResolver .gtinResolutionFooter>div{display:flex;gap:10px;flex-wrap:wrap}
+#quickGTINResolver .gtinResolutionFooter>div:not(.receivingReceiptActions){display:flex;gap:10px;flex-wrap:wrap}
+#quickGTINResolver .receivingReceiptActions{display:flex;gap:10px;align-items:center}
+#quickGTINResolver .receivingReceiptActions button{width:auto;min-height:38px;margin:0;font:inherit;white-space:nowrap}

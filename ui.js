@@ -2379,6 +2379,9 @@ function refreshReceivingTable(){
             return issues.has(issue)||(issues.has("received_any")&&received>0);
         });
     }
+    if(typeof getUnassignedReceivingReportRows==='function'&&(issues.has('manual')||issues.has('received_any'))){
+        rows.push(...getUnassignedReceivingReportRows().map(r=>({orderNumber:'',unassigned:true,receivedDate:r['Received Date'],itemCode:r['Item Number'],itemName:r['Item Name'],orderedQty:0,receivedQty:r['Received Qty'],remainingQty:0,status:'Extra Item',manual:true,group_name:r.Group,category:r.Category,sub_category:r['Sub Category']})));
+    }
     if(window.PharmFlowClassificationFilters){
         const classification=UI.receivingFilters.classification||{};
         const selectedGroups=Array.isArray(classification.groups)?classification.groups:[];
@@ -2393,7 +2396,7 @@ function refreshReceivingTable(){
     if(searchFilter) rows=rows.filter(item=>matchesReceivingSearch(item,searchFilter));
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;refreshReceivingIssueCards();if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     const inline=document.getElementById("receivingInlineResult");
-    if(!(AppState.workspace.orderData||[]).length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>';return;}
+    if(!(AppState.workspace.orderData||[]).length&&!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>';return;}
     if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No items match the selected filters.</td></tr>';return;}
     rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
     if(inline){ inline.hidden=true; inline.innerHTML=""; }
@@ -2469,6 +2472,7 @@ function createReceivingTableRow(
             ${escapeHTML(
                 item.itemName
             )}
+            ${item.unassigned?`<small class="receivingExtraDate">Received: ${escapeHTML(item.receivedDate||"—")}</small>`:""}
 
             ${
                 item.manual
@@ -2493,7 +2497,7 @@ function createReceivingTableRow(
 
         <td>
 
-            <div class="tableQtyControl">
+            ${item.unassigned?`<span class="tableQtyValue">${toNumber(item.receivedQty,0)}</span>`:`<div class="tableQtyControl">
 
                 <button
                     type="button"
@@ -2522,7 +2526,7 @@ function createReceivingTableRow(
                     +
                 </button>
 
-            </div>
+            </div>`}
 
         </td>
 

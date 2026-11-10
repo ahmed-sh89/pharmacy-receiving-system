@@ -1316,25 +1316,41 @@ function getPerOrderReceivingRows(orderNumber, options={}){
 }
 
 // Unassigned is a workspace scope, never an inferred Order association.
-function getUnassignedReceivingReportRows(){
-    const byCode=new Map(),seen=new Set();
-    for(const tx of AppState?.workspace?.receivingHistory||[]){
-        if(tx?.undone===true||tx?.unassigned!==true||normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||tx.orderNumber||''))continue;
-        if(tx.transactionId&&seen.has(tx.transactionId))continue;
-        if(tx.transactionId)seen.add(tx.transactionId);
-        const code=normalizeItemCode(tx.itemCode||'');if(!code)continue;
-        const row=byCode.get(code)||{code,name:tx.itemName||'',quantity:0};
-        row.quantity+=toNumber(tx.quantity,0);byCode.set(code,row);
+function getUnassignedReceivingReportRows(options={}){
+    const active=getActiveReceivingOrderNumbers();
+    const selected=options.orderNumbers||(typeof getSelectedReceivingOrderNumbers==='function'?getSelectedReceivingOrderNumbers():active);
+    // An orderless receipt belongs to the current pharmacy outstanding workspace,
+    // never a guessed subset of Orders. Historical reports use their snapshot.
+    if(active.length&&active.some(order=>!selected.includes(order)))return [];
+    const pharmacy=typeof AuthState!=='undefined'?AuthState.context?.pharmacy_id:null;
+    if(options.pharmacyId&&options.pharmacyId!==pharmacy)return [];
+    if(pharmacy&&typeof PharmFlowCloudWorkspace!=='undefined'&&PharmFlowCloudWorkspace.hydratedPharmacyId&&PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacy)return [];
+    const filters=typeof UI!=='undefined'?UI.receivingFilters||{}:{};
+    const from=options.fromDate||filters.fromDate||'',to=options.toDate||filters.toDate||'';
+    const seen=new Set(),ledger=(AppState?.workspace?.receivingHistory||[]).filter(tx=>{
+        if(tx?.undone===true||tx?.unassigned!==true||normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||tx.orderNumber||''))return false;
+        if(pharmacy&&tx.pharmacy_id&&tx.pharmacy_id!==pharmacy)return false;
+        if(tx.transactionId&&seen.has(tx.transactionId))return false;
+        if(tx.transactionId)seen.add(tx.transactionId);return true;
+    });
+    const balances=new Map(),reversed=new Map();
+    for(const tx of ledger){const code=normalizeItemCode(tx.itemCode||'');balances.set(code,(balances.get(code)||0)+toNumber(tx.quantity,0));if(tx.correctsTransactionId&&toNumber(tx.quantity,0)<0)reversed.set(tx.correctsTransactionId,(reversed.get(tx.correctsTransactionId)||0)+toNumber(tx.quantity,0));}
+    const byCode=new Map();
+    for(const tx of ledger){
+        const code=normalizeItemCode(tx.itemCode||'');if(!code||toNumber(tx.quantity,0)<=0)continue;
+        const quantity=Math.max(0,Math.min(toNumber(tx.quantity,0)+(reversed.get(tx.transactionId)||0),balances.get(code)||0));
+        balances.set(code,(balances.get(code)||0)-quantity);if(!quantity)continue;
+        const occurred=String(tx.dateTime||tx.occurred_at||''),date=new Date(occurred);
+        const day=Number.isFinite(date.getTime())?[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-'):'';
+        if((from&&(!day||day<from))||(to&&(!day||day>to)))continue;
+        const key=code+'|'+day,row=byCode.get(key)||{code,name:tx.itemName||'',quantity:0,day,occurred};row.quantity+=quantity;byCode.set(key,row);
     }
-    if(!byCode.size)return [];
     const workspace=new Map((AppState?.workspace?.orderData||[]).map(item=>[normalizeItemCode(item.itemCode),item]));
-    const ordered=new Set(getActiveReceivingOrderNumbers().flatMap(order=>getWorkspaceOrderSourceRows(order).filter(row=>toNumber(row.orderedQty,0)>0).map(row=>normalizeItemCode(row.itemCode))));
-    return [...byCode.values()].filter(row=>row.quantity>0).map(row=>{
+    return [...byCode.values()].map(row=>{
         const item=workspace.get(row.code)||{};
-        return {orderNumber:'',unassigned:true,'Order Number':'Unassigned','Item Number':row.code,'Item Name':row.name||item.itemName||'',
+        return {orderNumber:'',unassigned:true,'Order Number':'','Received Date':row.day,receivedAt:row.occurred,'Item Number':row.code,'Item Name':row.name||item.itemName||'',
             'Ordered Qty':0,'Received Qty':row.quantity,'Difference':row.quantity,'Issue Type':'Extra Item',issueKey:'manual',
-            'Assignment Status':ordered.has(row.code)?'Unassigned — order match available':'Unassigned — extra receipt',
-            Group:item.group_name||item.group||'',Category:item.category||'','Sub Category':item.sub_category||item.subCategory||''};
+            'Assignment Status':'Extra Items',Group:item.group_name||item.group||'',Category:item.category||'','Sub Category':item.sub_category||item.subCategory||''};
     });
 }
 
@@ -1386,7 +1402,7 @@ function buildMultiOrderReceivingReport(options={}){
         ? selectedOrders
         : getActiveReceivingOrderNumbers();
 
-    const unassignedRows=getUnassignedReceivingReportRows();
+    const unassignedRows=getUnassignedReceivingReportRows(options);
     [...reportOrders,...(unassignedRows.length?['']:[])].forEach(orderNumber=>{
         const meta=getReceivingOrderMetadata()
             .find(meta=>
@@ -1529,7 +1545,7 @@ function buildLiveReceivingReport(options={}){
         orderedQty:row["Ordered Qty"],receivedQty:row["Received Qty"],
         group_name:row.Group,category:row.Category,sub_category:row["Sub Category"],manual:row.issueKey==="manual"
     })));
-    scopedItems.push(...getUnassignedReceivingReportRows().map(row=>({orderNumber:'',unassigned:true,assignmentStatus:row["Assignment Status"],itemCode:row["Item Number"],itemName:row["Item Name"],orderedQty:0,receivedQty:row["Received Qty"],manual:true,group_name:row.Group,category:row.Category,sub_category:row["Sub Category"]})));
+    scopedItems.push(...getUnassignedReceivingReportRows(options).map(row=>({orderNumber:'',unassigned:true,receivedDate:row["Received Date"],receivedAt:row.receivedAt,assignmentStatus:row["Assignment Status"],itemCode:row["Item Number"],itemName:row["Item Name"],orderedQty:0,receivedQty:row["Received Qty"],manual:true,group_name:row.Group,category:row.Category,sub_category:row["Sub Category"]})));
     const allSourceItems=Array.isArray(options.items)?options.items:scopedItems;
     const sourceItems=options.classification && window.PharmFlowClassificationFilters
         ? window.PharmFlowClassificationFilters.filter(allSourceItems,options.classification)
@@ -1548,7 +1564,10 @@ function buildLiveReceivingReport(options={}){
 
         return {
             orderNumber:item.orderNumber||"",
-            "Order Number":item.unassigned?"Unassigned":item.orderNumber||"",
+            "Order Number":item.orderNumber||"",
+            unassigned:item.unassigned===true,
+            "Received Date":item.receivedDate||"",
+            receivedAt:item.receivedAt||"",
             "Assignment Status":item.assignmentStatus||"",
             "Item Number":item?.itemCode||"",
             "Item Name":item?.itemName||"",
@@ -1611,6 +1630,8 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
     const live=liveReport || buildLiveReceivingReport();
     const FINAL_DISCREPANCY_TYPES=new Set(["NOT RECEIVED","PARTIAL SHORTAGE","OVER RECEIVED","EXTRA ITEM","SHORTAGE","UNORDERED"]);
     const toEmailRow=row=>({
+        orderNumber:row.orderNumber||"",unassigned:row.unassigned===true,
+        "Received Date":row["Received Date"]||"",receivedAt:row.receivedAt||"",
         "Item Number":row["Item Number"],
         "Item Name":row["Item Name"],
         "Ordered Qty":row["Ordered Qty"],
@@ -1628,9 +1649,11 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
        still active instead of merging multiple orders into one item table. */
     const grouped=Array.isArray(live?.orderGroups)
         ? live
-        : (typeof buildMultiOrderReceivingReport==="function"
-            ? buildMultiOrderReceivingReport({visibleOnly:false})
-            : null);
+        : {orderGroups:(live?.rows||[]).reduce((groups,row)=>{
+            const order=row.orderNumber||'',unassigned=row.unassigned===true;
+            let group=groups.find(g=>g.orderNumber===order&&g.unassigned===unassigned);
+            if(!group){group={...(live.orders||[]).find(meta=>meta.orderNumber===order),orderNumber:order,unassigned,rows:[]};groups.push(group);}group.rows.push(row);return groups;
+        },[])};
 
     const orderGroups=Array.isArray(grouped?.orderGroups)
         ? grouped.orderGroups
@@ -1657,7 +1680,7 @@ function buildReceivingEmailDifferencesReport(liveReport=null){
     return {
         orderId:live?.orderId||"",
         orders:orderGroups.length
-            ? orderGroups.map(group=>({
+            ? orderGroups.filter(group=>group.orderNumber).map(group=>({
                 orderNumber:group.orderNumber,
                 orderDate:group.orderDate||""
             }))
@@ -1929,11 +1952,14 @@ function exportReceivingSummaryExcel(){
     aoa.push([]);
     const headerRow=aoa.length+1;
     aoa.push(["Order Number","Item Number","Item Name","Ordered Qty","Received Qty","Difference","Issue Type","Group"]);
-    s.rows.forEach(r=>aoa.push([r.orderNumber||r["Order Number"]||"",r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Group||""]));
+    const hasReceiptDates=s.rows.some(r=>r.unassigned);
+    if(hasReceiptDates)aoa[headerRow-1].push('Received Date');
+    s.rows.forEach(r=>{const row=[r.orderNumber||r["Order Number"]||"",r["Item Number"],r["Item Name"],r["Ordered Qty"],r["Received Qty"],r.Difference,r["Issue Type"],r.Group||""];if(hasReceiptDates)row.push(r["Received Date"]||'');aoa.push(row);});
     const ws=XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"]=[{wch:20},{wch:18},{wch:44},{wch:13},{wch:13},{wch:12},{wch:25},{wch:22}];
     ws["!freeze"]={xSplit:0,ySplit:headerRow};
-    ws["!autofilter"]={ref:`A${headerRow}:H${aoa.length}`};
+    if(hasReceiptDates)ws["!cols"].push({wch:18});
+    ws["!autofilter"]={ref:`A${headerRow}:${hasReceiptDates?'I':'H'}${aoa.length}`};
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,"Receiving View");
     XLSX.writeFile(wb,getReceivingReportFileBase(s)+".xlsx");
@@ -1995,9 +2021,11 @@ function exportReceivingSummaryPDF(){
     }
     header();
     s.rows.forEach((r)=>{
-        if(y+rowH>pageH-38){footer();doc.addPage();header();}
+        const height=r.unassigned?36:rowH;
+        if(y+height>pageH-38){footer();doc.addPage();header();}
         doc.setFont("helvetica","normal");doc.setFontSize(8);
         const nameLines=doc.splitTextToSize(String(r["Item Name"]||""),cols[2].w-8).slice(0,2);
+        if(r.unassigned)nameLines.push("Received: "+(r["Received Date"]||"—"));
         const catLines=doc.splitTextToSize(String(r.Group||""),cols[7].w-4).slice(0,2);
         doc.text(String(r.orderNumber||r["Order Number"]||""),cols[0].x,y);
         doc.text(String(r["Item Number"]||""),cols[1].x,y);
@@ -2007,8 +2035,8 @@ function exportReceivingSummaryPDF(){
         doc.text((r.Difference>0?"+":"")+String(r.Difference),cols[5].x,y);
         doc.setFont("helvetica","bold");doc.text(String(r["Issue Type"]),cols[6].x,y);
         doc.setFont("helvetica","normal");doc.text(catLines,cols[7].x,y);
-        doc.setDrawColor(225);doc.line(margin,y+15,pageW-margin,y+15);
-        y+=rowH;
+        doc.setDrawColor(225);doc.line(margin,y+height-9,pageW-margin,y+height-9);
+        y+=height;
     });
     footer();
     doc.save(getReceivingReportFileBase(s)+".pdf");

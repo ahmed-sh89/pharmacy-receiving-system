@@ -15,9 +15,10 @@
 /* Row action shares the existing item cell; the original six columns stay intact. */
 .receivingExtraItem{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .receivingExtraItem b{min-width:0}
-.receivingExtraItem .receivingExtraRemove{width:auto;min-height:0;margin:0;padding:4px 8px;flex:none;border:1px solid #b8d0e5;border-radius:6px;font:inherit;font-size:12px;white-space:nowrap}
+.receivingExtraItem .receivingExtraRemove{width:auto;min-height:32px;margin:0;padding:4px 10px;flex:none;font:inherit;font-size:12px;white-space:nowrap}
 .receivingReceiptChoice{display:grid;gap:6px;margin-top:12px;color:#315979;font-weight:700}
 .receivingReceiptChoice select{box-sizing:border-box;width:100%;padding:8px 10px;border:1px solid #b8d0e5;border-radius:8px;background:#fff;color:#123f6d;font:inherit}
+.receivingExtraDate{display:block;color:#607d96;font-size:12px}
 .receivingExtraMessage{margin:8px 0;color:#a12b41;font-size:12px}
 .receivingExtraMessage:empty{display:none}
 .receivingUnassignedNotice{display:grid;gap:3px;padding:10px 12px;border:1px solid #c7dced;border-radius:8px;background:#f1f7fd;color:#315979;font-size:12px;line-height:1.5}

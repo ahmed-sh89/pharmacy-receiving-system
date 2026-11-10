@@ -171,5 +171,5 @@ test("adjustment handlers emit exactly one signed delta for a duplicated item gr
 });
 
 test("the active HTML entry cache-busts the corrected report source",()=>{
-    assert.match(indexSource,/<script src="js\/reports\.js\?v=RECEIVING_SELECTED_20261110"><\/script>/);
+    assert.match(indexSource,/<script src="js\/reports\.js\?v=RECEIVING_EXTRA_FINAL_20261110"><\/script>/);
 });

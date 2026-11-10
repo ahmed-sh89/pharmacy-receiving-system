@@ -303,3 +303,17 @@ test('each canonical KPI card retains one 3px category accent in preview and cli
   }
  }
 });
+
+test('orderless Extra Items append one native four-column section; original six-column tables and Outlook styles remain intact',()=>{
+ const {c}=harness(),r=fixture();r.orderGroups.push({orderNumber:'',unassigned:true,rows:[{...row('1011925',0,1,'Extra Item'),'Item Name':'Adol Extra 24 Tab','Received Date':'2026-11-10',unassigned:true}]});
+ const html=c.buildFinalizedDiscrepancyEmailHTML(r),{document}=parseHTML(html),heads=[...document.querySelectorAll('thead')];
+ assert.deepEqual(heads.slice(0,2).map(head=>[...head.querySelectorAll('th')].map(x=>x.textContent)),Array(2).fill(['Code','Item Name','Ordered','Received','Diff','Status']));
+ assert.deepEqual([...heads.at(-1).querySelectorAll('th')].map(x=>x.textContent),['Received Date','Code','Item Name','Received Quantity']);
+ assert.match(html,/10 Nov 2026/);assert.doesNotMatch(html,/Unassigned Extra Items|Extra \/ Unassigned/);assert.equal((html.match(/Adol Extra 24 Tab/g)||[]).length,1);
+ const base=heads[0].querySelector('th'),extra=heads.at(-1).querySelector('th');assert.equal(extra.getAttribute('style'),base.getAttribute('style'));assert.equal(extra.getAttribute('bgcolor'),base.getAttribute('bgcolor'));
+ assert.doesNotMatch(html,/<script|<style|on\w+=|display:flex|display:grid/i);assert.match(c.buildFinalizedDiscrepancyEmailText(r),/Extra Items\r\nReceived Date \| Code \| Item Name \| Received Quantity/);
+});
+test('without qualifying orderless extras the complete email HTML and plain text are byte-identical to Production',()=>{
+ const {c}=harness(),baseline={window:{},setTimeout(){}};vm.createContext(baseline);vm.runInContext(require('node:child_process').execFileSync('git',['show','70d3e2059317f460a9be482dac0445049cf9045d:js/orders.js'],{encoding:'utf8'}),baseline);
+ for(const r of [fixture(),{orderGroups:[]},{orderGroups:[group('A',[row('ONE',1,0,'NOT RECEIVED')])]}]){assert.equal(c.buildFinalizedDiscrepancyEmailHTML(r),baseline.buildFinalizedDiscrepancyEmailHTML(r));assert.equal(c.buildFinalizedDiscrepancyEmailText(r),baseline.buildFinalizedDiscrepancyEmailText(r));}
+});

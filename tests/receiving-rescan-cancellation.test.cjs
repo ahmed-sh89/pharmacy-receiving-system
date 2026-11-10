@@ -9,6 +9,6 @@ test('cancelled Extra rescans as recognised/not-in-order when authoritative Orde
  vm.createContext(c);for(const name of ['receiveParsedBarcode','getReceivingItemByItemCode','quickResolveUnrecognizedGTIN','openKnownNotInOrderPC'])vm.runInContext(fn(receiving,name),c);vm.runInContext(fn(cloud,'rebuildReceivingQuantitiesFromLedger'),c);
  const before=JSON.stringify(history);c.rebuildReceivingQuantitiesFromLedger();assert.equal(ordered.receivedQty,0);assert.equal(ordered.orderedQty,5);
  const result=c.receiveParsedBarcode({gtin:'SAME-BARCODE',quantity:1});for(let n=0;n<10;n++)await Promise.resolve();
- assert.match(document.body.textContent,/RECOGNISED · NOT IN ORDER/);assert.match(document.body.textContent,/Test item/);assert.equal(document.querySelector('[data-extra-order] option').getAttribute('value'),'');
+ assert.match(document.body.textContent,/RECOGNISED · NOT IN ORDER/);assert.match(document.body.textContent,/Test item/);const actions=document.querySelector('.receivingReceiptActions');assert.ok(actions);assert.equal(actions.querySelectorAll('button').length,2);assert.equal(actions.querySelector('[data-add-extra]').textContent,'Confirm');assert.ok(actions.querySelector('[data-close]').classList.contains('gtinSecondaryAction'));assert.equal(document.querySelector('[data-extra-order] option').getAttribute('value'),'');
  document.querySelector('[data-close]').onclick();assert.equal(await result,false);assert.equal(JSON.stringify(history),before);assert.equal(mapping.found,true);assert.equal(mapping.itemCode,'EXTRA');assert.deepEqual(failures,[]);
 });
