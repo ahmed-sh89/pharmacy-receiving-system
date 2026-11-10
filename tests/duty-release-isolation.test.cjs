@@ -15,9 +15,9 @@ function verifyRelease(read=path=>fs.readFileSync(path)){
  }
 }
 
-test('release baseline is pinned to verified Production and the declared Staging Receiving source',()=>{
- assert.equal(manifest.production_base,'70d3e2059317f460a9be482dac0445049cf9045d');
- assert.equal(manifest.approved_source,'5f3e578be806f10311266dbcd209f54a7a5f611a');
+test('release baseline is pinned to verified Production and the declared Receiving hotfix source',()=>{
+ assert.equal(manifest.production_base,'4a3ba8e875b155f398a40e6c277385d9e4acebe0');
+ assert.equal(manifest.approved_source,'cd9b7f55770cbce1a741ab984dd25b5b7d5b4499');
  git('merge-base','--is-ancestor',manifest.production_base,manifest.approved_source);
  for(const path of Object.keys(historical.protected_files))assert.ok(Object.hasOwn(manifest.protected_files,path),`Protection removed: ${path}`);
  for(const path of ['css/duty.css','js/duty.js','js/duty-model.js','js/duty-controls.js','js/duty-schedule.js','js/duty-reports.js']){
