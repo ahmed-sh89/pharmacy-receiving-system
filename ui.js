@@ -2396,8 +2396,8 @@ function refreshReceivingTable(){
     if(searchFilter) rows=rows.filter(item=>matchesReceivingSearch(item,searchFilter));
     UI.receivingVisibleItems=rows.slice();const d=document.getElementById("rsDisplayedItems");if(d)d.textContent=rows.length;refreshReceivingIssueCards();if(typeof refreshReceivingVerificationSummary==="function")refreshReceivingVerificationSummary();
     const inline=document.getElementById("receivingInlineResult");
-    if(!(AppState.workspace.orderData||[]).length&&!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No order items loaded.</td></tr>';return;}
-    if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="10" class="tableEmptyState">No items match the selected filters.</td></tr>';return;}
+    if(!(AppState.workspace.orderData||[]).length&&!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="9" class="tableEmptyState">No order items loaded.</td></tr>';return;}
+    if(!rows.length){if(inline){inline.hidden=true;inline.innerHTML="";}tbody.innerHTML='<tr><td colspan="9" class="tableEmptyState">No items match the selected filters.</td></tr>';return;}
     rows.forEach((item,index)=>{const tr=createReceivingTableRow(item,index);tr.dataset.orderNumber=item.orderNumber||"";tbody.appendChild(tr);});
     if(inline){ inline.hidden=true; inline.innerHTML=""; }
 

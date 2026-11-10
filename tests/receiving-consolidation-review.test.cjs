@@ -133,11 +133,22 @@ test('Extra KPI drill-down, email, Excel and PDF use outstanding dated pharmacy 
  for(const name of ['normalizeReceivingSearchText','matchesReceivingSearch','refreshReceivingTable'])vm.runInContext(fn(ui,name),c);
  for(const name of ['getCurrentReceivingFilterKeys','buildReceivingDiscrepancyReport','buildLiveReceivingReport','getLiveReceivingItemStatus','buildReceivingEmailDifferencesReport','exportReceivingSummaryExcel','exportReceivingSummaryPDF'])vm.runInContext(fn(report,name),c);
  c.getWorkspaceOrderFile=order=>({sourceRows:source[order]});c.refreshReceivingTable();assert.equal(c.UI.receivingVisibleItems.length,1);assert.match(document.getElementById('rows').textContent,/Adol Extra/);
+ c.getSelectedReceivingOrderNumbers=()=>['A'];c.refreshReceivingTable();assert.equal(c.UI.receivingVisibleItems.length,1);
  const view=c.buildReceivingDiscrepancyReport({visibleOnly:true});assert.equal(view.manualExtraItems,1);assert.equal(view.rows.length,1);assert.equal(view.rows[0]['Received Date'],'2026-11-10');assert.equal(view.rows[0].orderNumber,'');
  const email=c.buildReceivingEmailDifferencesReport(view);assert.equal(email.rows.length,1);assert.equal(email.rows[0]['Received Date'],'2026-11-10');assert.equal(email.rows[0]['Received Qty'],1);assert.equal(email.orders.length,0);
  let excel;const pdf=[];c.XLSX={utils:{aoa_to_sheet:rows=>(excel=rows,{}),book_new:()=>({}),book_append_sheet(){}},writeFile(){}};c.getReceivingReportFileBase=()=> 'test';c.showToast=()=>{};
  c.window.jspdf={jsPDF:class{constructor(){this.internal={pageSize:{getWidth:()=>842,getHeight:()=>595}};}setFont(){}setFontSize(){}setDrawColor(){}line(){}save(){}addPage(){}splitTextToSize(s){return [s];}text(s){pdf.push(s);}}};c.exportReceivingSummaryExcel();c.exportReceivingSummaryPDF();assert.equal(excel.find(row=>row[1]==='1011925')[8],'2026-11-10');assert.ok(pdf.some(x=>Array.isArray(x)&&x.includes('Received: 2026-11-10')));
- assert.equal(c.getUnassignedReceivingReportRows({fromDate:'2026-11-11'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({toDate:'2026-11-09'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({pharmacyId:'OTHER'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({orderNumbers:['A']}).length,0);
+ assert.equal(c.getUnassignedReceivingReportRows({fromDate:'2026-11-11'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({toDate:'2026-11-09'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({pharmacyId:'OTHER'}).length,0);assert.equal(c.getUnassignedReceivingReportRows({orderNumbers:['A']}).length,1);
  c.UI.receivingFilters.search='No match';c.refreshReceivingTable();assert.equal(c.UI.receivingVisibleItems.length,0);assert.equal(c.buildReceivingDiscrepancyReport({visibleOnly:true}).rows.length,0);
  c.UI.receivingFilters.search='';c.UI.receivingFilters.issues=new Set(['over']);c.refreshReceivingTable();assert.equal(c.UI.receivingVisibleItems.length,0);assert.equal(c.buildReceivingDiscrepancyReport({visibleOnly:true}).rows.length,0);
+});
+
+test('subset and all Orders retain the same orderless Extra scope without changing associated Extra/Over calculations',()=>{
+ const {c,source}=harness();c.getWorkspaceOrderFile=order=>({sourceRows:source[order]});
+ for(const name of ['getCurrentReceivingFilterKeys','buildReceivingDiscrepancyReport'])vm.runInContext(fn(report,name),c);
+ c.UI={receivingFilters:{issues:new Set(['manual','over'])}};
+ c.AppState.workspace.receivingHistory=[tx('A',63,'over'),{itemCode:'ASSIGNED-EXTRA',itemName:'Assigned Extra',quantity:2,orderId:'A',transactionId:'e'},{itemCode:'ORDERLESS',itemName:'Orderless Extra',quantity:1,unassigned:true,transactionId:'u',dateTime:'2026-11-10T01:00:00Z'}];
+ const before=JSON.stringify(c.AppState.workspace.receivingHistory);
+ for(const selected of [['A'],['A','B','C']]){c.getSelectedReceivingOrderNumbers=()=>selected;const s=c.buildReceivingDiscrepancyReport({visibleOnly:true});assert.equal(s.manualExtraItems,2);assert.equal(s.overItems,1);assert.equal(s.rows.find(row=>row['Item Number']==='ORDERLESS').orderNumber,'');assert.equal(s.rows.find(row=>row['Item Number']==='ASSIGNED-EXTRA')['Received Qty'],2);assert.equal(s.rows.find(row=>row['Item Number']==='1012562')['Difference'],1);}
+ assert.equal(JSON.stringify(c.AppState.workspace.receivingHistory),before);
 });

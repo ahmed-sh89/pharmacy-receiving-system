@@ -341,3 +341,7 @@ body.zebraDevice .hhReceivingAssignedOrder{display:flex;align-items:center;justi
 body.zebraDevice .hhReceivingAssignedOrder>strong{min-width:0}
 body.zebraDevice .hhReceivingAssignedOrder>span{flex:none;color:#216448;font-size:11px}
 body.zebraDevice .hhReceivingHistoryOverlay[hidden]{display:none!important}
+
+/* Nine report columns share the available width; quantity controls stay in Received. */
+#page-receiving .receivingReportTable{table-layout:fixed}
+#page-receiving .receivingReportTable td:nth-child(4){overflow-wrap:break-word}
