@@ -1317,11 +1317,8 @@ function getPerOrderReceivingRows(orderNumber, options={}){
 
 // Unassigned is a workspace scope, never an inferred Order association.
 function getUnassignedReceivingReportRows(options={}){
-    const active=getActiveReceivingOrderNumbers();
-    const selected=options.orderNumbers||(typeof getSelectedReceivingOrderNumbers==='function'?getSelectedReceivingOrderNumbers():active);
-    // An orderless receipt belongs to the current pharmacy outstanding workspace,
-    // never a guessed subset of Orders. Historical reports use their snapshot.
-    if(active.length&&active.some(order=>!selected.includes(order)))return [];
+    // Order selection scopes associated rows only. Outstanding orderless
+    // Extras retain their pharmacy/date scope without inferred membership.
     const pharmacy=typeof AuthState!=='undefined'?AuthState.context?.pharmacy_id:null;
     if(options.pharmacyId&&options.pharmacyId!==pharmacy)return [];
     if(pharmacy&&typeof PharmFlowCloudWorkspace!=='undefined'&&PharmFlowCloudWorkspace.hydratedPharmacyId&&PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacy)return [];
