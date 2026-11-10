@@ -1,7 +1,7 @@
 {
   "release": "receiving-selected-receipts-staging-20261110",
   "production_base": "70d3e2059317f460a9be482dac0445049cf9045d",
-  "approved_source": "18cbb5a5c3591c844be9d5e04e442ac6f136261c",
+  "approved_source": "5f3e578be806f10311266dbcd209f54a7a5f611a",
   "purpose": "Pin the exact owner-requested Staging candidate; manual acceptance remains pending. Retain every historical protected path and unchanged Duty/deployment files. No file exemptions.",
   "protected_files": {
     ".github/workflows/accepted-release-checks.yml": "b7211072ec465835448892c218daf870276cfc92",
@@ -100,8 +100,8 @@
   "approved_changes": {
     "css/pharmflow-next.css": "40f55e7b4ac96d19b725a80307bcb120d972fca0",
     "css/receiving-allocation.css": "fe23ac7fff6764b587b2359035ee4d534e2202db",
-    "index.html": "91a6a18f92a43a72e88068a70eb2a3fe99cb4065",
-    "js/orders.js": "157083eadd3075bfea2a80e0d0b073efe955accf",
+    "index.html": "734d15ea50a6da9380b75ce0f64ed22e43ed49d2",
+    "js/orders.js": "5686d3d2112bf418ea03c990b89e3e14c23779d1",
     "js/permissions.js": "4fc292814c203b889b14bdd40f35733263d5a16d",
     "js/receiving-recovery.js": "7d4c8aa3e125096b4cb8e81d417844a8ff7a4344",
     "js/receiving.js": "08a4a63bd5b4475e6921eaeef5fa1fc07a5de995",
