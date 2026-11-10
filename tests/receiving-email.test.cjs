@@ -304,16 +304,27 @@ test('each canonical KPI card retains one 3px category accent in preview and cli
  }
 });
 
-test('orderless Extra Items append one native four-column section; original six-column tables and Outlook styles remain intact',()=>{
+test('orderless Extra Items append native six-column date sections; original six-column tables and Outlook styles remain intact',()=>{
  const {c}=harness(),r=fixture();r.orderGroups.push({orderNumber:'',unassigned:true,rows:[{...row('1011925',0,1,'Extra Item'),'Item Name':'Adol Extra 24 Tab','Received Date':'2026-11-10',unassigned:true}]});
  const html=c.buildFinalizedDiscrepancyEmailHTML(r),{document}=parseHTML(html),heads=[...document.querySelectorAll('thead')];
  assert.deepEqual(heads.slice(0,2).map(head=>[...head.querySelectorAll('th')].map(x=>x.textContent)),Array(2).fill(['Code','Item Name','Ordered','Received','Diff','Status']));
- assert.deepEqual([...heads.at(-1).querySelectorAll('th')].map(x=>x.textContent),['Received Date','Code','Item Name','Received Quantity']);
+ assert.deepEqual([...heads.at(-1).querySelectorAll('th')].map(x=>x.textContent),['Code','Item Name','Ordered','Received','Diff','Status']);
+ const code=[...document.querySelectorAll('td')].find(node=>node.textContent==='1011925'),cells=[...code.parentElement.children];assert.deepEqual(cells.map(cell=>cell.textContent),['1011925','Adol Extra 24 Tab','0','1','+1','Extra']);
+ const diff=cells[4].querySelector('table');assert.equal(diff.getAttribute('bgcolor'),'#d9ccef');assert.equal(cells[5].querySelector('font').getAttribute('color'),'#62468e');
  assert.match(html,/10 Nov 2026/);assert.doesNotMatch(html,/Unassigned Extra Items|Extra \/ Unassigned/);assert.equal((html.match(/Adol Extra 24 Tab/g)||[]).length,1);
  const base=heads[0].querySelector('th'),extra=heads.at(-1).querySelector('th');assert.equal(extra.getAttribute('style'),base.getAttribute('style'));assert.equal(extra.getAttribute('bgcolor'),base.getAttribute('bgcolor'));
- assert.doesNotMatch(html,/<script|<style|on\w+=|display:flex|display:grid/i);assert.match(c.buildFinalizedDiscrepancyEmailText(r),/Extra Items\r\nReceived Date \| Code \| Item Name \| Received Quantity/);
+ assert.doesNotMatch(html,/<script|<style|on\w+=|display:flex|display:grid/i);assert.match(c.buildFinalizedDiscrepancyEmailText(r),/Extra Items \| 10 Nov 2026\r\n\r\nCode \| Item Name \| Ordered \| Received \| Diff \| Status/);
 });
 test('without qualifying orderless extras the complete email HTML and plain text are byte-identical to Production',()=>{
  const {c}=harness(),baseline={window:{},setTimeout(){}};vm.createContext(baseline);vm.runInContext(require('node:child_process').execFileSync('git',['show','70d3e2059317f460a9be482dac0445049cf9045d:js/orders.js'],{encoding:'utf8'}),baseline);
  for(const r of [fixture(),{orderGroups:[]},{orderGroups:[group('A',[row('ONE',1,0,'NOT RECEIVED')])]}]){assert.equal(c.buildFinalizedDiscrepancyEmailHTML(r),baseline.buildFinalizedDiscrepancyEmailHTML(r));assert.equal(c.buildFinalizedDiscrepancyEmailText(r),baseline.buildFinalizedDiscrepancyEmailText(r));}
+});
+
+test('Extra sections use actual receipt dates, one section per day, positive purple badges and no synthetic Order',()=>{
+ const {c}=harness(),r={orderGroups:[group('A',[row('OVER',2,3,'Over Received')]),{orderNumber:'',unassigned:true,rows:[{...row('E2',0,3,'Extra Item'),'Received Date':'2026-11-11'}, {...row('E1',0,1,'Extra Item'),'Received Date':'2026-11-10'}, {...row('E3',0,2,'Extra Item'),'Received Date':'2026-11-10'}]}]};
+ const sections=c.getReceivingEmailSections(c.getReceivingEmailModel(r));assert.deepEqual(json(sections.map(group=>[group.orderNumber,group.orderDate,group.rows.length])),[['A','2026-11-01',1],['','2026-11-10',2],['','2026-11-11',1]]);
+ const html=c.buildFinalizedDiscrepancyEmailHTML(r),{document}=parseHTML(html);assert.match(html,/Extra Items &nbsp;\|&nbsp; 10 Nov 2026/);assert.match(html,/Extra Items &nbsp;\|&nbsp; 11 Nov 2026/);assert.doesNotMatch(html,/Unassigned|UNASSIGNED/);
+ const model=c.getReceivingEmailModel(r);assert.equal(model.counts.orders,1);assert.equal(model.counts.over,1);assert.equal(model.counts.extra,6);
+ const code=[...document.querySelectorAll('td')].find(node=>node.textContent==='E2'),badge=code.parentElement.children[4].querySelector('table');assert.equal(badge.getAttribute('bgcolor'),'#d9ccef');assert.match(badge.textContent,/\+3/);
+ const assigned=[...document.querySelectorAll('td')].find(node=>node.textContent==='OVER').parentElement.children[4].querySelector('table');assert.equal(badge.getAttribute('style'),assigned.getAttribute('style').replaceAll('#bde8d7','#d9ccef'));
 });
