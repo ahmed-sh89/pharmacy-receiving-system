@@ -1,5 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{PGlite}=require('@electric-sql/pglite');
 const SQL=fs.readFileSync('supabase/migrations/20261030185516_receiving_revisions_and_allocation.sql','utf8')+'\n'+fs.readFileSync('supabase/migrations/20261030190938_receiving_allocation_active_source_guard.sql','utf8')+'\n'+fs.readFileSync('supabase/migrations/20261031010759_receiving_extra_batch_correction.sql','utf8');
+const CANCEL_SQL=fs.readFileSync('supabase/migrations/20261109224205_receiving_exact_extra_receipt_cancellation.sql','utf8');
 const pid='10000000-0000-4000-8000-000000000001',uid='20000000-0000-4000-8000-000000000001';
 async function setup(){const db=new PGlite();await db.exec(`
 create role anon;create role authenticated;create schema auth;create schema pharmflow_auth_private;
@@ -16,7 +17,7 @@ create table pharmflow_order_source_items(pharmacy_id uuid,order_number text,lin
 create table pharmflow_cloud_workspaces(pharmacy_id uuid,workspace jsonb,updated_at timestamptz,updated_by uuid);
 create table pharmflow_receiving_transactions_v1(pharmacy_id uuid,transaction_id text,order_number text,item_code text,item_name text,gtin text,quantity int,source text,device_id text,occurred_at timestamptz,payload jsonb,created_by uuid,created_at timestamptz default now(),primary key(pharmacy_id,transaction_id));
 create function public.save_pharmflow_order_source_items_v2(uuid,text,jsonb,boolean) returns int language plpgsql set search_path=public as $$begin delete from pharmflow_order_source_items where pharmacy_id=$1 and order_number=$2;insert into pharmflow_order_source_items select $1,$2,(r->>'line_no')::int,r->>'item_code',(r->>'ordered_qty')::numeric from jsonb_array_elements($3) r;return jsonb_array_length($3);end$$;
-`);await db.exec(SQL);return db;}
+`);await db.exec(SQL+CANCEL_SQL);return db;}
 const file=(rows,order='SYNTH-A')=>({documentId:order,name:'different-name.xlsx',sourceRows:rows,rows:rows.length});
 const rows=n=>Array.from({length:n},(_,i)=>({itemCode:'SYNTH-'+i,itemName:'Fictional '+i,orderedQty:i?5:50}));
 async function fixture(){const db=await setup(),r=rows(246),f=file(r),b=file([{...r[0],orderedQty:40}],'SYNTH-B');await db.query('insert into pharmflow_active_order_manifest_v1 values($1,$2,1,now(),$3,1)',[pid,JSON.stringify({orderFiles:[f,b],orderData:r.map(x=>({...x,orderNumbers:['SYNTH-A'],manual:false}))}),uid]);await db.query("insert into pharmflow_orders(pharmacy_id,order_number,status) values($1,'SYNTH-A','uploaded'),($1,'SYNTH-B','uploaded')",[pid]);await db.query("insert into pharmflow_receiving_transactions_v1 values($1,'receipt','SYNTH-A','SYNTH-0','Fictional 0','',60,'SCAN','SYNTH-PC',now(),'{}',$2,now())",[pid,uid]);return db;}
@@ -35,3 +36,27 @@ test('Extra batch conserves whole receipts atomically and retries idempotently',
 test('batch rejects ordinary receiving, duplicate selection and foreign pharmacy without writes',async()=>{const db=await fixture();try{const items=[{transactionId:'receipt',quantity:60}];await assert.rejects(batch(db,items),/Ordinary/);await assert.rejects(batch(db,[...items,...items]),/Duplicate/);await assert.rejects(db.query('select correct_pharmflow_extra_receipts_v1($1,$2,$3,$4,1,$5)',['10000000-0000-4000-8000-000000000002',op(91),JSON.stringify(items),'SYNTH-B','PC']),/permission denied/);assert.equal((await db.query('select count(*)::int n from pharmflow_receiving_transactions_v1')).rows[0].n,1);assert.equal((await db.query('select count(*)::int n from pharmflow_receiving_private.operations_v1')).rows[0].n,0);}finally{await db.close();}});
 test('invalid second batch receipt rolls back first allocation and all audit writes',async()=>{const db=await fixture();try{await db.query("update pharmflow_receiving_transactions_v1 set order_number=null,payload='{\"unassigned\":true}'");await db.query("insert into pharmflow_receiving_transactions_v1 select pharmacy_id,'zz-invalid',null,'OTHER',item_name,gtin,10,source,device_id,occurred_at,payload,created_by,created_at from pharmflow_receiving_transactions_v1 where transaction_id='receipt'");await assert.rejects(batch(db,[{transactionId:'receipt',quantity:60},{transactionId:'zz-invalid',quantity:10}]),/Destination/);assert.equal((await db.query('select count(*)::int n from pharmflow_receiving_transactions_v1')).rows[0].n,2);assert.equal((await db.query('select count(*)::int n from pharmflow_receiving_private.operations_v1')).rows[0].n,0);}finally{await db.close();}});
 test('approved Extra10 -> revised Ordered5 preserves Received10 and Over5, not surplus Extra; retry conserves quantity',async()=>{const db=await fixture();try{const original=rows(246).slice(1);await db.query("update pharmflow_active_order_manifest_v1 set manifest=jsonb_set(manifest,'{orderFiles,0,sourceRows}',$1::jsonb)",[JSON.stringify(original)]);await db.query("update pharmflow_receiving_transactions_v1 set quantity=10 where transaction_id='receipt'");const updated=rows(246);updated[0].orderedQty=5;await revise(db,file(updated));await revise(db,file(updated));const m=(await db.query('select manifest from pharmflow_active_order_manifest_v1')).rows[0].manifest;const ordered=m.orderFiles[0].sourceRows.find(x=>x.itemCode==='SYNTH-0').orderedQty;const received=(await db.query("select sum(quantity)::int q from pharmflow_receiving_transactions_v1 where order_number='SYNTH-A'")).rows[0].q;assert.equal(ordered,5);assert.equal(received,10);assert.equal(Math.max(0,received-ordered),5);assert.equal((await db.query('select count(*)::int n from pharmflow_receiving_transactions_v1')).rows[0].n,1);await assert.rejects(revise(db,file(updated),2,op(99)),/NO_CHANGES/);}finally{await db.close();}});
+
+const cancel=(db,quantity=60,id=op(101),transaction='receipt',revision=1,pharmacy=pid)=>db.query('select cancel_pharmflow_extra_receipt_v1($1,$2,$3,$4,$5,$6) r',[pharmacy,id,transaction,quantity,revision,'SYNTH-PC']);
+test('exact cancellation is append-only, audited, idempotent and cannot consume a repeated scan',async()=>{const db=await fixture();try{
+ await db.exec(`update pharmflow_receiving_transactions_v1 set order_number=null,payload='{"unassigned":true}';insert into pharmflow_receiving_transactions_v1 select pharmacy_id,'repeat',null,item_code,item_name,gtin,5,source,device_id,occurred_at,payload,created_by,created_at from pharmflow_receiving_transactions_v1 where transaction_id='receipt'`);
+ await cancel(db);await cancel(db);
+ assert.deepEqual((await db.query("select transaction_id,quantity from pharmflow_receiving_transactions_v1 where quantity>0 order by transaction_id")).rows,[{transaction_id:'receipt',quantity:60},{transaction_id:'repeat',quantity:5}]);
+ assert.equal((await db.query('select sum(quantity)::int q from pharmflow_receiving_transactions_v1')).rows[0].q,5);
+ assert.equal((await db.query('select count(*)::int n from pharmflow_receiving_private.operations_v1')).rows[0].n,1);
+ await assert.rejects(cancel(db,60,op(102)),/STALE/);
+ await assert.rejects(batch(db,[{transactionId:'receipt',quantity:60}]),/available|STALE/i);
+ await batch(db,[{transactionId:'repeat',quantity:5}]);
+ assert.equal((await db.query('select sum(quantity)::int q from pharmflow_receiving_transactions_v1')).rows[0].q,5);
+}finally{await db.close();}});
+test('cancellation respects partial assignment, source quantity, manifest, pharmacy and administrator fences',async()=>{const db=await fixture();try{
+ await assert.rejects(cancel(db),/Ordinary/);
+ await db.exec(`update pharmflow_receiving_transactions_v1 set order_number=null,payload='{"unassigned":true}'`);
+ await allocate(db,[{orderNumber:'SYNTH-B',quantity:20}]);
+ await assert.rejects(cancel(db),/STALE/);await assert.rejects(cancel(db,40,op(102),'receipt',0),/STALE/);
+ await assert.rejects(cancel(db,40,op(103),'receipt',1,'10000000-0000-4000-8000-000000000002'),/permission/);
+ await cancel(db,40);assert.equal((await db.query('select sum(quantity)::int q from pharmflow_receiving_transactions_v1')).rows[0].q,20);
+ await db.exec('create or replace function public.is_pharmacy_admin(uuid) returns boolean language sql as $$select false$$');
+ await assert.rejects(cancel(db,40,op(104)),/ADMIN/);
+ assert.equal((await db.query("select has_function_privilege('anon','public.cancel_pharmflow_extra_receipt_v1(uuid,uuid,text,integer,bigint,text)','execute') ok")).rows[0].ok,false);
+}finally{await db.close();}});

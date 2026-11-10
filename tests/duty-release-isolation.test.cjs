@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const crypto=require('node:crypto');
 const {execFileSync}=require('node:child_process');
 
-const manifest=JSON.parse(fs.readFileSync('docs/receiving/missing-gtin-20261109/RELEASE_MANIFEST.json','utf8'));
+const manifest=JSON.parse(fs.readFileSync('docs/receiving/selected-receipts-20261110/RELEASE_MANIFEST.json','utf8'));
 const historical=JSON.parse(fs.readFileSync('docs/duty/RELEASE_MANIFEST.json','utf8'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const blobHash=bytes=>crypto.createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
@@ -15,9 +15,9 @@ function verifyRelease(read=path=>fs.readFileSync(path)){
  }
 }
 
-test('release baseline is pinned to verified Production and the accepted Receiving source',()=>{
- assert.equal(manifest.production_base,'7e9cad2177131e80735016fde35014deb3c5a390');
- assert.equal(manifest.approved_source,'6fe902bf13335fc2c161dc5868cccf6ee2922070');
+test('release baseline is pinned to verified Production and the declared Staging Receiving source',()=>{
+ assert.equal(manifest.production_base,'70d3e2059317f460a9be482dac0445049cf9045d');
+ assert.equal(manifest.approved_source,'5f3e578be806f10311266dbcd209f54a7a5f611a');
  git('merge-base','--is-ancestor',manifest.production_base,manifest.approved_source);
  for(const path of Object.keys(historical.protected_files))assert.ok(Object.hasOwn(manifest.protected_files,path),`Protection removed: ${path}`);
  for(const path of ['css/duty.css','js/duty.js','js/duty-model.js','js/duty-controls.js','js/duty-schedule.js','js/duty-reports.js']){
@@ -37,7 +37,7 @@ test('release baseline is pinned to verified Production and the accepted Receivi
  for(const path of Object.keys(manifest.approved_changes))assert.ok(Object.hasOwn(manifest.protected_files,path),`Unprotected approval: ${path}`);
 });
 
-test('release retains Production and accepted Receiving bytes without excluding changed files',()=>{
+test('release retains Production and declared Receiving bytes without excluding changed files',()=>{
  verifyRelease();
 });
 
