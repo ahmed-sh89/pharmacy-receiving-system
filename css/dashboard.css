@@ -7454,3 +7454,38 @@ body.zebraDevice #zebraExpiryShell .expiryScanBox{background:#eef4ff}
 body.zebraDevice #zebraExpiryShell .expiryEntryGrid .expiryBatchField{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:stretch;gap:0;min-height:46px;border:1px solid #dbe3ed;border-radius:9px;background:#fff}
 body.zebraDevice #zebraExpiryShell .expiryBatchField>.expiryControlLabel{display:flex;align-items:center;padding:0 10px!important;margin:0;border-radius:8px 0 0 8px;background:#eef3f8;border-right:1px solid #dbe3ed;color:#50647e;font-weight:650}
 body.zebraDevice #zebraExpiryShell .expiryBatchField #expiryBatchInput{min-width:0;border:0;border-radius:0 8px 8px 0;background:#fff}
+
+.finalizedEmailWorkOrders {
+  margin: 0 20px 12px;
+  color: #173f66;
+}
+.finalizedEmailWorkOrders summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 700;
+}
+.finalizedEmailWorkOrderFields {
+  max-height: 25vh;
+  overflow: auto;
+  margin-top: 6px;
+}
+.finalizedEmailWorkOrderFields fieldset {
+  min-width: 0;
+  margin: 0 0 6px;
+  border: 1px solid #d8e5f2;
+}
+.finalizedEmailWorkOrderFields label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 3px 0;
+}
+.finalizedEmailWorkOrderFields label span {
+  overflow-wrap: anywhere;
+}
+.finalizedEmailWorkOrderFields input {
+  width: min(9rem, 35%);
+  flex-shrink: 0;
+  padding: 4px 6px;
+}
