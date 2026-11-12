@@ -1,6 +1,6 @@
 {
   "production_base": "1da5ae0b4d2d9d9141eeb9db6d2206aa139cf4c2",
-  "approved_source": "af72204f027e5ff1918379b648b1450b11cd1c77",
+  "approved_source": "41f9b63f45ba4e7132f621d79bba3b54d7f996ef",
   "protected_files": {
     ".github/workflows/accepted-release-checks.yml": "b7211072ec465835448892c218daf870276cfc92",
     ".github/workflows/deploy.yml": "2b804175acdd222d4c6e1a7fb7804a7fbd1bc72a",
@@ -97,10 +97,10 @@
     "vite.config.js": "254e49a424a73fe9531e70608c857712c9f2d4ce"
   },
   "approved_changes": {
-    "css/dashboard.css": "208e3d5f2b3d562f8cce9f8673c3b839f56f6308",
-    "index.html": "39d1b0e84d6b5b5665bba2b859b8bdb3d8cdab17",
-    "js/orders.js": "1916a0969ce6409d8d2f8cb28ffe77c93f5716ca",
-    "tests/receiving-email.test.cjs": "0b0214df84c08cc6c86d00e0488bef234e407e82",
+    "css/dashboard.css": "51f493da031d58e8fdf0ab8ed319477a1e7c817c",
+    "index.html": "f813ad1c1497515bc80bce6fd2d1a02ab6e945cb",
+    "js/orders.js": "60793d4d191a69d761e6e4c33f2eaa829841dfe9",
+    "tests/receiving-email.test.cjs": "ab06a2e75bbd820ca6b1f7cec9db1bc0bfcfae3b",
     "vite.config.js": "dd1bb7aa344bb25e0e61b1c6809f66a63edcf340"
   }
 }
