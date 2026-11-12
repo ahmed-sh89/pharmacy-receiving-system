@@ -7456,36 +7456,81 @@ body.zebraDevice #zebraExpiryShell .expiryBatchField>.expiryControlLabel{display
 body.zebraDevice #zebraExpiryShell .expiryBatchField #expiryBatchInput{min-width:0;border:0;border-radius:0 8px 8px 0;background:#fff}
 
 .finalizedEmailWorkOrders {
-  margin: 0 20px 12px;
+  margin: 0 20px 10px;
+  border: 1px solid #cbddea;
+  border-radius: 10px;
+  background: #f5f9fd;
   color: #173f66;
 }
-.finalizedEmailWorkOrders summary {
-  width: fit-content;
-  cursor: pointer;
-  font-weight: 700;
+.finalizedEmailWOHeading {
+  padding: 7px 10px;
+  border-bottom: 1px solid #d8e5f2;
+}
+.finalizedEmailWOHeading h3,
+.finalizedEmailWOHeading p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.finalizedEmailWOHeading p {
+  color: #47627b;
 }
 .finalizedEmailWorkOrderFields {
-  max-height: 25vh;
+  max-height: 24vh;
   overflow: auto;
-  margin-top: 6px;
 }
-.finalizedEmailWorkOrderFields fieldset {
-  min-width: 0;
-  margin: 0 0 6px;
-  border: 1px solid #d8e5f2;
+.finalizedEmailWOGroup + .finalizedEmailWOGroup {
+  border-top: 1px solid #d8e5f2;
 }
-.finalizedEmailWorkOrderFields label {
+.finalizedEmailWORow,
+.finalizedEmailWORow label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 3px 0;
+  flex-wrap: wrap;
+  gap: 6px 12px;
 }
-.finalizedEmailWorkOrderFields label span {
+.finalizedEmailWORow {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+.finalizedEmailWORow > strong {
+  min-width: min(10rem, 100%);
   overflow-wrap: anywhere;
 }
-.finalizedEmailWorkOrderFields input {
-  width: min(9rem, 35%);
-  flex-shrink: 0;
+.finalizedEmailWOInput {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid #9ab9d3;
+  border-radius: 7px;
+  background: #fff;
+}
+.finalizedEmailWOInput > span {
+  display: grid;
+  place-items: center;
+  padding: 0 7px;
+  border-right: 1px solid #cbddea;
+  background: #e4eff9;
+  font-weight: 700;
+}
+.finalizedEmailWOInput input {
+  width: 7.5rem;
+  min-height: 30px;
   padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.finalizedEmailWORow [data-wo-toggle] {
+  min-height: 30px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.finalizedEmailWOItems {
+  margin: 0 10px 6px;
+  border-left: 2px solid #b7d3e8;
+}
+.finalizedEmailWOItems .finalizedEmailWORow > span:first-child {
+  flex: 1 1 10rem;
+  overflow-wrap: anywhere;
 }
