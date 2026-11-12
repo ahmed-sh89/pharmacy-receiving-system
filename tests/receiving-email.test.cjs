@@ -41,7 +41,7 @@ const fixture = () => ({
     orders: [{orderNumber: 'UNRELATED'}],
     rows: [row('FLAT-MUST-NOT-COUNT', 1, 0)]
 });
-const details = document => document.querySelector('th[scope=col]').closest('table');
+const detailTables = document => [...document.querySelectorAll('th[scope=col]:first-child')].map(th => th.closest('table'));
 const values = nodes => [...nodes].map(node => node.textContent);
 
 test('subject lists up to three unique TO numbers, with a fallback for orderless extras', () => {
@@ -58,15 +58,16 @@ test('subject lists up to three unique TO numbers, with a fallback for orderless
     }), 'Extra Items');
 });
 
-test('one table preserves quantities, sign colors and distinct rows for repeat codes across orders', () => {
+test('one table per TO preserves quantities, sign colors and distinct rows across orders', () => {
     const {c} = harness(), report = fixture(), before = JSON.stringify(report);
     const html = c.buildFinalizedDiscrepancyEmailHTML(report);
     const {document} = parseHTML(html);
-    assert.equal(document.querySelectorAll('th[scope=col]')[6].closest('table'), details(document));
-    const table = details(document);
-    assert.equal(table.querySelectorAll('table').length, 0);
-    assert.equal(table.getAttribute('width'), '100%');
-    for (const group of table.querySelectorAll('tbody')) {
+    const tables = detailTables(document);
+    assert.equal(tables.length, 2);
+    for (const table of tables) {
+        assert.equal(table.querySelectorAll('table').length, 0);
+        assert.equal(table.getAttribute('width'), '100%');
+        const group = table.querySelector('tbody');
         assert.equal(group.children[0].children[0].getAttribute('colspan'), '6');
         assert.deepEqual(values(group.children[1].children), ['Code', 'Item Name', 'Ordered', 'Received', 'Diff', 'Status']);
         assert.equal(group.children[2].children[0].tagName, 'TD');
@@ -74,11 +75,13 @@ test('one table preserves quantities, sign colors and distinct rows for repeat c
             assert.match(heading.getAttribute('style'), /border:1px solid/);
         }
     }
-    assert.deepEqual(values(table.querySelectorAll('td[colspan="6"]')), ['TO-001 | 1 Nov 2026', 'TO-002 | 2 Nov 2026']);
-    const itemRows = [...table.querySelectorAll('tbody tr')].filter(tr => tr.children.length === 6 && tr.children[0].tagName === 'TD');
+    assert.deepEqual(values(document.querySelectorAll('td[colspan="6"]')).map(value => value.replace(/\s+/g, ' ')), [
+        'الطلبية TO-001 · 1 نوفمبر 2026', 'الطلبية TO-002 · 2 نوفمبر 2026'
+    ]);
+    const itemRows = tables.flatMap(table => [...table.querySelectorAll('tbody > tr')].slice(2));
     assert.deepEqual(itemRows.map(tr => values(tr.children).slice(2)), [
-        ['100', '31', '-69', 'ناقص'], ['10', '0', '-10', 'ناقص'],
-        ['7', '8', '+1', 'زيادة'], ['34', '31', '-3', 'ناقص']
+        ['100', '31', '-69', 'ناقص 69'], ['10', '0', '-10', 'ناقص 10'],
+        ['7', '8', '+1', 'زيادة 1'], ['34', '31', '-3', 'ناقص 3']
     ]);
     for (const tr of itemRows) {
         const isShort = tr.children[4].textContent.startsWith('-');
@@ -92,50 +95,62 @@ test('one table preserves quantities, sign colors and distinct rows for repeat c
     assert.equal(JSON.stringify(report), before);
 });
 
-test('Arabic intro and closing use centered 14px Arial without punctuation', () => {
+test('Arabic intro and closing use centered 14pt Arial without punctuation', () => {
     const {c} = harness();
     const {document} = parseHTML(c.buildFinalizedDiscrepancyEmailHTML(fixture()));
-    const messages = [...document.querySelectorAll('td[dir="rtl"]')];
+    const messages = [...document.querySelectorAll('td[dir="rtl"]:not([colspan])')];
     assert.equal(messages.length, 2);
     assert.equal(messages[0].querySelector('b').innerHTML, 'السلام عليكم<br>يوجد فرق توريد موضح أدناه');
     assert.equal(messages[1].textContent, 'الرجاء المراجعة والإفادة');
-    for (const font of document.querySelectorAll('font')) assert.match(font.getAttribute('style'), /font-size:14px/);
+    for (const font of document.querySelectorAll('font')) assert.match(font.getAttribute('style'), /font-size:14pt;mso-bidi-font-size:14pt/);
     for (const message of messages) {
         assert.equal(message.getAttribute('align'), 'center');
         assert.equal(message.querySelector('font').getAttribute('face'), 'Arial, Helvetica, sans-serif');
     }
 });
 
-test('manual Work Orders group the items in preview, rich clipboard and plain fallback', async () => {
+test('manual WO entries stay with one TO in preview and both clipboard formats', async () => {
     const {c, document, Event, writes} = harness();
-    const report = fixture(), before = JSON.stringify(report);
+    const report = fixture();
+    report.orderGroups[0].orderDate = '';
+    report.orderGroups.splice(1, 0, group('TO-001', [row('005', 3, 1)], ''));
+    const before = JSON.stringify(report);
     c.openFinalizedDiscrepancyEmailPreview(report, {liveReport: true});
     const frame = document.querySelector('iframe');
     assert.equal(frame.getAttribute('sandbox'), '');
-    const defaultInput = document.querySelector('[data-work-order-default]');
+    const editors = document.querySelectorAll('[data-wo-group]');
+    assert.equal(editors.length, 2);
+    const editor = editors[0];
+    const initial = editor.querySelector('[data-wo-number]');
     assert.equal(document.querySelector('h2').textContent, 'TO-001 + TO-002');
-    assert.equal(defaultInput.getAttribute('inputmode'), 'numeric');
-    assert.equal(defaultInput.previousElementSibling.textContent, 'WO-');
-    defaultInput.value = 'WO-0001';
-    defaultInput.dispatchEvent(new Event('input', {bubbles: true}));
-    assert.equal(defaultInput.value, '0001');
-    assert.match(frame.srcdoc, /TO-001 \| WO-0001/);
-    const toggle = document.querySelector('[data-wo-toggle]');
-    const overrides = document.getElementById(toggle.getAttribute('aria-controls'));
-    assert.equal(overrides.hidden, true);
-    toggle.click();
-    assert.equal(overrides.hidden, false);
-    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
-    const itemInput = overrides.querySelectorAll('[data-work-order-row]')[2];
-    itemInput.value = '0002';
-    itemInput.dispatchEvent(new Event('input', {bubbles: true}));
+    assert.equal(initial.getAttribute('inputmode'), 'numeric');
+    assert.equal(initial.previousElementSibling.textContent, 'WO-');
+    const enter = (input, value) => {
+        input.value = value;
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+    };
+    const click = button => button.dispatchEvent(new Event('click', {bubbles: true}));
+    enter(initial, 'WO-0001');
+    assert.equal(initial.value, '0001');
+    assert.match(frame.srcdoc, /WO-0001/);
+    const add = editor.querySelector('[data-wo-add]');
+    click(add);
+    enter(editor.querySelectorAll('[data-wo-number]')[1], '0002');
+    click(add);
+    enter(editor.querySelectorAll('[data-wo-number]')[2], '0002');
+    click(add);
+    assert.equal(editor.querySelectorAll('[data-wo-number]').length, 4);
+
     const html = frame.srcdoc;
-    const groups = details(parseHTML(html).document).querySelectorAll('tbody');
-    assert.deepEqual([...groups].map(tbody => [tbody.querySelector('[colspan]').textContent, tbody.children.length - 1]), [
-        ['TO-001 | WO-0001 | 1 Nov 2026', 3],
-        ['TO-001 | WO-0002 | 1 Nov 2026', 2],
-        ['TO-002 | 2 Nov 2026', 2]
-    ]);
+    const tables = detailTables(parseHTML(html).document);
+    assert.equal(tables.length, 2);
+    assert.deepEqual(tables.map(table => table.querySelectorAll('tr').length - 2), [4, 1]);
+    const heading = tables[0].querySelector('[colspan]');
+    assert.equal(heading.querySelectorAll('br').length, 1);
+    assert.match(heading.textContent, /الطلبية TO-001أوامر العمل.*WO-0001 · WO-0002/);
+    assert.doesNotMatch(heading.textContent, /—/);
+    assert.doesNotMatch(tables[1].textContent, /أوامر العمل|WO-/);
+    assert.equal((html.match(/WO-0002/g) || []).length, 1);
     document.querySelector('#btnCopyFinalizedEmail').click();
     const data = writes[0][0].data;
     assert.equal(await data['text/html'].text(), html);
@@ -144,12 +159,16 @@ test('manual Work Orders group the items in preview, rich clipboard and plain fa
     document.querySelector('#btnOpenFinalizedOutlook').click();
     assert.equal(new URL(openedUrl).searchParams.get('subject'), 'TO-001 + TO-002');
     const text = await data['text/plain'].text();
-    assert.match(text, /TO-001 \| WO-0002 \| 1 Nov 2026\r\nCode \| Item Name/);
-    assert.match(text, /\+1 \| زيادة/);
-    assert.match(text, /-69 \| ناقص/);
+    assert.match(text, /الطلبية TO-001\r\nأوامر العمل WO-0001 · WO-0002\r\nCode \| Item Name/);
+    assert.match(text, /\+1 \| زيادة 1/);
+    assert.match(text, /-69 \| ناقص 69/);
+    for (const remove of editor.querySelectorAll('[data-wo-remove]')) click(remove);
+    assert.doesNotMatch(frame.srcdoc, /WO-0002/);
+    enter(initial, '');
+    assert.doesNotMatch(frame.srcdoc, /أوامر العمل/);
     assert.equal(JSON.stringify(report), before);
     c.openFinalizedDiscrepancyEmailPreview(report);
-    assert.equal(document.querySelector('[data-work-order-default]').value, '');
+    assert.equal(document.querySelector('[data-wo-number]').value, '');
 });
 
 test('a legacy flat report and dated orderless extras retain their correct grouping', () => {
@@ -165,10 +184,10 @@ test('a legacy flat report and dated orderless extras retain their correct group
         ]
     };
     const {document} = parseHTML(c.buildFinalizedDiscrepancyEmailHTML(report));
-    assert.deepEqual(values(details(document).querySelectorAll('td[colspan="6"]')), [
-        'TO-001 | 1 Nov 2026', 'Extra Items | 10 Nov 2026', 'Extra Items | 11 Nov 2026'
+    assert.deepEqual(values(document.querySelectorAll('td[colspan="6"]')).map(value => value.replace(/\s+/g, ' ')), [
+        'الطلبية TO-001 · 1 نوفمبر 2026', 'Extra Items · 10 نوفمبر 2026', 'Extra Items · 11 نوفمبر 2026'
     ]);
-    assert.equal(details(document).querySelectorAll('tbody')[1].children.length, 4);
+    assert.equal(detailTables(document)[1].querySelector('tbody').children.length, 4);
     assert.match(c.buildFinalizedDiscrepancyEmailText(report), /E2 .*\| 0 \| 3 \| \+3 \| زيادة/);
     assert.match(c.buildFinalizedDiscrepancyEmailHTML({orderId: 'LEGACY', rows: [row('A', 2, 1)]}), /LEGACY/);
     assert.doesNotMatch(c.buildFinalizedDiscrepancyEmailHTML({}), /<th scope=/);
@@ -177,7 +196,7 @@ test('a legacy flat report and dated orderless extras retain their correct group
 test('unsupported rich clipboard writes provide the same plain email and explicit fallback', async () => {
     for (const options of [{textOnly: true}, {reject: true}]) {
         const {c, plain} = harness(options);
-        const report = fixture(), workOrders = vm.runInContext('new Map([["0:0","001"]])', c);
+        const report = fixture(), workOrders = vm.runInContext('new Map([["TO-001",["001"]]])', c);
         assert.equal(await c.copyFormattedReceivingEmail(report, workOrders), false);
         assert.equal(plain[0], c.buildFinalizedDiscrepancyEmailText(report, workOrders));
         assert.match(plain[0], /WO-001/);
