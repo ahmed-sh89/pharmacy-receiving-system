@@ -43,6 +43,12 @@ const fixture = () => ({
 });
 const detailTables = document => [...document.querySelectorAll('th[scope=col]:first-child')].map(th => th.closest('table'));
 const values = nodes => [...nodes].map(node => node.textContent);
+function assertTypography(container, size, bold) {
+    const font = container.querySelector('font');
+    assert.match(font.getAttribute('style'), new RegExp(`font-size:${size}pt;mso-bidi-font-size:${size}pt;`));
+    assert.match(font.getAttribute('style'), new RegExp(`font-weight:${bold ? 700 : 400};`));
+    assert.equal(Boolean(font.querySelector('b')), bold);
+}
 
 test('subject lists up to three unique TO numbers, with a fallback for orderless extras', () => {
     const {c} = harness();
@@ -68,15 +74,22 @@ test('one table per TO preserves quantities, sign colors and distinct rows acros
         assert.equal(table.querySelectorAll('table').length, 0);
         assert.equal(table.getAttribute('width'), '100%');
         const group = table.querySelector('tbody');
-        assert.equal(group.children[0].children[0].getAttribute('colspan'), '6');
+        const header = group.children[0].children[0];
+        assert.equal(header.getAttribute('colspan'), '6');
+        assert.equal(header.getAttribute('dir'), 'ltr');
+        assertTypography(header, 13, true);
+        const date = header.querySelectorAll('font')[1];
+        assert.match(date.getAttribute('style'), /font-size:13pt;.*font-weight:400/);
+        assert.equal(date.querySelector('b'), null);
         assert.deepEqual(values(group.children[1].children), ['Code', 'Item Name', 'Ordered', 'Received', 'Diff', 'Status']);
         assert.equal(group.children[2].children[0].tagName, 'TD');
         for (const heading of group.children[1].children) {
             assert.match(heading.getAttribute('style'), /border:1px solid/);
+            assertTypography(heading, 12, true);
         }
     }
     assert.deepEqual(values(document.querySelectorAll('td[colspan="6"]')).map(value => value.replace(/\s+/g, ' ')), [
-        'الطلبية TO-001 · 1 نوفمبر 2026', 'الطلبية TO-002 · 2 نوفمبر 2026'
+        'TO-001 | 1 Nov 2026', 'TO-002 | 2 Nov 2026'
     ]);
     const itemRows = tables.flatMap(table => [...table.querySelectorAll('tbody > tr')].slice(2));
     assert.deepEqual(itemRows.map(tr => values(tr.children).slice(2)), [
@@ -84,6 +97,7 @@ test('one table per TO preserves quantities, sign colors and distinct rows acros
         ['7', '8', '+1', 'زيادة 1'], ['34', '31', '-3', 'ناقص 3']
     ]);
     for (const tr of itemRows) {
+        [...tr.children].forEach((cell, index) => assertTypography(cell, 12, index >= 4));
         const isShort = tr.children[4].textContent.startsWith('-');
         assert.equal(tr.children[4].getAttribute('bgcolor'), isShort ? '#f7c3c3' : '#bde8d7');
         for (const cell of [tr.children[4], tr.children[5]]) {
@@ -102,8 +116,8 @@ test('Arabic intro and closing use centered 14pt Arial without punctuation', () 
     assert.equal(messages.length, 2);
     assert.equal(messages[0].querySelector('b').innerHTML, 'السلام عليكم<br>يوجد فرق توريد موضح أدناه');
     assert.equal(messages[1].textContent, 'الرجاء المراجعة والإفادة');
-    for (const font of document.querySelectorAll('font')) assert.match(font.getAttribute('style'), /font-size:14pt;mso-bidi-font-size:14pt/);
     for (const message of messages) {
+        assertTypography(message, 14, true);
         assert.equal(message.getAttribute('align'), 'center');
         assert.equal(message.querySelector('font').getAttribute('face'), 'Arial, Helvetica, sans-serif');
     }
@@ -147,9 +161,12 @@ test('manual WO entries stay with one TO in preview and both clipboard formats',
     assert.deepEqual(tables.map(table => table.querySelectorAll('tr').length - 2), [4, 1]);
     const heading = tables[0].querySelector('[colspan]');
     assert.equal(heading.querySelectorAll('br').length, 1);
-    assert.match(heading.textContent, /الطلبية TO-001أوامر العمل.*WO-0001 · WO-0002/);
+    assert.deepEqual(values(heading.querySelectorAll('font')), ['TO-001', 'WO-0001 | WO-0002']);
+    const woFont = heading.querySelectorAll('font')[1];
+    assert.match(woFont.getAttribute('style'), /font-size:13pt;.*font-weight:400/);
+    assert.equal(woFont.querySelector('b'), null);
     assert.doesNotMatch(heading.textContent, /—/);
-    assert.doesNotMatch(tables[1].textContent, /أوامر العمل|WO-/);
+    assert.doesNotMatch(tables[1].textContent, /WO-/);
     assert.equal((html.match(/WO-0002/g) || []).length, 1);
     document.querySelector('#btnCopyFinalizedEmail').click();
     const data = writes[0][0].data;
@@ -159,13 +176,13 @@ test('manual WO entries stay with one TO in preview and both clipboard formats',
     document.querySelector('#btnOpenFinalizedOutlook').click();
     assert.equal(new URL(openedUrl).searchParams.get('subject'), 'TO-001 + TO-002');
     const text = await data['text/plain'].text();
-    assert.match(text, /الطلبية TO-001\r\nأوامر العمل WO-0001 · WO-0002\r\nCode \| Item Name/);
+    assert.match(text, /TO-001\r\nWO-0001 \| WO-0002\r\nCode \| Item Name/);
     assert.match(text, /\+1 \| زيادة 1/);
     assert.match(text, /-69 \| ناقص 69/);
     for (const remove of editor.querySelectorAll('[data-wo-remove]')) click(remove);
     assert.doesNotMatch(frame.srcdoc, /WO-0002/);
     enter(initial, '');
-    assert.doesNotMatch(frame.srcdoc, /أوامر العمل/);
+    assert.doesNotMatch(frame.srcdoc, /WO-0001|WO-0002/);
     assert.equal(JSON.stringify(report), before);
     c.openFinalizedDiscrepancyEmailPreview(report);
     assert.equal(document.querySelector('[data-wo-number]').value, '');
@@ -185,7 +202,7 @@ test('a legacy flat report and dated orderless extras retain their correct group
     };
     const {document} = parseHTML(c.buildFinalizedDiscrepancyEmailHTML(report));
     assert.deepEqual(values(document.querySelectorAll('td[colspan="6"]')).map(value => value.replace(/\s+/g, ' ')), [
-        'الطلبية TO-001 · 1 نوفمبر 2026', 'Extra Items · 10 نوفمبر 2026', 'Extra Items · 11 نوفمبر 2026'
+        'TO-001 | 1 Nov 2026', 'Extra Items | 10 Nov 2026', 'Extra Items | 11 Nov 2026'
     ]);
     assert.equal(detailTables(document)[1].querySelector('tbody').children.length, 4);
     assert.match(c.buildFinalizedDiscrepancyEmailText(report), /E2 .*\| 0 \| 3 \| \+3 \| زيادة/);

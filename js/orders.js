@@ -704,8 +704,8 @@ function buildReceivingDiscrepancyEmailSubject(report){
     return numbers.slice(0,3).join(" + ")+(numbers.length>3?" + More":"");
 }
 
-const receivingEmailDateFormat=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{
-    day:"numeric",month:"long",year:"numeric",timeZone:"UTC"
+const receivingEmailDateFormat=new Intl.DateTimeFormat("en-GB",{
+    day:"numeric",month:"short",year:"numeric",timeZone:"UTC"
 });
 
 function formatReceivingEmailOrderDate(value){
@@ -720,7 +720,7 @@ function formatReceivingEmailOrderDate(value){
 
 function getReceivingEmailSectionMeta(group){
     return {
-        title:group.extraSection?"Extra Items":"الطلبية "+group.orderNumber,
+        title:group.extraSection?"Extra Items":group.orderNumber,
         date:formatReceivingEmailOrderDate(group.orderDate),
         workOrders:(group.workOrders||[]).map(number=>"WO-"+number)
     };
@@ -737,8 +737,8 @@ function getReceivingEmailStatus(row){
 function buildFinalizedDiscrepancyEmailHTML(report,workOrders){
     const esc=value=>String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
         .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-    const font=(text,color="#1d3954",bold=false)=>
-        `<font face="Arial, Helvetica, sans-serif" size="4" color="${color}" style="font-family:Arial,Helvetica,sans-serif;font-size:14pt;mso-bidi-font-size:14pt;line-height:1.25;color:${color}">${bold?`<b>${text}</b>`:text}</font>`;
+    const font=(text,color="#1d3954",bold=false,size=12)=>
+        `<font face="Arial, Helvetica, sans-serif" size="${size>12?4:3}" color="${color}" style="font-family:Arial,Helvetica,sans-serif;font-size:${size}pt;mso-bidi-font-size:${size}pt;line-height:1.25;font-weight:${bold?700:400};color:${color}">${bold?`<b>${text}</b>`:text}</font>`;
     const interior="#F0F6FB";
     const centered="text-align:center;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;";
     const sections=getReceivingEmailSections(report,workOrders);
@@ -752,18 +752,17 @@ function buildFinalizedDiscrepancyEmailHTML(report,workOrders){
             const [ink,tint]=row.difference<0?["#a72f2f","#f7c3c3"]:["#16634b","#bde8d7"];
             const cell=(content,background=bg,style="overflow-wrap:anywhere")=>
                 `<td align="center" valign="middle" bgcolor="${background}" style="${centered}padding:4px 3px;background-color:${background};border:1px solid #dce8f2;${style}">${content}</td>`;
-            return `<tr>${cell(font(esc(row["Item Number"])))}${cell(`<span dir="auto">${font(esc(row["Item Name"]))}</span>`)}${cell(font(esc(row.ordered),"#103d66",true))}${cell(font(esc(row.received),"#103d66",true))}${cell(font(esc(getReceivingEmailDifference(row)),ink,true),tint)}${cell(`<span dir="rtl">${font(getReceivingEmailStatus(row),ink,true)}</span>`)}</tr>`;
+            return `<tr>${cell(font(esc(row["Item Number"])))}${cell(`<span dir="auto">${font(esc(row["Item Name"]))}</span>`)}${cell(font(esc(row.ordered),"#103d66"))}${cell(font(esc(row.received),"#103d66"))}${cell(font(esc(getReceivingEmailDifference(row)),ink,true),tint)}${cell(`<span dir="rtl">${font(getReceivingEmailStatus(row),ink,true)}</span>`)}</tr>`;
         }).join("");
         const meta=getReceivingEmailSectionMeta(group);
-        const title=group.extraSection?font(meta.title,"#FFFFFF",true):
-            font(`الطلبية <span dir="ltr">${esc(group.orderNumber)}</span>`,"#FFFFFF",true);
-        const date=meta.date?" &nbsp;·&nbsp; "+font(esc(meta.date),"#DCEEFF"):"";
-        const workOrders=meta.workOrders.map(number=>`<span dir="ltr" style="white-space:nowrap">${esc(number)}</span>`).join(" · ");
-        const workOrderLine=workOrders?"<br>"+font("أوامر العمل","#DCEEFF")+" &nbsp;"+font(`<span dir="ltr">${workOrders}</span>`,"#FFFFFF"):"";
-        const heading=`<tr><td colspan="6" align="center" valign="middle" bgcolor="#0b5f9f" dir="rtl" style="${centered}padding:6px;background-color:#0b5f9f;color:#FFFFFF;overflow-wrap:anywhere">${title}${date}${workOrderLine}</td></tr>`;
+        const title=font(esc(meta.title),"#FFFFFF",true,13);
+        const date=meta.date?font(" | "+esc(meta.date),"#DCEEFF",false,13):"";
+        const workOrders=meta.workOrders.map(number=>`<span style="white-space:nowrap">${esc(number)}</span>`).join(" | ");
+        const workOrderLine=workOrders?"<br>"+font(workOrders,"#FFFFFF",false,13):"";
+        const heading=`<tr><td colspan="6" align="center" valign="middle" bgcolor="#0b5f9f" dir="ltr" style="${centered}direction:ltr;padding:6px;background-color:#0b5f9f;color:#FFFFFF;overflow-wrap:anywhere">${title}${date}${workOrderLine}</td></tr>`;
         return `<tr><td align="center" style="padding:0 6px"><table align="center" width="100%" border="1" bordercolor="#cbddea" cellpadding="0" cellspacing="0" dir="ltr" style="width:100%;border-collapse:collapse;table-layout:auto;border:1px solid #cbddea"><tbody>${heading}<tr>${headings}</tr>${rows}</tbody></table></td></tr>`;
     });
-    const message=text=>`<table role="presentation" align="center" width="100%" border="1" bordercolor="#97c3e3" cellpadding="0" cellspacing="0" bgcolor="#d5eaf8" style="width:100%;border-collapse:collapse;background-color:#d5eaf8;border:1px solid #97c3e3;border-radius:10px"><tr><td align="center" dir="rtl" bgcolor="#d5eaf8" style="${centered}padding:6px 8px;background-color:#d5eaf8">${font(text,"#173d63",true)}</td></tr></table>`;
+    const message=text=>`<table role="presentation" align="center" width="100%" border="1" bordercolor="#97c3e3" cellpadding="0" cellspacing="0" bgcolor="#d5eaf8" style="width:100%;border-collapse:collapse;background-color:#d5eaf8;border:1px solid #97c3e3;border-radius:10px"><tr><td align="center" dir="rtl" bgcolor="#d5eaf8" style="${centered}padding:6px 8px;background-color:#d5eaf8">${font(text,"#173d63",true,14)}</td></tr></table>`;
     const spacer=`<tr><td align="center" height="10" bgcolor="${interior}" style="height:10px;font-size:1px;line-height:10px">&nbsp;</td></tr>`;
     return `<table role="presentation" align="center" width="100%" border="0" cellpadding="0" cellspacing="0" dir="rtl" bgcolor="#f2f7fb" style="width:100%;max-width:920px;table-layout:fixed;border-collapse:collapse;background-color:#f2f7fb"><tr><td align="center" style="${centered}padding:6px"><table role="presentation" align="center" width="100%" border="1" bordercolor="#b8d5e9" cellpadding="0" cellspacing="0" bgcolor="${interior}" style="width:100%;table-layout:fixed;border-collapse:collapse;background-color:${interior};border:1px solid #b8d5e9;border-radius:14px">
       <tr><td align="center" style="padding:6px 6px 0">${message(receivingEmailGreeting+"<br>"+receivingEmailIntro)}</td></tr>
@@ -804,8 +803,8 @@ function buildFinalizedDiscrepancyEmailText(report,workOrders){
     const lines=[receivingEmailGreeting,receivingEmailIntro];
     for(const group of getReceivingEmailSections(report,workOrders)){
         const meta=getReceivingEmailSectionMeta(group);
-        lines.push("",[meta.title,meta.date].filter(Boolean).join(" · "));
-        if(meta.workOrders.length)lines.push("أوامر العمل "+meta.workOrders.join(" · "));
+        lines.push("",[meta.title,meta.date].filter(Boolean).join(" | "));
+        if(meta.workOrders.length)lines.push(meta.workOrders.join(" | "));
         lines.push(receivingEmailColumns.join(" | "));
         for(const row of group.rows){
             lines.push([
