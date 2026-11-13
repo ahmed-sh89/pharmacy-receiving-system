@@ -167,7 +167,11 @@ test('manual WO entries stay with one TO in preview and both clipboard formats',
     ]);
     const color = tr=>tr.children[0].getAttribute('bgcolor');
     assert.equal(color(first[0]),color(first[2]));
-    assert.notEqual(color(first[0]),color(first[3]));
+    assert.equal(color(first[0]),'#e5d5f7');
+    assert.equal(color(first[3]),'#f8e7be');
+    assert.notEqual(color(first[0]),tables[0].querySelector('th').getAttribute('bgcolor'));
+    assertTypography(first[0].children[0],10,true);
+    assertTypography(first[1].children[0],10,false);
     assert.equal(color(first[1]),'#eaf4fb');
     assert.equal(rows(tables[1])[0].children[0].textContent,'WO-0030');
     document.querySelector('#btnCopyFinalizedEmail').click();

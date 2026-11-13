@@ -750,7 +750,7 @@ function buildFinalizedDiscrepancyEmailHTML(report,workOrders){
     const headings=receivingEmailColumns.map((label,index)=>
         `<th scope="col" align="center" valign="middle" bgcolor="#dceefb" width="${widths[index]}" style="${centered}padding:4px 3px;background-color:#dceefb;border:1px solid #b7d3e8;overflow-wrap:anywhere">${font(label,"#103d66",true)}</th>`
     ).join("");
-    const workOrderColors=["#dceeff","#eee4fb","#fff1ce","#d9f3ef","#f9e3ef","#e7edd7"];
+    const workOrderColors=["#e5d5f7","#f8e7be","#efdce9","#e6e1d9","#f8dfc9","#e4defb"];
     const groups=sections.map(group=>{
         const workOrderBackgrounds=new Map();
         const rows=group.rows.map((row,index)=>{
@@ -761,7 +761,7 @@ function buildFinalizedDiscrepancyEmailHTML(report,workOrders){
             if(row.workOrder&&!workOrderBackgrounds.has(row.workOrder)){
                 workOrderBackgrounds.set(row.workOrder,workOrderColors[workOrderBackgrounds.size%workOrderColors.length]);
             }
-            const workOrderCell=cell(font(esc(getReceivingEmailWorkOrder(row))),workOrderBackgrounds.get(row.workOrder)||bg,"white-space:nowrap");
+            const workOrderCell=cell(font(esc(getReceivingEmailWorkOrder(row)),"#1d3954",Boolean(row.workOrder)),workOrderBackgrounds.get(row.workOrder)||bg,"white-space:nowrap");
             return `<tr>${workOrderCell}${cell(font(esc(row["Item Number"])))}${cell(`<span dir="auto">${font(esc(row["Item Name"]))}</span>`)}${cell(font(esc(row.ordered),"#103d66"))}${cell(font(esc(row.received),"#103d66"))}${cell(font(esc(getReceivingEmailDifference(row)),ink,true,11),tint)}${cell(`<span dir="rtl">${font(getReceivingEmailStatus(row),ink,true,11)}</span>`)}</tr>`;
         }).join("");
         const meta=getReceivingEmailSectionMeta(group);
