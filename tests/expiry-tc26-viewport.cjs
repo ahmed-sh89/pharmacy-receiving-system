@@ -28,7 +28,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict'),{chromium}=requ
  assert.ok(r.root<=r.rootClient+1&&r.rootBox<=visible+1,label+' document '+JSON.stringify(r));assert.ok(r.body<=visible+1,label+' body '+JSON.stringify(r));assert.ok(r.container.scroll<=r.container.height+1,label+' content '+JSON.stringify(r));
  for(const c of r.controls)assert.ok(c.visible&&c.height>0&&c.top>=-1&&c.bottom<=visible+1,label+' '+JSON.stringify(c));console.log('PASS '+label+'; fixed document, essential controls visible');}
  for(const [layout,visible] of [[480,480],[520,520],[640,640],[640,480],[640,520]]){
- await load(layout,visible);await measure('login '+layout+'/'+visible,visible,['#authEmail','#authPassword','#btnAuthSignIn','#btnAuthForgotPassword','#btnAuthShowPublicSignup'],'#authGate');
+ await load(layout,visible);await measure('login '+layout+'/'+visible,visible,['#authEmail','#authPassword','#btnAuthSignIn'],'#authGate');
  await page.evaluate(()=>{document.querySelector('#authGate').classList.remove('visible');document.body.classList.remove('authLocked');initializeZebraInterface();window.UI={elements:{lastScanCard:document.querySelector('#lastScanCard')}};createProfessionalLastScanLayout();createLastScanQuantityControls();});
  await measure('Choose Space '+layout+'/'+visible,visible,['#btnZebraReceivingMode','#btnZebraExpiryMode','#btnZebraSignOut'],'#zebraHome');
  await page.evaluate(()=>{setZebraReceivingMode();document.querySelector('#page-dashboard').classList.add('active');});

@@ -1,5 +1,11 @@
 # PharmFlow current checkpoint — 14 November 2026
 
+## Pharmacy Admin sign-in — Staging candidate
+
+Based on Production main `0fda480ba6945a905ea8c45df3ad091739b03df1` (PR #61). Adds Pharmacy Code as a sign-in ID, simplifies the sign-in form, and uses the browser password manager for autofill. Create Pharmacy & Admin adds Duty with the existing Enabled/Disabled control. Create and Reset issue a randomly generated two-letter, eight-digit temporary password that must be replaced using the existing password-change gate. Password recovery requests are handled by the pharmacy supervisor and the System Administrator.
+
+The backend release adds a service-role-only lookup and an additive provisioning RPC that saves Duty with the other initial permissions before activating the pharmacy. Existing account credentials and pharmacy permissions require no backfill. The hosted Auth setting **Allow new users to sign up** must be disabled and verified separately. Auth and functional checks must use Staging `tovkcakucyagvbzvlnks`. Owner acceptance is pending.
+
 ## Receiving KPI order details — Staging review
 
 Based on Production main `1e0db955d2ee174cc9d95572af39d9532c9f23bd` (PR #60). Completed, Remaining Items, Remaining Units, and Over Received details classify each selected Order row independently. The Order No. and signed Received minus Ordered are drawn from the existing per-order Receiving projection. The cards keep their unique-item counts and aggregate remaining units. Review all four details on the Staging Preview, including the same item on two Orders, before requesting Production release.

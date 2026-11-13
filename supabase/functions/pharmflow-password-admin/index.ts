@@ -11,10 +11,19 @@ const json = (body: Record<string, unknown>, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 
-const temporaryPassword = () => {
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
-  return `Pf7!${btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_")}`;
+const randomCharacters = (alphabet: string, length: number) => {
+  let result = "";
+  const cutoff = 256 - (256 % alphabet.length);
+  while (result.length < length) {
+    for (const byte of crypto.getRandomValues(new Uint8Array(length - result.length))) {
+      if (byte < cutoff) result += alphabet[byte % alphabet.length];
+    }
+  }
+  return result;
 };
+
+const temporaryPassword = () =>
+  randomCharacters("ABCDEFGHJKLMNPQRSTUVWXYZ", 2) + randomCharacters("0123456789", 8);
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -55,13 +64,16 @@ Deno.serve(async (request) => {
   if (body.action === "create-account") {
     // The caller RPC verifies current owner + forced-change state and journals
     // the pharmacy exactly once. Auth creation stays on this privileged server.
-    if (supabaseUrl !== "https://zznoshzcyxmtwfbznjyr.supabase.co") return json({ error: "Production environment mismatch" }, 403);
+    if (!["https://zznoshzcyxmtwfbznjyr.supabase.co", "https://tovkcakucyagvbzvlnks.supabase.co"].includes(supabaseUrl)) {
+      return json({ error: "PharmFlow environment mismatch" }, 403);
+    }
     const params = {
       p_operation_id: body.operation_id, p_name: body.pharmacy_name,
       p_code: body.pharmacy_code, p_admin_email: body.admin_email,
       p_receiving: body.receiving, p_expiry: body.expiry, p_data_access: body.data_access,
+      p_duty: body.duty ?? "DISABLED",
     };
-    const prepare = await callerClient.rpc("owner_provision_pharmacy_v2", params);
+    const prepare = await callerClient.rpc("owner_provision_pharmacy_v3", params);
     if (prepare.error) return json({ error: prepare.error.message, operation_not_started: true }, 400);
     let operation = prepare.data;
     let password: string | undefined;
@@ -75,12 +87,12 @@ Deno.serve(async (request) => {
         // Includes duplicate-email races and lost Auth responses. Never reset
         // the existing credential. The journal resolves the same email/user.
         password = undefined;
-        const recovered = await callerClient.rpc("owner_provision_pharmacy_v2", params);
+        const recovered = await callerClient.rpc("owner_provision_pharmacy_v3", params);
         if (recovered.error || !recovered.data?.admin_user_id) return json({ error: "Account creation incomplete. Retry with the same operation." }, 409);
         operation = recovered.data;
       }
     }
-    const finished = await callerClient.rpc("owner_provision_pharmacy_v2", { ...params, p_finish: true });
+    const finished = await callerClient.rpc("owner_provision_pharmacy_v3", { ...params, p_finish: true });
     if (finished.error) return json({ error: "Admin assignment incomplete. Retry with the same operation." }, 409);
     return json({ ...finished.data, temporary_password: password,
       credential_status: password ? "TEMPORARY_PASSWORD" : operation.created_for_operation ? "USE_EXPLICIT_RESET" : "EXISTING_LOGIN" });

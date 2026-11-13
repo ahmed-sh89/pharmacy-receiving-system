@@ -37,6 +37,7 @@ const AuthState = {
     connectionDegraded:false,
     refreshRejected:false,
     busy:false,
+    signInIdentifier:"",
     registration:null,
     mustChangePassword:false,
     ownerRegistrations:[],
@@ -143,15 +144,13 @@ function finishAuthBootState(){
 }
 
 function bindAuthUI(){
-    bindClick("btnAuthSignIn", ()=>signInFromForm());
-    bindClick("btnAuthShowLogin", ()=>showAuthPanel("login"));
+    document.getElementById("authLoginForm")?.addEventListener("submit", event=>{
+        event.preventDefault();
+        signInFromForm();
+    });
     bindClick("btnAuthShowLoginFromOwner", ()=>showAuthPanel("login"));
     bindClick("btnAuthShowLoginFromInvite", ()=>showAuthPanel("login"));
-    bindClick("btnAuthShowPublicSignup", ()=>showAuthPanel("public"));
-    bindClick("btnAuthShowOwnerSetup", ()=>showAuthPanel("owner"));
-    bindClick("btnAuthForgotPassword", ()=>requestPasswordRecovery());
     bindPasswordToggle("btnToggleAuthPassword","authPassword");
-    bindPasswordToggle("btnTogglePublicSignupPassword","publicSignupPassword");
     bindPasswordToggle("btnToggleInviteSignupPassword","inviteSignupPassword");
     bindPasswordToggle("btnToggleOwnerSignupPassword","ownerSignupPassword");
     restoreRememberedEmail();
@@ -167,7 +166,6 @@ function bindAuthUI(){
     }
     bindAuthHistoryNavigation();
     bindClick("btnAuthInviteSignUp", ()=>signUpInvitedUser());
-    bindClick("btnAuthPublicSignUp", ()=>signUpPublicPharmacy());
     bindClick("btnSubmitPendingRegistration", ()=>submitRegistrationFromPendingPanel());
     bindClick("btnAuthOwnerSignUp", ()=>signUpInitialOwner());
     bindClick("btnRedeemInvite", ()=>redeemInviteFromPendingPanel());
@@ -195,18 +193,6 @@ function bindAuthUI(){
         });
     }
     bindClick("btnCreateMemberInvite", ()=>createMemberInviteFromSettings());
-
-    ["authEmail","authPassword"].forEach(id=>{
-        const el = document.getElementById(id);
-        if(el){
-            el.addEventListener("keydown", event=>{
-                if(event.key === "Enter"){
-                    event.preventDefault();
-                    signInFromForm();
-                }
-            });
-        }
-    });
 }
 
 
@@ -324,7 +310,6 @@ function bindAuthHistoryNavigation(){
 function getVisibleAuthMode(){
     const map = {
         login:"authLoginForm",
-        public:"authPublicSignupForm",
         invite:"authInviteSignupForm",
         owner:"authOwnerSignupForm",
         recovery:"authRecoveryForm"
@@ -359,11 +344,6 @@ function setRecoveryMessage(message,type){
     el.textContent = message || "";
     el.className = "authMessage " + (type || "");
 }
-
-async function requestPasswordRecovery(){
-    setAuthMessage("Contact your PharmFlow Admin to receive a temporary password. No recovery email will be sent.","info");
-}
-
 
 function handleRecoveryErrorFromUrl(){
     AuthState.recoveryActive = false;
@@ -511,6 +491,7 @@ function persistAuthSession(session){
         scheduleTokenRefresh(session);
     }
     else{
+        AuthState.signInIdentifier="";
         localStorage.removeItem(AUTH_STORAGE_KEY);
         if(AuthState.refreshTimer){ clearTimeout(AuthState.refreshTimer); }
         AuthState.refreshTimer = null;
@@ -792,19 +773,23 @@ async function signInFromForm(){
     clearRecoveryArtifacts();
     showAuthPanel("login",{history:"replace"});
 
-    const email = valueOf("authEmail").trim();
+    const identifier = valueOf("authEmail").trim();
     const password = valueOf("authPassword");
-    if(!email || !password){
-        setAuthMessage("Enter email and password.", "error");
+    if(!identifier || !password){
+        setAuthMessage("Enter your email or pharmacy code and password.", "error");
         return;
     }
-    persistRememberedEmail(email);
+    persistRememberedEmail(identifier);
     setAuthBusy(true, "Signing in...");
     try{
-        const session = await authRequest("/auth/v1/token?grant_type=password", {
+        const emailSignIn = identifier.includes("@");
+        const session = await authRequest(emailSignIn
+            ? "/auth/v1/token?grant_type=password"
+            : "/functions/v1/pharmflow-code-sign-in", {
             method:"POST",
-            body:JSON.stringify({email,password})
+            body:JSON.stringify(emailSignIn ? {email:identifier,password} : {code:identifier,password})
         });
+        AuthState.signInIdentifier = identifier;
         persistAuthSession(session);
         if(AuthState.mustChangePassword){
             renderAuthState();
@@ -827,39 +812,6 @@ async function signInFromForm(){
     finally{ setAuthBusy(false); }
 }
 
-
-async function signUpPublicPharmacy(){
-    if(AuthState.busy){ return; }
-    const email = valueOf("publicSignupEmail").trim();
-    const password = valueOf("publicSignupPassword");
-    const confirmPassword = valueOf("publicSignupPasswordConfirm");
-    const pharmacyCode = valueOf("publicPharmacyCode").trim();
-    if(!email || password.length < 8 || password !== confirmPassword || pharmacyCode.length < 3){
-        setAuthMessage("Enter a valid email, matching passwords of at least 8 characters, and your pharmacy code.","error");
-        return;
-    }
-    localStorage.setItem(AUTH_PENDING_REGISTRATION_KEY,JSON.stringify({pharmacyCode}));
-    setAuthBusy(true,"Creating account...");
-    try{
-        const result = await authRequest("/auth/v1/signup",{
-            method:"POST",
-            body:JSON.stringify({email,password})
-        });
-        if(result && result.access_token){
-            persistAuthSession(result);
-            await submitPendingRegistration();
-            await loadMyAppContext();
-            await loadMyRegistrationStatus();
-            renderAuthState();
-        }else{
-            setAuthMessage("Account created. Sign in with the same email and password to finish the pharmacy request.","success");
-            showAuthPanel("login");
-            setInputValue("authEmail",email);
-        }
-    }catch(error){
-        setAuthMessage(error.message || "Unable to create account.","error");
-    }finally{ setAuthBusy(false); }
-}
 
 async function submitPendingRegistration(){
     const raw = localStorage.getItem(AUTH_PENDING_REGISTRATION_KEY);
@@ -2280,9 +2232,6 @@ function renderAuthState(){
     // Current PharmFlow access model: one ADMIN per pharmacy, no staff invitations.
     const memberCard = document.getElementById("memberInviteCard");
     if(memberCard){ memberCard.hidden = true; }
-
-    const ownerButton = document.getElementById("btnAuthShowOwnerSetup");
-    if(ownerButton){ ownerButton.hidden = AuthState.ownerExists; }
 }
 
 function renderPendingAccessPanel(){
@@ -2326,7 +2275,7 @@ function showForcedPasswordPanel(){
     const accessPanel=document.getElementById("authAccessPanel");
     if(formsPanel){ formsPanel.hidden=false; }
     if(accessPanel){ accessPanel.hidden=true; }
-    ["authLoginForm","authPublicSignupForm","authInviteSignupForm","authOwnerSignupForm","authRecoveryForm"].forEach(id=>{
+    ["authLoginForm","authInviteSignupForm","authOwnerSignupForm","authRecoveryForm"].forEach(id=>{
         const el=document.getElementById(id); if(el){ el.hidden=true; }
     });
     let form=document.getElementById("authForcedPasswordForm");
@@ -2334,9 +2283,15 @@ function showForcedPasswordPanel(){
         const template=document.getElementById("authForcedPasswordTemplate");
         if(template&&formsPanel){ formsPanel.appendChild(template.content.cloneNode(true)); }
         form=document.getElementById("authForcedPasswordForm");
-        bindClick("btnAuthForcedPasswordSave",()=>completeTemporaryPassword());
+        form?.addEventListener("submit",event=>{
+            event.preventDefault();
+            completeTemporaryPassword();
+        });
     }
-    if(form){ form.hidden=false; }
+    if(form){
+        setInputValue("authForcedUsername",AuthState.signInIdentifier || AuthState.user?.email);
+        form.hidden=false;
+    }
     setAuthMessage("","");
 }
 
@@ -2381,12 +2336,11 @@ function showAuthPanel(mode, options = {}){
         mode = "login";
     }
 
-    const validMode = ["login","owner","public","recovery"].includes(mode) ? mode : "login";
+    const validMode = ["login","owner","recovery"].includes(mode) ? mode : "login";
 
     const login = document.getElementById("authLoginForm");
     const invite = document.getElementById("authInviteSignupForm");
     const owner = document.getElementById("authOwnerSignupForm");
-    const publicSignup = document.getElementById("authPublicSignupForm");
     const recovery = validMode === "recovery" && AuthState.recoveryActive
         ? mountRecoveryForm()
         : document.getElementById("authRecoveryForm");
@@ -2395,7 +2349,6 @@ function showAuthPanel(mode, options = {}){
     if(login){ login.hidden = validMode !== "login"; }
     if(invite){ invite.hidden = validMode !== "invite"; }
     if(owner){ owner.hidden = validMode !== "owner"; }
-    if(publicSignup){ publicSignup.hidden = validMode !== "public"; }
     if(recovery){ recovery.hidden = validMode !== "recovery"; }
     if(forcedPassword){ forcedPassword.hidden = true; }
 

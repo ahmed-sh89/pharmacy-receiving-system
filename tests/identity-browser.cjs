@@ -39,12 +39,8 @@ fs.mkdirSync(out, { recursive: true });
     await page.locator('#authRememberEmail').uncheck();
     assert.equal(await page.locator('#authRememberEmail').isChecked(),false);
     await page.locator('#authRememberEmail').check();
-    await page.locator('#btnAuthShowPublicSignup').click();
-    assert.equal(await page.locator('#authPublicSignupForm').isVisible(),true);
-    await page.locator('#btnAuthShowLogin').click();
-    await page.locator('#btnAuthShowInviteSignup').click();
-    assert.equal(await page.locator('#authInviteSignupForm').isVisible(),true);
-    await page.locator('#btnAuthShowLoginFromInvite').click();
+    assert.equal(await page.locator('#btnAuthShowPublicSignup, #btnAuthForgotPassword').count(),0);
+    assert.equal(await page.locator('#authEmail').getAttribute('autocomplete'),'username');
   }
   const scan = await page.locator('.authBrandLogoCard').evaluate(el => {
     const animation = el.getAnimations({subtree:true}).find(a => a.animationName?.includes('Scan'));
