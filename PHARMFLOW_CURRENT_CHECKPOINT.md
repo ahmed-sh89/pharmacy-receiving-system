@@ -1,8 +1,8 @@
 # PharmFlow current checkpoint — 13 November 2026
 
-## Work Order per discrepancy item — Staging review
+## Work Order per discrepancy item — Production approved
 
-Production baseline `6c82f95ae1c3d10915509917e8802e66f3510089` (PR #58). See the [Staging checkpoint](docs/receiving/email-item-wo/CHECKPOINT.md) for work order entry, copy verification and the Outlook review step.
+Production baseline `6c82f95ae1c3d10915509917e8802e66f3510089` (PR #58). See the [release checkpoint](docs/receiving/email-item-wo/CHECKPOINT.md) for work order entry, cell styling and verification.
 
 ## Receiving discrepancy email — Staging review
 
