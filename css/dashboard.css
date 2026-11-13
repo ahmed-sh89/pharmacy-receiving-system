@@ -7454,3 +7454,85 @@ body.zebraDevice #zebraExpiryShell .expiryScanBox{background:#eef4ff}
 body.zebraDevice #zebraExpiryShell .expiryEntryGrid .expiryBatchField{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:stretch;gap:0;min-height:46px;border:1px solid #dbe3ed;border-radius:9px;background:#fff}
 body.zebraDevice #zebraExpiryShell .expiryBatchField>.expiryControlLabel{display:flex;align-items:center;padding:0 10px!important;margin:0;border-radius:8px 0 0 8px;background:#eef3f8;border-right:1px solid #dbe3ed;color:#50647e;font-weight:650}
 body.zebraDevice #zebraExpiryShell .expiryBatchField #expiryBatchInput{min-width:0;border:0;border-radius:0 8px 8px 0;background:#fff}
+
+.finalizedEmailWorkOrders {
+  margin: 0 20px 10px;
+  border: 1px solid #cbddea;
+  border-radius: 10px;
+  background: #f5f9fd;
+  color: #173f66;
+}
+.finalizedEmailWOHeading {
+  padding: 7px 10px;
+  border-bottom: 1px solid #d8e5f2;
+}
+.finalizedEmailWOHeading h3,
+.finalizedEmailWOHeading p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.finalizedEmailWOHeading p {
+  color: #47627b;
+}
+.finalizedEmailWorkOrderFields {
+  max-height: 24vh;
+  overflow: auto;
+}
+.finalizedEmailWOGroup + .finalizedEmailWOGroup {
+  border-top: 1px solid #d8e5f2;
+}
+.finalizedEmailWOGroup,
+.finalizedEmailWOEntry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.finalizedEmailWOGroup {
+  align-items: flex-start;
+  padding: 5px 10px;
+  font-size: 13px;
+}
+.finalizedEmailWOGroup > strong {
+  min-width: min(10rem, 100%);
+  padding: 6px 0;
+  overflow-wrap: anywhere;
+}
+.finalizedEmailWOEntries {
+  display: grid;
+  gap: 5px;
+}
+.finalizedEmailWOInput {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid #9ab9d3;
+  border-radius: 7px;
+  background: #fff;
+}
+.finalizedEmailWOInput > span {
+  display: grid;
+  place-items: center;
+  padding: 0 7px;
+  border-right: 1px solid #cbddea;
+  background: #e4eff9;
+  font-weight: 700;
+}
+.finalizedEmailWOInput input {
+  width: 7.5rem;
+  min-height: 30px;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.finalizedEmailWOGroup [data-wo-add],
+.finalizedEmailWOEntry [data-wo-remove] {
+  min-height: 30px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.finalizedEmailWOEntry [data-wo-remove] {
+  min-width: 30px;
+}

@@ -1,4 +1,8 @@
-# PharmFlow current checkpoint — 9 November 2026
+# PharmFlow current checkpoint — 13 November 2026
+
+## Receiving discrepancy email — Staging review
+
+One table per TO with a single header for the date and all manually entered WO numbers, English left-to-right headers and approved Arial 10/11/12/15pt typography, signed differences with Arabic status quantities, and a TO-only subject. Application candidate and remaining Outlook verification are recorded in the [Staging checkpoint](docs/receiving/email-simplification-20261113/CHECKPOINT.md). Production release requires separate approval.
 
 ## Duty KPI / Today polish — READY FOR USER TEST — 9 November 2026
 
