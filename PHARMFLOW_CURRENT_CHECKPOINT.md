@@ -1,5 +1,9 @@
 # PharmFlow current checkpoint — 13 November 2026
 
+## Work Order per discrepancy item — Production approved
+
+Production baseline `6c82f95ae1c3d10915509917e8802e66f3510089` (PR #58). See the [release checkpoint](docs/receiving/email-item-wo/CHECKPOINT.md) for work order entry, cell styling and verification.
+
 ## Receiving discrepancy email — Staging review
 
 One table per TO with a single header for the date and all manually entered WO numbers, English left-to-right headers and approved Arial 10/11/12/15pt typography, signed differences with Arabic status quantities, and a TO-only subject. Application candidate and remaining Outlook verification are recorded in the [Staging checkpoint](docs/receiving/email-simplification-20261113/CHECKPOINT.md). Production release requires separate approval.

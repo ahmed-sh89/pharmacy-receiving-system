@@ -7482,26 +7482,35 @@ body.zebraDevice #zebraExpiryShell .expiryBatchField #expiryBatchInput{min-width
 .finalizedEmailWOGroup + .finalizedEmailWOGroup {
   border-top: 1px solid #d8e5f2;
 }
-.finalizedEmailWOGroup,
+.finalizedEmailWOGroup summary {
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.finalizedEmailWOEntries {
+  max-height: 19vh;
+  overflow: auto;
+  padding: 0 10px 5px;
+}
 .finalizedEmailWOEntry {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 12px;
-}
-.finalizedEmailWOGroup {
-  align-items: flex-start;
-  padding: 5px 10px;
+  justify-content: space-between;
+  gap: 6px 10px;
+  padding: 4px 0;
   font-size: 13px;
 }
-.finalizedEmailWOGroup > strong {
-  min-width: min(10rem, 100%);
-  padding: 6px 0;
+.finalizedEmailWOEntry + .finalizedEmailWOEntry {
+  border-top: 1px solid #d8e5f2;
+}
+.finalizedEmailWOItem {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
-.finalizedEmailWOEntries {
-  display: grid;
-  gap: 5px;
+.finalizedEmailWOItem strong {
+  margin-inline-end: 4px;
 }
 .finalizedEmailWOInput {
   display: inline-flex;
@@ -7519,7 +7528,8 @@ body.zebraDevice #zebraExpiryShell .expiryBatchField #expiryBatchInput{min-width
   font-weight: 700;
 }
 .finalizedEmailWOInput input {
-  width: 7.5rem;
+  width: 7rem;
+  min-width: 0;
   min-height: 30px;
   padding: 4px 6px;
   border: 0;
@@ -7527,12 +7537,6 @@ body.zebraDevice #zebraExpiryShell .expiryBatchField #expiryBatchInput{min-width
   color: inherit;
   font: inherit;
 }
-.finalizedEmailWOGroup [data-wo-add],
-.finalizedEmailWOEntry [data-wo-remove] {
-  min-height: 30px;
-  padding: 3px 8px;
-  font-size: 12px;
-}
-.finalizedEmailWOEntry [data-wo-remove] {
-  min-width: 30px;
+@media (max-width: 420px) {
+  .finalizedEmailWOEntry { flex-wrap: wrap; }
 }
