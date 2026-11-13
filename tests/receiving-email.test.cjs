@@ -77,15 +77,15 @@ test('one table per TO preserves quantities, sign colors and distinct rows acros
         const header = group.children[0].children[0];
         assert.equal(header.getAttribute('colspan'), '6');
         assert.equal(header.getAttribute('dir'), 'ltr');
-        assertTypography(header, 13, true);
+        assertTypography(header, 12, true);
         const date = header.querySelectorAll('font')[1];
-        assert.match(date.getAttribute('style'), /font-size:13pt;.*font-weight:400/);
+        assert.match(date.getAttribute('style'), /font-size:12pt;.*font-weight:400/);
         assert.equal(date.querySelector('b'), null);
         assert.deepEqual(values(group.children[1].children), ['Code', 'Item Name', 'Ordered', 'Received', 'Diff', 'Status']);
         assert.equal(group.children[2].children[0].tagName, 'TD');
         for (const heading of group.children[1].children) {
             assert.match(heading.getAttribute('style'), /border:1px solid/);
-            assertTypography(heading, 12, true);
+            assertTypography(heading, 10, true);
         }
     }
     assert.deepEqual(values(document.querySelectorAll('td[colspan="6"]')).map(value => value.replace(/\s+/g, ' ')), [
@@ -97,7 +97,7 @@ test('one table per TO preserves quantities, sign colors and distinct rows acros
         ['7', '8', '+1', 'زيادة 1'], ['34', '31', '-3', 'ناقص 3']
     ]);
     for (const tr of itemRows) {
-        [...tr.children].forEach((cell, index) => assertTypography(cell, 12, index >= 4));
+        [...tr.children].forEach((cell, index) => assertTypography(cell, index >= 4 ? 11 : 10, index >= 4));
         const isShort = tr.children[4].textContent.startsWith('-');
         assert.equal(tr.children[4].getAttribute('bgcolor'), isShort ? '#f7c3c3' : '#bde8d7');
         for (const cell of [tr.children[4], tr.children[5]]) {
@@ -109,7 +109,7 @@ test('one table per TO preserves quantities, sign colors and distinct rows acros
     assert.equal(JSON.stringify(report), before);
 });
 
-test('Arabic intro and closing use centered 14pt Arial without punctuation', () => {
+test('Arabic intro and closing use centered 15pt Arial without punctuation', () => {
     const {c} = harness();
     const {document} = parseHTML(c.buildFinalizedDiscrepancyEmailHTML(fixture()));
     const messages = [...document.querySelectorAll('td[dir="rtl"]:not([colspan])')];
@@ -117,7 +117,7 @@ test('Arabic intro and closing use centered 14pt Arial without punctuation', () 
     assert.equal(messages[0].querySelector('b').innerHTML, 'السلام عليكم<br>يوجد فرق توريد موضح أدناه');
     assert.equal(messages[1].textContent, 'الرجاء المراجعة والإفادة');
     for (const message of messages) {
-        assertTypography(message, 14, true);
+        assertTypography(message, 15, true);
         assert.equal(message.getAttribute('align'), 'center');
         assert.equal(message.querySelector('font').getAttribute('face'), 'Arial, Helvetica, sans-serif');
     }
@@ -163,7 +163,7 @@ test('manual WO entries stay with one TO in preview and both clipboard formats',
     assert.equal(heading.querySelectorAll('br').length, 1);
     assert.deepEqual(values(heading.querySelectorAll('font')), ['TO-001', 'WO-0001 | WO-0002']);
     const woFont = heading.querySelectorAll('font')[1];
-    assert.match(woFont.getAttribute('style'), /font-size:13pt;.*font-weight:400/);
+    assert.match(woFont.getAttribute('style'), /font-size:10pt;.*font-weight:400/);
     assert.equal(woFont.querySelector('b'), null);
     assert.doesNotMatch(heading.textContent, /—/);
     assert.doesNotMatch(tables[1].textContent, /WO-/);
