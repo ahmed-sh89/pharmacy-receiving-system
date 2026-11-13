@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const crypto=require('node:crypto');
 const {execFileSync}=require('node:child_process');
 
-const manifest=JSON.parse(fs.readFileSync('docs/receiving/archive-extra-menu/RELEASE_MANIFEST.json','utf8'));
+const manifest=JSON.parse(fs.readFileSync('docs/receiving/kpi-order-details/RELEASE_MANIFEST.json','utf8'));
 const historical=JSON.parse(fs.readFileSync('docs/duty/RELEASE_MANIFEST.json','utf8'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const blobHash=bytes=>crypto.createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
@@ -16,8 +16,8 @@ function verifyRelease(read=path=>fs.readFileSync(path)){
 }
 
 test('release baseline is pinned to verified Production and the declared Receiving hotfix source',()=>{
- assert.equal(manifest.production_base,'463b9d1881796b4620ada6628e9030981d580cd9');
- assert.equal(manifest.approved_source,'1bc5be0348f2df7b9cf215d8bf3602d85fcb5b8b');
+ assert.equal(manifest.production_base,'1e0db955d2ee174cc9d95572af39d9532c9f23bd');
+ assert.equal(manifest.approved_source,'a08be3f65dde043c1107f54bef3ffe021abfdf46');
  git('merge-base','--is-ancestor',manifest.production_base,manifest.approved_source);
  for(const path of Object.keys(historical.protected_files))assert.ok(Object.hasOwn(manifest.protected_files,path),`Protection removed: ${path}`);
  for(const path of ['css/duty.css','js/duty.js','js/duty-model.js','js/duty-controls.js','js/duty-schedule.js','js/duty-reports.js']){
