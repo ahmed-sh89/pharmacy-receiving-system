@@ -17,7 +17,7 @@ function verifyRelease(read=path=>fs.readFileSync(path)){
 
 test('release baseline is pinned to verified Production and the declared Receiving hotfix source',()=>{
  assert.equal(manifest.production_base,'1da5ae0b4d2d9d9141eeb9db6d2206aa139cf4c2');
- assert.equal(manifest.approved_source,'525c9700621045c4f723d0576d0d327a9600a6b6');
+ assert.equal(manifest.approved_source,'ea53d7cfade84b17037b5c6b71c0e436f4bfcfd0');
  git('merge-base','--is-ancestor',manifest.production_base,manifest.approved_source);
  for(const path of Object.keys(historical.protected_files))assert.ok(Object.hasOwn(manifest.protected_files,path),`Protection removed: ${path}`);
  for(const path of ['css/duty.css','js/duty.js','js/duty-model.js','js/duty-controls.js','js/duty-schedule.js','js/duty-reports.js']){
