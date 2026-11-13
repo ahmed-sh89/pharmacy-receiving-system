@@ -1152,12 +1152,21 @@ function closeSmartScanSearch(
    GLOBAL UI EVENTS
 ===================================================== */
 
+function bindReceivingReportActionMenu(){
+    const menu=document.querySelector(".pfnReportActionMenu");
+    if(!menu)return;
+    const close=()=>{ menu.open=false; };
+    menu.querySelectorAll("button").forEach(button=>button.addEventListener("click",close));
+    AppEvents.on("route:changed",close);
+}
+
 function bindUIEvents(){
 
     setupDashboardKpiInteractivity();
     setupPhase263ActionDelegation();
     refreshScanSafetyUI();
 
+    bindReceivingReportActionMenu();
     document.getElementById("btnExportReceivingSummaryExcel")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryExcel==="function") exportReceivingSummaryExcel(); });
     document.getElementById("btnExportReceivingSummaryPDF")?.addEventListener("click",()=>{ if(typeof exportReceivingSummaryPDF==="function") exportReceivingSummaryPDF(); });
     document.getElementById("btnEmailReceivingDifferences")?.addEventListener("click",()=>{
@@ -1606,7 +1615,11 @@ function bindUIStateEvents(){
 
     AppEvents.on(
         "archive:updated",
-        refreshArchiveUI
+        ()=>{
+            refreshArchiveUI();
+            refreshDashboard();
+            refreshReceivingTable();
+        }
     );
 
 }

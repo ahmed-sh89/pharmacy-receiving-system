@@ -1,5 +1,9 @@
 # PharmFlow current checkpoint — 13 November 2026
 
+## Historical Extra Items and export menu — Staging review
+
+Production baseline `463b9d1881796b4620ada6628e9030981d580cd9` (PR #59). See the [Staging checkpoint](docs/receiving/archive-extra-menu/CHECKPOINT.md) for archive scoping and manual verification.
+
 ## Work Order per discrepancy item — Production approved
 
 Production baseline `6c82f95ae1c3d10915509917e8802e66f3510089` (PR #58). See the [release checkpoint](docs/receiving/email-item-wo/CHECKPOINT.md) for work order entry, cell styling and verification.

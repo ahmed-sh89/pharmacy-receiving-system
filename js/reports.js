@@ -1315,6 +1315,42 @@ function getPerOrderReceivingRows(orderNumber, options={}){
     return rows;
 }
 
+// A completed archive can contain orderless receipts in its discrepancy
+// snapshot. Keep those ledger entries for history, outside the next workspace.
+function getCurrentUnassignedReceivingLedger(ledger=(AppState?.workspace?.receivingHistory||[])){
+    const archive=AppState?.archive?.orders||[];
+    const files=AppState?.workspace?.orderFiles||[];
+    const imports=files.map(file=>Date.parse(file.importedAt));
+    if(files.length&&imports.some(time=>!Number.isFinite(time)))return ledger;
+    const firstImport=Math.min(...imports);
+    const archivedThrough=new Map();
+    for(const order of archive){
+        const closed=Date.parse(order.closedAt);
+        if(!Number.isFinite(closed)||closed>=firstImport)continue;
+        for(const row of order.discrepancyReport?.rows||[]){
+            if(row.unassigned!==true||!row["Received Date"])continue;
+            const key=normalizeItemCode(row["Item Number"])+"|"+row["Received Date"];
+            archivedThrough.set(key,Math.max(closed,archivedThrough.get(key)||0));
+        }
+    }
+    if(!archivedThrough.size)return ledger;
+
+    const archived=new Set();
+    const archivedRows=new Set();
+    for(const tx of ledger){
+        if(tx.unassigned!==true||normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||tx.orderNumber)||Number(tx.quantity)<=0)continue;
+        const date=new Date(tx.dateTime||tx.occurred_at||"");
+        if(!Number.isFinite(date.getTime()))continue;
+        const day=[date.getFullYear(),String(date.getMonth()+1).padStart(2,"0"),String(date.getDate()).padStart(2,"0")].join("-");
+        const cutoff=archivedThrough.get(normalizeItemCode(tx.itemCode)+"|"+day);
+        if(cutoff&&date.getTime()<=cutoff){
+            archivedRows.add(tx);
+            if(tx.transactionId)archived.add(tx.transactionId);
+        }
+    }
+    return ledger.filter(tx=>!archivedRows.has(tx)&&!(tx.unassigned===true&&archived.has(tx.correctsTransactionId)));
+}
+
 // Unassigned is a workspace scope, never an inferred Order association.
 function getUnassignedReceivingReportRows(options={}){
     // Order selection scopes associated rows only. Outstanding orderless
@@ -1324,7 +1360,7 @@ function getUnassignedReceivingReportRows(options={}){
     if(pharmacy&&typeof PharmFlowCloudWorkspace!=='undefined'&&PharmFlowCloudWorkspace.hydratedPharmacyId&&PharmFlowCloudWorkspace.hydratedPharmacyId!==pharmacy)return [];
     const filters=typeof UI!=='undefined'?UI.receivingFilters||{}:{};
     const from=options.fromDate||filters.fromDate||'',to=options.toDate||filters.toDate||'';
-    const seen=new Set(),ledger=(AppState?.workspace?.receivingHistory||[]).filter(tx=>{
+    const seen=new Set(),ledger=getCurrentUnassignedReceivingLedger().filter(tx=>{
         if(tx?.undone===true||tx?.unassigned!==true||normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||tx.orderNumber||''))return false;
         if(pharmacy&&tx.pharmacy_id&&tx.pharmacy_id!==pharmacy)return false;
         if(tx.transactionId&&seen.has(tx.transactionId))return false;

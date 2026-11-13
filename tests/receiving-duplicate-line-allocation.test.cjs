@@ -77,6 +77,7 @@ test("receiving report builder returns consolidated order totals",()=>{
     context.getReceivingOrderMetadata=()=>[{orderNumber:order,orderDate:"2026-10-12"}];
     vm.runInNewContext(extractFunction(reportSource,"allocateReceivedQuantityAcrossOrderLines"),context);
     vm.runInNewContext(extractFunction(reportSource,"getPerOrderReceivingRows"),context);
+    vm.runInNewContext(extractFunction(reportSource,"getCurrentUnassignedReceivingLedger"),context);
     vm.runInNewContext(extractFunction(reportSource,"getUnassignedReceivingReportRows"),context);
     vm.runInNewContext(extractFunction(reportSource,"buildMultiOrderReceivingReport"),context);
     const report=context.buildMultiOrderReceivingReport();
@@ -171,5 +172,5 @@ test("adjustment handlers emit exactly one signed delta for a duplicated item gr
 });
 
 test("the active HTML entry cache-busts the corrected report source",()=>{
-    assert.match(indexSource,/<script src="js\/reports\.js\?v=RECEIVING_EXTRA_SCOPE_20261110"><\/script>/);
+    assert.match(indexSource,/<script src="js\/reports\.js\?v=RECEIVING_ARCHIVED_EXTRAS"><\/script>/);
 });

@@ -14,7 +14,7 @@ function harness(){
  getScopedOrderItems:()=>c.AppState.workspace.orderData,getReceivingOrderMetadata:()=>orders.map(orderNumber=>({orderNumber})),setTimeout:()=>{},document:{body:{classList:{add(){},remove(){}}}}};
  c.addReceivingTransaction=t=>{c.AppState.workspace.receivingHistory.push(t);return t;};
  vm.createContext(c);
- for(const n of ['getUnassignedReceivingReportRows','buildReceivedQuantityByOrder','getPerOrderReceivingRows','buildMultiOrderReceivingReport'])vm.runInContext(fn(reports,n),c);
+ for(const n of ['getCurrentUnassignedReceivingLedger','getUnassignedReceivingReportRows','buildReceivedQuantityByOrder','getPerOrderReceivingRows','buildMultiOrderReceivingReport'])vm.runInContext(fn(reports,n),c);
  for(const n of ['getReceivingEligibleOrders','getReceivingOrderRow','chooseDeterministicReceivingOrder','resolveReceivingTransactionOrder','getReceivingDisplayMetrics','getReceivingOperationalItems','getReceivingAutoAllocationCandidates','buildReceivingAutoAllocationPlan','receiveAutoAllocatedItem','receiveOperationalItem','receiveOrderItem','createReceivingTransaction','addItemReceivedQuantity','receiveItemBySearch','applyQuantityAdjustment','increaseItemQuantity','decreaseItemQuantity','updateLastScanFromReceiving','undoRecentScannerTransaction'])vm.runInContext(fn(receiving,n),c);
  // Core transaction side effects are isolated; allocation/validation/ledger projection use actual code.
  c.ReceivingEngine.currentLocalBatch={};c.rememberReceivingTransaction=()=>{};
