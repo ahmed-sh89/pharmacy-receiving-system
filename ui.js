@@ -8154,65 +8154,56 @@ function getScopedOrderItems(){
 
 function getKpiPanelItems(key){
     if(key==="manual" && typeof getExtraCorrectionItems==="function")return getExtraCorrectionItems();
-    const items=getScopedOrderItems();
-    if(key==="total"){
-        const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
-        if(typeof getPerOrderReceivingRows==="function" && selectedOrders.length){
-            const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
-            const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
-            return selectedOrders.flatMap(order=>getPerOrderReceivingRows(order,{receivedMap,workspaceByCode}).map(row=>({
-                orderNumber:order,
-                orderNumbers:[order],
-                itemCode:row["Item Number"],
-                itemName:row["Item Name"],
-                orderedQty:toNumber(row["Ordered Qty"],0),
-                receivedQty:toNumber(row["Received Qty"],0),
-                remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
-                status:row["Issue Type"],
-                manual:row.issueKey==="manual",
-                group_name:row["Group"]||"",
-                category:row["Category"]||"",
-                sub_category:row["Sub Category"]||"",
-                /* Priority belongs to the authoritative workspace item, not to
-                   the report-row projection. Preserve it when rebuilding the
-                   Order Items browser so persisted SHORT/NEW state survives
-                   redraws and the High Priority filter. */
-                priorityType:toSafeString(getItemByCode?.(row["Item Number"])?.priorityType||""),
-                highPriority:!!getItemByCode?.(row["Item Number"])?.highPriority
-            }))).filter(item=>item.orderedQty>0);
-        }
-        return items.filter(item=>toNumber(item.orderedQty,0)>0);
-    }
     const selectedOrders=typeof getSelectedReceivingOrderNumbers==="function" ? getSelectedReceivingOrderNumbers() : [];
+    const orderDetails=["total","completed","remaining","remainingItems","over"].includes(key);
+    if(!selectedOrders.length || typeof getPerOrderReceivingRows!=="function"){
+        if(key==="total") return getScopedOrderItems().filter(item=>toNumber(item.orderedQty,0)>0);
+        if(key==="manual" && typeof getPerOrderReceivingRows!=="function"){
+            return getScopedOrderItems().filter(item=>item.manual===true && toNumber(item.receivedQty,0)>0);
+        }
+        return [];
+    }
+
+    if(!orderDetails && key!=="manual") return [];
+
     const receivedMap=typeof buildReceivedQuantityByOrder==="function"?buildReceivedQuantityByOrder():null;
-    const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item.itemCode),item]));
-    const perOrderRows=typeof getPerOrderReceivingRows==="function" ? selectedOrders.flatMap(order=>getPerOrderReceivingRows(order,{receivedMap,workspaceByCode}).map(row=>({
-        orderNumber:order,
-        itemCode:row["Item Number"], itemName:row["Item Name"],
-        orderedQty:toNumber(row["Ordered Qty"],0), receivedQty:toNumber(row["Received Qty"],0),
-        remainingQty:Math.max(0,toNumber(row["Ordered Qty"],0)-toNumber(row["Received Qty"],0)),
-        status:row["Issue Type"], manual:row.issueKey==="manual"
-    }))) : [];
-    // Ordered metrics use the same selected Item Code projection as the cards.
-    // Extras retain Item + Order identity; combining them with a matching line
-    // in another Order would hide incorrect assignments.
-    const scoped=typeof getReceivingOperationalItems==="function"
-        ? getReceivingOperationalItems() : items;
-    if(key==="completed") return scoped.filter(i=>{
-        const o=toNumber(i.orderedQty,0),r=toNumber(i.receivedQty,0);
-        return o>0 && r===o;
+    const workspaceByCode=new Map((AppState.workspace?.orderData||[]).map(item=>[normalizeItemCode(item?.itemCode||""),item]));
+    const perOrderRows=selectedOrders.flatMap(order=>getPerOrderReceivingRows(order,{receivedMap,workspaceByCode}).map(row=>{
+        const itemCode=row["Item Number"];
+        const item={
+            orderNumber:order, itemCode, itemName:row["Item Name"],
+            orderedQty:toNumber(row["Ordered Qty"],0),
+            receivedQty:toNumber(row["Received Qty"],0),
+            status:row["Issue Type"], manual:row.issueKey==="manual"
+        };
+        if(key==="total"){
+            // Persisted SHORT/NEW state belongs to the workspace item.
+            const workspaceItem=getItemByCode?.(itemCode);
+            Object.assign(item,{
+                orderNumbers:[order], remainingQty:Math.max(0,item.orderedQty-item.receivedQty),
+                group_name:row["Group"]||"",
+                category:row["Category"]||"", sub_category:row["Sub Category"]||"",
+                priorityType:toSafeString(workspaceItem?.priorityType||""),
+                highPriority:!!workspaceItem?.highPriority
+            });
+        }
+        return item;
+    }));
+    if(key==="manual") return perOrderRows.filter(item=>item.manual && item.receivedQty>0);
+    return perOrderRows.filter(({orderedQty,receivedQty})=>{
+        if(orderedQty<=0) return false;
+        if(key==="completed") return receivedQty===orderedQty;
+        if(key==="over") return receivedQty>orderedQty;
+        if(key==="remaining"||key==="remainingItems") return receivedQty<orderedQty;
+        return true;
     });
-    if(key==="remaining"||key==="remainingItems") return scoped.filter(i=>toNumber(i.remainingQty,0)>0);
-    if(key==="over") return scoped.filter(i=>toNumber(i.orderedQty,0)>0 && toNumber(i.receivedQty,0)>toNumber(i.orderedQty,0));
-    if(key==="manual") return (typeof getPerOrderReceivingRows==="function" ? perOrderRows : items).filter(i=>i.manual===true && toNumber(i.receivedQty,0)>0);
-    return [];
 }
 
 function kpiTitle(key){
     return ({
         total:"Order Items",
         completed:"Completed Items",
-        remaining:"Remaining Items",
+        remaining:"Remaining Units",
         remainingItems:"Remaining Items",
         over:"Over Received",
         manual:"Extra Items",
@@ -8832,6 +8823,28 @@ function renderDashboardKpiPanel(key,body){
     }
     const rows=getKpiPanelItems(key);
     if(!rows.length){body.innerHTML='<div class="tableEmptyState">No items in this category.</div>';return;}
+    if(["completed","remaining","remainingItems","over"].includes(key)){
+        body.closest(".quickKpiPanel")?.classList.add("pfrOrderItemsPanel");
+        body.innerHTML=`<div class="phase263TableWrap pfnCleanWorklist pfrKpiOrderDetails">
+            <table class="quickKpiTable phase263Table">
+                <thead><tr><th>Item Code</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Remaining</th><th>Status</th><th>Order No.</th></tr></thead>
+                <tbody>${rows.map(item=>{
+                    const difference=item.receivedQty-item.orderedQty;
+                    const tone=difference===0?"matched":difference<0?"shortage":"surplus";
+                    return `<tr class="pfnMobileItemCard">
+                        <td class="pfnItemCode" data-label="Item Number">${esc(item.itemCode)}</td>
+                        <td class="pfnItemName" data-label="Item Name" title="${esc(item.itemName)}">${esc(item.itemName)}</td>
+                        <td class="pfnOrderedQty" data-label="Ordered">${esc(item.orderedQty)}</td>
+                        <td class="pfnOrderedQty" data-label="Received">${esc(item.receivedQty)}</td>
+                        <td class="pfnOrderedQty" data-label="Remaining"><span class="pfrKpiDifference" data-tone="${tone}">${difference>0?"+":""}${esc(difference)}</span></td>
+                        <td data-label="Status">${esc(key==="completed"?"Completed":item.status)}</td>
+                        <td class="pfnOrderNo" data-label="Order No." title="${esc(item.orderNumber)}">${esc(item.orderNumber)}</td>
+                    </tr>`;
+                }).join("")}</tbody>
+            </table>
+        </div>`;
+        return;
+    }
     const quantityHeading=key==="over"?"Over Qty":"Remaining";
     body.innerHTML=`<div class="phase263TableWrap"><table class="quickKpiTable phase263Table"><thead><tr><th>Item Code</th><th>Item Name</th>${key==="manual"?"<th>Order</th>":""}<th>Ordered</th><th>Received</th><th>${quantityHeading}</th><th>Status</th>${key==="manual"?"<th>Action</th>":""}</tr></thead><tbody>${rows.map((item,index)=>{const quantityValue=key==="over"?`+${Math.max(0,toNumber(item.receivedQty,0)-toNumber(item.orderedQty,0))}`:String(toNumber(item.remainingQty,0));return `<tr class="pfnMobileItemCard"><td data-label="Item Number">${esc(item.itemCode)}</td><td data-label="Item Name"><b>${esc(item.itemName)}</b></td>${key==="manual"?`<td data-label="Order">${esc(item.orderNumber||item.orderId||"—")}</td>`:""}<td data-label="Ordered">${esc(toNumber(item.orderedQty,0))}</td><td data-label="Received">${esc(toNumber(item.receivedQty,0))}</td><td data-label="${quantityHeading}">${esc(quantityValue)}</td><td data-label="Status">${esc(item.status||"")}</td>${key==="manual"?`<td data-label="Action"><button type="button" class="dangerButton pfnExtraRemoveButton" data-remove-extra="${index}">Remove Extra Item</button></td>`:""}</tr>`}).join("")}</tbody></table></div>`;
     if(key==="manual"){
