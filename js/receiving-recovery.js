@@ -105,24 +105,25 @@ async function recordUnassignedReceiving({itemCode,itemName,quantity,gtin="",lot
     const ack=Array.isArray(result)?result[0]:result;if(ack?.acknowledged!==true)throw new Error("Receipt was not acknowledged.");
     assertReceivingRecoveryScope(scope);applyCloudTransaction({...tx,payload:tx});saveWorkspaceSnapshot?.();refreshEntireUI?.();return tx;
 }
-function receivingAllocationBalance(tx){
+function receivingAllocationBalance(tx,ledger=getCurrentUnassignedReceivingLedger()){
     const order=normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||tx.orderNumber);
-    return (AppState.workspace.receivingHistory||[]).reduce((n,t)=>normalizeItemCode(t.itemCode)===normalizeItemCode(tx.itemCode)&&normalizeOrderNumber(t.selectedOrderNumber||t.orderId||t.orderNumber)===order?n+Number(t.quantity||0):n,0);
+    return ledger.reduce((n,t)=>normalizeItemCode(t.itemCode)===normalizeItemCode(tx.itemCode)&&normalizeOrderNumber(t.selectedOrderNumber||t.orderId||t.orderNumber)===order?n+Number(t.quantity||0):n,0);
 }
-function receivingReceiptAvailable(tx){
-    const reversed=(AppState.workspace.receivingHistory||[]).filter(row=>row.correctsTransactionId===tx.transactionId && Number(row.quantity)<0).reduce((n,row)=>n+Number(row.quantity),0);
-    return Math.max(0,Math.min(Number(tx.quantity)+reversed,receivingAllocationBalance(tx)));
+function receivingReceiptAvailable(tx,ledger=getCurrentUnassignedReceivingLedger()){
+    const reversed=ledger.filter(row=>row.correctsTransactionId===tx.transactionId && Number(row.quantity)<0).reduce((n,row)=>n+Number(row.quantity),0);
+    return Math.max(0,Math.min(Number(tx.quantity)+reversed,receivingAllocationBalance(tx,ledger)));
 }
 function getExtraCorrectionReceipts(){
     const selected=new Set(getSelectedReceivingOrderNumbers().map(normalizeOrderNumber));
     const targets=getActiveReceivingOrderNumbers();
     const seen=new Set();
-    return (AppState.workspace.receivingHistory||[]).filter(tx=>{if(tx.undone===true||!tx.transactionId||seen.has(tx.transactionId)||Number(tx.quantity)<=0)return false;seen.add(tx.transactionId);return true;}).map(tx=>{
+    const ledger=getCurrentUnassignedReceivingLedger();
+    return ledger.filter(tx=>{if(tx.undone===true||!tx.transactionId||seen.has(tx.transactionId)||Number(tx.quantity)<=0)return false;seen.add(tx.transactionId);return true;}).map(tx=>{
         const order=normalizeOrderNumber(tx.selectedOrderNumber||tx.orderId||''),code=normalizeItemCode(tx.itemCode),file=order?getWorkspaceOrderFile(order):null;
         const unassigned=!order&&tx.unassigned===true;
         const extra=order&&selected.has(order)&&Array.isArray(file?.sourceRows)&&!file.sourceRows.some(line=>normalizeItemCode(line.itemCode)===code&&Number(line.orderedQty)>0);
         if(!unassigned&&!extra)return null;
-        const quantity=receivingReceiptAvailable(tx);
+        const quantity=receivingReceiptAvailable(tx,ledger);
         if(quantity<=0)return null;
         const destinations=targets.filter(target=>normalizeOrderNumber(target)!==order&&getWorkspaceOrderSourceRows(target).some(line=>normalizeItemCode(line.itemCode)===code&&Number(line.orderedQty)>0));
         return {tx,order,code,quantity,type:unassigned?'Unassigned':'Extra',destinations};

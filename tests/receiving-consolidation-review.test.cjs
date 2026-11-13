@@ -9,7 +9,7 @@ function harness(){
  getValidReceivingQuantity:Number,getActiveReceivingOrderNumbers:()=>Object.keys(source),getWorkspaceOrderSourceRows:o=>source[o],getItemByCode:()=>item,getSelectedReceivingOrderNumbers:()=>['A','B','C'],
  getReceivingOrderMetadata:()=>Object.keys(source).map(orderNumber=>({orderNumber})),IdentifierService:{pharmacyId:()=> 'P'},sessionStorage:{getItem:k=>c.saved.get(k)||null,setItem:(k,v)=>c.saved.set(k,v)},saved:new Map()};
  vm.createContext(c);
- for(const n of ['getUnassignedReceivingReportRows','buildReceivedQuantityByOrder','getPerOrderReceivingRows','buildMultiOrderReceivingReport'])vm.runInContext(fn(report,n),c);
+ for(const n of ['getCurrentUnassignedReceivingLedger','getUnassignedReceivingReportRows','buildReceivedQuantityByOrder','getPerOrderReceivingRows','buildMultiOrderReceivingReport'])vm.runInContext(fn(report,n),c);
  for(const n of ['getReceivingOperationalItems','getReceivingEligibleOrders','getReceivingOrderRow','getReceivingAutoAllocationCandidates','buildReceivingAutoAllocationPlan','receiveAutoAllocatedItem','resolveReceivingTransactionOrder'])vm.runInContext(fn(receiving,n),c);
  for(const n of ['groupNeedsReviewRows','nrV2AllocationScope','nrV2ResolutionScope','nrV2ResolveGroupToOrderItem'])vm.runInContext(fn(ui,n),c);
  return {c,item,source};
@@ -151,4 +151,26 @@ test('subset and all Orders retain the same orderless Extra scope without changi
  const before=JSON.stringify(c.AppState.workspace.receivingHistory);
  for(const selected of [['A'],['A','B','C']]){c.getSelectedReceivingOrderNumbers=()=>selected;const s=c.buildReceivingDiscrepancyReport({visibleOnly:true});assert.equal(s.manualExtraItems,2);assert.equal(s.overItems,1);assert.equal(s.rows.find(row=>row['Item Number']==='ORDERLESS').orderNumber,'');assert.equal(s.rows.find(row=>row['Item Number']==='ASSIGNED-EXTRA')['Received Qty'],2);assert.equal(s.rows.find(row=>row['Item Number']==='1012562')['Difference'],1);}
  assert.equal(JSON.stringify(c.AppState.workspace.receivingHistory),before);
+});
+
+test('archived orderless receipt does not carry into the next TO or its selected-order report',()=>{
+ const {c}=harness(),workspace=c.AppState.workspace;
+ workspace.orderFiles=[{documentId:'A',importedAt:'2026-11-10T08:00:00Z'},{documentId:'B',importedAt:'2026-11-10T09:00:00Z'}];
+ c.getSelectedReceivingOrderNumbers=()=>['A'];
+ const old={transactionId:'old',itemCode:'1017691',unassigned:true,quantity:2,dateTime:'2026-11-09T08:00:00Z'};
+ const correction={...old,transactionId:'minus',quantity:-1,correctsTransactionId:'old',dateTime:'2026-11-09T08:30:00Z'};
+ const current={...old,transactionId:'new',quantity:3,dateTime:'2026-11-10T10:00:00Z'};
+ const other={...current,transactionId:'other',itemCode:'OTHER'};
+ workspace.receivingHistory=[old,correction,current,other];
+ const saved={unassigned:true,'Item Number':'1017691','Received Date':'2026-11-09','Received Qty':1};
+ c.AppState.archive={orders:[{closedAt:'2026-11-09T09:00:00Z',discrepancyReport:{rows:[saved]}}]};
+ const before=JSON.stringify(c.AppState);
+ const extras=c.buildMultiOrderReceivingReport().rows.filter(row=>row.unassigned);
+ assert.deepEqual(Array.from(extras,r=>[r['Item Number'],r['Received Qty']]),[['1017691',3],['OTHER',3]]);
+ assert.deepEqual(Array.from(c.getCurrentUnassignedReceivingLedger(),tx=>tx.transactionId),['new','other']);
+ assert.equal(JSON.stringify(c.AppState),before);
+ // An archive for an order finalized while other orders are still active
+ // does not close the shared current receiving period.
+ workspace.orderFiles[0].importedAt='2026-11-08T08:00:00Z';
+ assert.ok(c.getCurrentUnassignedReceivingLedger().includes(old));
 });
