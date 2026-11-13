@@ -72,10 +72,35 @@ test('actual card refresh replaces stale single-Order snapshot without mutating 
  assert.equal(h.c.UI.elements.lastOrderedQty.textContent,'134');assert.equal(rendered.receivedQty,131);assert.equal(rendered.remainingQty,3);assert.equal(JSON.stringify(h.c.AppState.workspace.lastScan),before);
 });
 
-test('Extra card and detail count agree for single/multiple Orders; Over excludes Extra',()=>{
- const h=harness();h.c.AppState.workspace.receivingHistory=[{transactionId:'SYNTH-OVER',itemCode:'1019577',orderId:h.orders[0],quantity:135},{transactionId:'SYNTH-EXTRA',itemCode:'SYNTH-X',itemName:'Fictional Extra',orderId:h.orders[0],quantity:4}];
- for(const scope of [[h.orders[0]],h.orders]){h.scope(scope);const metric=h.c.getSelectedOrderDashboardMetrics();assert.equal(metric.manualItems,1);assert.equal(metric.manualItems,h.c.getKpiPanelItems('manual').length);assert.equal(metric.overReceivedItems,1);assert.equal(h.c.getKpiPanelItems('over').length,1);assert(h.c.getKpiPanelItems('over').every(x=>x.orderedQty>0));assert.equal(metric.completedItems,h.c.getKpiPanelItems('completed').length);assert.equal(metric.remainingItems,h.c.getKpiPanelItems('remaining').length);}
- h.scope([h.orders[1]]);assert.equal(h.c.getSelectedOrderDashboardMetrics().manualItems,0);assert.equal(h.c.getKpiPanelItems('manual').length,0);
+test('Extra count stays aligned while ordered KPI details show the status of each selected Order',()=>{
+ const h=harness(),[first,second]=h.orders;
+ h.c.AppState.workspace.receivingHistory=[
+  {transactionId:'SYNTH-OVER',itemCode:'1019577',orderId:first,quantity:135},
+  {transactionId:'SYNTH-EXTRA',itemCode:'SYNTH-X',itemName:'Fictional Extra',orderId:first,quantity:4}
+ ];
+ h.scope([first]);
+ assert.equal(h.c.getSelectedOrderDashboardMetrics().remainingItems,0);
+ assert.equal(h.c.getKpiPanelItems('remaining').length,0);
+
+ h.scope(h.orders);
+ const metrics=h.c.getSelectedOrderDashboardMetrics();
+ assert.equal(metrics.manualItems,h.c.getKpiPanelItems('manual').length);
+ assert.equal(metrics.manualItems,1);
+ assert.equal(metrics.overReceivedItems,1);
+ assert.equal(metrics.remainingItems,0);
+ const details=key=>Array.from(h.c.getKpiPanelItems(key),row=>[row.orderNumber,row.itemCode,row.orderedQty,row.receivedQty]);
+ assert.deepEqual(details('over'),[[first,'1019577',100,135]]);
+ assert.deepEqual(details('remainingItems'),[[second,'1019577',34,0]]);
+ assert.deepEqual(details('remaining'),details('remainingItems'));
+ assert.deepEqual(details('completed'),[]);
+ h.c.AppState.workspace.receivingHistory.push({itemCode:'1019577',orderId:second,quantity:34});
+ assert.deepEqual(details('completed'),[[second,'1019577',34,34]]);
+ assert.deepEqual(details('remainingItems'),[]);
+
+ h.scope([second]);
+ assert.deepEqual(details('over'),[]);
+ assert.equal(h.c.getSelectedOrderDashboardMetrics().manualItems,0);
+ assert.equal(h.c.getKpiPanelItems('manual').length,0);
 });
 test('Extra remains visible when same item is ordered on another selected Order',()=>{
  const h=harness();h.source[h.orders[1]].push({itemCode:'SYNTH-X',itemName:'Fictional X',orderedQty:4});h.c.AppState.workspace.receivingHistory=[{itemCode:'SYNTH-X',itemName:'Fictional X',orderId:h.orders[0],quantity:4}];assert.equal(h.c.getSelectedOrderDashboardMetrics().manualItems,1);assert.equal(h.c.getKpiPanelItems('manual')[0].orderNumber,h.orders[0]);assert.equal(h.c.getKpiPanelItems('over').length,0);

@@ -1,4 +1,8 @@
-# PharmFlow current checkpoint — 13 November 2026
+# PharmFlow current checkpoint — 14 November 2026
+
+## Receiving KPI order details — Staging review
+
+Based on Production main `1e0db955d2ee174cc9d95572af39d9532c9f23bd` (PR #60). Completed, Remaining Items, Remaining Units, and Over Received details classify each selected Order row independently. The Order No. and signed Received minus Ordered are drawn from the existing per-order Receiving projection. The cards keep their unique-item counts and aggregate remaining units. Review all four details on the Staging Preview, including the same item on two Orders, before requesting Production release.
 
 ## Historical Extra Items and export menu — Staging review
 
