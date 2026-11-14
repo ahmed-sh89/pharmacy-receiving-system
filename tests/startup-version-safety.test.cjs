@@ -137,7 +137,8 @@ test("an unchanged deployment stays quiet and a newer deployment shows the refre
     newer.api.initialize();
     await new Promise(setImmediate);
     assert.equal(newer.notice.hidden,false);
-    assert.match(newer.notice.innerHTML,/New PharmFlow version available — Refresh to update/);
+    assert.match(newer.notice.innerHTML,/<strong>PharmFlow update available<\/strong>/);
+    assert.match(newer.notice.innerHTML,/data-refresh>Refresh now<\/button>/);
 });
 
 test("version refresh is blocked during auth transitions, pending scans, and unsaved edits",async t=>{

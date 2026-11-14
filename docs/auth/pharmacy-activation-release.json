@@ -1,9 +1,11 @@
 {
   "production_base": "3911030186e2c94b4f2a671b9c51e0c7bd1c6238",
   "changes": {
-    "PHARMFLOW_CURRENT_CHECKPOINT.md": "e98cb06981a0fa0f39212c46e31e1746d6a8fab7",
+    "PHARMFLOW_CURRENT_CHECKPOINT.md": "a5eb14524967b39b82b7d5177d1e8a552dc633b0",
+    "css/identity.css": "9ecc205d3b1755ec058941343799b41c4ce07868",
     "css/settings-workspace.css": "8d526b5719cc62803445e96592be9f6d2851b789",
-    "index.html": "3fc7e75ce507801eb1c8ccd78896ebab5ea4c335",
+    "index.html": "cb80b2b9163b90de6499aea9032e30917a8098f1",
+    "js/app-version.js": "42f9852e698384d5a5a455031d8a986078b9c9f3",
     "js/auth.js": "d77e503ce98c1738705cef52d13cac01e794e5e9",
     "vite.config.js": "50654ba796249f7795f2c2bf1e12a51ea21dcaea"
   }

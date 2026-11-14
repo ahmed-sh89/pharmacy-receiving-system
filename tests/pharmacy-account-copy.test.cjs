@@ -26,12 +26,11 @@ test('new pharmacy dialog copies the complete message and offers selection if cl
  const field=document.querySelector('textarea');
  const button=document.querySelector('button[type=button]');
  const details=[
-  'Pharmacy: Example Pharmacy',
-  'Pharmacy Code: 001-A',
-  'Admin Email: created@example.invalid',
-  'Temporary Password: AB12345678',
-  '',
-  'On your first sign-in, you’ll be asked to set a new password.'
+  'Pharmacy\tExample Pharmacy',
+  'Pharmacy Code\t001-A',
+  'Admin Email\tcreated@example.invalid',
+  'Temporary Password\tAB12345678',
+  'First sign-in\tYou’ll be asked to set a new password.'
  ].join('\n');
  assert.equal(field.value,details);
  assert.equal(field.readOnly,true);
@@ -49,4 +48,14 @@ test('new pharmacy dialog copies the complete message and offers selection if cl
  document.querySelector('form').dispatchEvent(new Event('submit'));
  await dialog;
  assert.equal(document.querySelector('textarea'),null);
+ const special=context.showCreatedPharmacyCredentials(
+  {pharmacy_name:'=Example\tName',pharmacy_code:'00101',admin_email:'submitted@example.invalid'},
+  {temporary_password:'AB12345678'}
+ );
+ const rows=document.querySelector('textarea').value.split('\n').map(row=>row.split('\t'));
+ assert.equal(rows.every(row=>row.length===2),true);
+ assert.equal(rows[0][1],"'=Example Name");
+ assert.equal(rows[1][1],"'00101");
+ document.querySelector('form').dispatchEvent(new Event('submit'));
+ await special;
 });

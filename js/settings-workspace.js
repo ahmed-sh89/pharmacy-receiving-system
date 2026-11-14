@@ -294,14 +294,20 @@ async function openPharmacyDeletionHistory(){
 }
 
 function showCreatedPharmacyCredentials(pharmacy,result){
+ // Normalize row separators and keep spreadsheet formulas and numeric
+ // pharmacy identifiers as text when the message is pasted into Excel.
+ const textCell=(value,identifier=false)=>{
+  const text=String(value).replace(/[\t\r\n]/g,' ');
+  return /^[ ]*[=+@-]/.test(text) || (identifier && /^\d[\d-]*$/.test(text))
+   ? "'"+text : text;
+ };
  const details=[
-  `Pharmacy: ${pharmacy.pharmacy_name}`,
-  `Pharmacy Code: ${pharmacy.pharmacy_code.toUpperCase()}`,
-  `Admin Email: ${result.admin_email || pharmacy.admin_email.toLowerCase()}`,
-  `Temporary Password: ${result.temporary_password}`,
-  '',
-  'On your first sign-in, you’ll be asked to set a new password.'
- ].join('\n');
+  ['Pharmacy',textCell(pharmacy.pharmacy_name)],
+  ['Pharmacy Code',textCell(pharmacy.pharmacy_code.toUpperCase(),true)],
+  ['Admin Email',textCell(result.admin_email || pharmacy.admin_email.toLowerCase())],
+  ['Temporary Password',textCell(result.temporary_password)],
+  ['First sign-in','You’ll be asked to set a new password.']
+ ].map(row=>row.join('\t')).join('\n');
  return settingsDialog({
   title:'Pharmacy Account Created',label:'Account details',value:details,
   readOnly:true,multiline:true,copyLabel:'Copy Account Details',confirmText:'Close'

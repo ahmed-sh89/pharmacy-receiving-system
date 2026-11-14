@@ -175,12 +175,19 @@ body.authBooting .workspaceBootOverlay,body.workspaceBooting .workspaceBootOverl
 #pf-idle-refresh:hover{background:#066bce}
 #pf-idle-refresh:focus-visible{outline:3px solid #55acff;outline-offset:4px}
 .pf-idle-restart{font-size:25px;line-height:1}
-.pharmflowVersionNotice{position:fixed;right:16px;bottom:16px;z-index:12000;display:flex;align-items:center;gap:12px;max-width:min(560px,calc(100vw - 32px));padding:12px 14px;border:1px solid #97bfdf;border-radius:12px;background:#fff;box-shadow:0 12px 34px rgba(18,48,78,.18);color:#173655;font:600 13px/1.4 system-ui,sans-serif}
+.pharmflowVersionNotice{position:fixed;right:clamp(12px,2vw,24px);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:12000;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px 14px;width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;padding:14px 16px;border:1px solid #d6e5f2;border-inline-start:4px solid #0879e8;border-radius:12px;background:#fff;box-shadow:0 12px 34px rgba(18,48,78,.18);color:#173655;font:400 13px/1.4 'Segoe UI',Arial,sans-serif}
 .pharmflowVersionNotice[hidden]{display:none}
-.pharmflowVersionNotice button{flex:none;border:0;border-radius:8px;padding:9px 12px;background:#0879e8;color:#fff;font:700 12px system-ui,sans-serif;cursor:pointer}
+.pharmflowVersionMark{box-sizing:content-box;display:block;padding:7px;border-radius:9px;background:#edf6ff}
+.pharmflowVersionCopy{display:grid;gap:3px;min-width:0}
+.pharmflowVersionCopy strong{font-size:14px;font-weight:700}
+.pharmflowVersionCopy span{color:#496680}
+.pharmflowVersionNotice button{border:0;border-radius:7px;padding:9px 12px;background:#075cae;color:#fff;font-family:inherit;font-size:12px;font-weight:700;line-height:1.4;cursor:pointer;white-space:nowrap}
+.pharmflowVersionNotice button:hover:not(:disabled){background:#084a8a}
+.pharmflowVersionNotice button:focus-visible{outline:2px solid #0879e8;outline-offset:3px}
 .pharmflowVersionNotice button:disabled{opacity:.65;cursor:wait}
-.pharmflowVersionNotice small{flex-basis:100%;color:#8a4b16;font-weight:500}
-@media(max-width:560px){.pharmflowVersionNotice{left:12px;right:12px;bottom:12px;max-width:none;flex-wrap:wrap}.pharmflowVersionNotice span{flex:1 1 100%}}
+.pharmflowVersionNotice small{grid-column:2/-1;color:#8a4b16;font-weight:500}
+.pharmflowVersionNotice small:empty{display:none}
+@media(max-width:480px){.pharmflowVersionNotice{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:auto;max-width:none;grid-template-columns:auto minmax(0,1fr)}.pharmflowVersionNotice button{grid-column:2;justify-self:start}}
 @media (max-height:500px){
   .pf-idle-card{padding:12px 22px 18px}
   .pf-idle-logo-card{width:66px;height:66px;margin-bottom:8px;border-radius:18px}

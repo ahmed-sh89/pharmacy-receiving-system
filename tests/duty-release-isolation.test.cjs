@@ -45,7 +45,7 @@ test('release retains the protected files with only the pinned sign-in updates',
   assert.equal(git('rev-parse',`${login.production_base}:${file}`),manifest.approved_changes[file] ?? manifest.protected_files[file]);
  }
  assert.deepEqual(Object.keys(activation.changes).sort(),[
-  'PHARMFLOW_CURRENT_CHECKPOINT.md','css/settings-workspace.css','index.html','js/auth.js','vite.config.js'
+  'PHARMFLOW_CURRENT_CHECKPOINT.md','css/identity.css','css/settings-workspace.css','index.html','js/app-version.js','js/auth.js','vite.config.js'
  ]);
  for(const file of Object.keys(activation.changes)){
   assert.equal(git('rev-parse',`${activation.production_base}:${file}`),login.changes[file] ?? manifest.approved_changes[file] ?? manifest.protected_files[file]);
