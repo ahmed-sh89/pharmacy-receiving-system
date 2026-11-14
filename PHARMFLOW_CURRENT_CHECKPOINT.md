@@ -2,7 +2,7 @@
 
 ## Pharmacy activation status — Staging candidate
 
-Based on Production main `3911030186e2c94b4f2a671b9c51e0c7bd1c6238` (PR #62). Newly provisioned pharmacy admin accounts remain Pending Activation until their initial temporary password is replaced. Later resets preserve the initial activation state. Deactivate and Reactivate reuse the existing pharmacy access control, with the same supervisor message for valid email and code sign-ins. Existing accounts keep their activation classification. Staging acceptance pending.
+Based on Production main `3911030186e2c94b4f2a671b9c51e0c7bd1c6238` (PR #62). Newly provisioned pharmacy admin accounts remain Pending Activation until their initial temporary password is replaced. Later resets preserve the initial activation state. Deactivate and Reactivate reuse the existing pharmacy access control, with the same supervisor message for valid email and code sign-ins. Existing accounts keep their activation classification. The owner can permanently delete an unactivated pharmacy after the server confirms it has no operational data. A dedicated, unactivated admin created for that pharmacy can be removed in the same transaction. Staging acceptance pending.
 
 ## Pharmacy Admin sign-in — Staging accepted
 

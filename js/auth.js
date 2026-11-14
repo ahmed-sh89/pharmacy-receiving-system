@@ -1711,6 +1711,7 @@ function renderOwnerPharmacies(){
                     <button type="button" class="secondaryButton" data-owner-action="admin" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-pharmacy-code="${escapeAuthHtml(p.pharmacy_code || "")}">Admin</button>
                     ${p.admin_user_id ? `<button type="button" class="secondaryButton" data-owner-action="reset-password" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}" data-admin-user-id="${escapeAuthHtml(p.admin_user_id)}">Reset</button>` : ""}
                     <button type="button" class="secondaryButton" data-owner-action="${deactivated ? "reactivate" : "deactivate"}" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">${deactivated ? "Reactivate" : "Deactivate"}</button>
+                    ${p.pharmacy_code?.toUpperCase()!=="HHP084" ? `<button type="button" class="secondaryButton" data-owner-action="delete" data-pharmacy-id="${escapeAuthHtml(p.pharmacy_id)}">Delete</button>` : ""}
                 </div>
                 <div class="ownerPharmacyEditor"></div>
             </div>
@@ -1912,6 +1913,31 @@ async function handleOwnerPharmacyAction(button){
     if(!pharmacyId){ return; }
 
     if(action === "permissions"){ await window.editPharmacyPermissions(button); return; }
+
+    if(action === "delete"){
+        const pharmacy=AuthState.ownerPharmacies.find(row=>String(row.pharmacy_id)===pharmacyId);
+        if(!pharmacy){ return; }
+        const identity={p_pharmacy_id:pharmacyId,p_pharmacy_code:pharmacy.pharmacy_code};
+        setAuthBusy(true);
+        try{
+            await authRpc("owner_check_pharmacy_deletable_v1",identity);
+            setAuthBusy(false);
+            const confirmed=await window.settingsConfirm({
+                title:"Delete Pharmacy",
+                message:`Permanently delete ${pharmacy.pharmacy_name} (${pharmacy.pharmacy_code})? This cannot be undone.`,
+                confirmText:"Delete"
+            });
+            if(!confirmed){ return; }
+            setAuthBusy(true);
+            await authRpc("owner_delete_unactivated_pharmacy_v1",identity);
+            AuthState.ownerPharmacies=AuthState.ownerPharmacies.filter(row=>String(row.pharmacy_id)!==pharmacyId);
+            await loadOwnerPharmacies().catch(()=>{});
+            setOwnerManagementMessage("Pharmacy deleted.","success");
+        }catch(error){
+            setOwnerManagementMessage(error.message || "Unable to delete pharmacy.","error");
+        }finally{ setAuthBusy(false); }
+        return;
+    }
 
     if(action === "reset-password"){
         const targetUserId=button.dataset.adminUserId;

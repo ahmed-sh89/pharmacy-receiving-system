@@ -131,8 +131,8 @@ dialog.settingsDialog::backdrop{background:#142a4066}
 #page-settings .ownerPharmacyActions button:hover:not(:disabled){background:#e8f1fb;border-color:#8baeca}
 #page-settings .ownerPharmacyActions button:focus-visible{outline:2px solid #245b9c;outline-offset:2px}
 #page-settings .ownerPharmacyActions button:disabled{opacity:.5;cursor:default}
-#page-settings .ownerPharmacyActions button[data-owner-action="suspend"]{color:#a63c4a;border-color:#e2bdc4;background:#fff8f9}
-#page-settings .ownerPharmacyActions button[data-owner-action="suspend"]:hover:not(:disabled){background:#fbecef;border-color:#c88c98}
+#page-settings .ownerPharmacyActions button:is([data-owner-action="deactivate"],[data-owner-action="delete"]){color:#a63c4a;border-color:#e2bdc4;background:#fff8f9}
+#page-settings .ownerPharmacyActions button:is([data-owner-action="deactivate"],[data-owner-action="delete"]):hover:not(:disabled){background:#fbecef;border-color:#c88c98}
 #page-settings .ownerRequestsTable th:nth-child(1){width:13%}
 #page-settings .ownerRequestsTable th:nth-child(2){width:24%}
 #page-settings .ownerRequestsTable th:nth-child(3){width:31%}
