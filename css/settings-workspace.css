@@ -80,14 +80,14 @@ body:not(.zebraDevice) #page-settings.active{display:block}
 #page-settings .settingsDescription{margin:4px 0 0;color:var(--settings-muted);font-size:12px}
 #page-settings .expiryWorkerAddRow{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:8px;margin-bottom:14px}
 #page-settings .expiryWorkerRow{display:grid;grid-template-columns:minmax(120px,1fr) auto auto;gap:8px;align-items:center;margin:0;padding:10px 0;border-bottom:1px solid var(--settings-line);background:transparent}
-#page-settings .ownerMetricGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
+#page-settings .ownerMetricGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:0}
 #page-settings .ownerManagementSearch{width:min(390px,100%);min-width:0}
 #page-settings .ownerPharmacyCodeBadge{justify-self:start;padding:3px 7px;border-radius:5px;background:#eaf2fa;color:#365f82;font-size:11px;font-weight:700}
 #page-settings .ownerPharmacyName,#page-settings .ownerPharmacyAdmin{overflow-wrap:anywhere}
 #page-settings .ownerPharmacyActions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;justify-content:flex-start}
 #page-settings .ownerPharmacyState{justify-self:end;display:inline-flex;align-items:center;justify-content:center;min-width:78px;padding:4px 8px;border:1px solid transparent;border-radius:5px;font-size:11px;font-weight:700;letter-spacing:.025em;white-space:nowrap}
 #page-settings .ownerPharmacyState.active{background:#e6f4eb;border-color:#acd3ba;color:#205d3b}
-#page-settings .ownerPharmacyState.suspended{background:#fcebed;border-color:#e8b9c0;color:#922f40}
+#page-settings .ownerPharmacyState.deactivated{background:#fcebed;border-color:#e8b9c0;color:#922f40}
 #page-settings .ownerPharmacyState.pending{background:#fff4dc;border-color:#e8cf93;color:#7c5713}
 #page-settings .registrationRequestCard{padding:14px;border:1px solid var(--settings-line);border-radius:8px;background:#fbfdff}
 #page-settings .registrationApprovalFields{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(150px,.6fr);gap:10px}
@@ -232,7 +232,7 @@ dialog.settingsDialog::backdrop{background:#142a4066}
 #page-settings .settingsSrOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 
 /* Pharmacy grid only: independent aligned Name/Code columns and readable type. */
-#page-settings #ownerPharmacyList{--owner-grid-columns:minmax(0,1.2fr) minmax(110px,.6fr) minmax(0,1.5fr) 108px 126px 18px}
+#page-settings #ownerPharmacyList{--owner-grid-columns:minmax(0,1.2fr) minmax(110px,.6fr) minmax(0,1.5fr) 148px 126px 18px}
 #page-settings #ownerPharmacyList :is(.ownerGridHeader,.ownerPharmacySummary){grid-template-columns:var(--owner-grid-columns);gap:12px;box-sizing:border-box}
 #page-settings #ownerPharmacyList .ownerGridHeader{font:700 12px/1.4 'Segoe UI',Arial,sans-serif;color:#334d65}
 #page-settings #ownerPharmacyList .ownerPharmacySummary{font-size:13.5px;line-height:1.45;min-height:58px}

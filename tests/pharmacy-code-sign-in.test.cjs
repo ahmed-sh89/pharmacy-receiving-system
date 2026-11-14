@@ -64,7 +64,7 @@ test('suspension is disclosed only with a valid password and returns no session'
 
     const blocked = await fixture(account).signIn('HHB084', 'fixture-password');
     assert.equal(blocked.status, 403);
-    assert.deepEqual(await blocked.json(), { error: 'Pharmacy Suspended. Contact your administrator.' });
+    assert.deepEqual(await blocked.json(), { error: 'Please contact your supervisor for reactivation.' });
 });
 
 test('login and password-change forms provide browser autofill fields and omit public account actions', () => {

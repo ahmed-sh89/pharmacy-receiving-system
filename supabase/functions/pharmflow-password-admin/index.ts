@@ -81,7 +81,11 @@ Deno.serve(async (request) => {
       password = temporaryPassword();
       const created = await admin.auth.admin.createUser({
         email: operation.admin_email, password, email_confirm: true,
-        app_metadata: { pharmflow_must_change_password: true, pharmflow_provision_operation: body.operation_id },
+        app_metadata: {
+          pharmflow_must_change_password: true,
+          pharmflow_initial_activation_pending: true,
+          pharmflow_provision_operation: body.operation_id,
+        },
       });
       if (created.error) {
         // Includes duplicate-email races and lost Auth responses. Never reset
@@ -124,6 +128,10 @@ Deno.serve(async (request) => {
     if (caller.app_metadata?.pharmflow_must_change_password !== true) {
       return json({ error: "Temporary password change is not required" }, 403);
     }
+    const { data: access, error: accessError } = await callerClient.rpc("get_my_pharmacy_access_status_v1");
+    if (accessError) return json({ error: "Unable to verify pharmacy access." }, 503);
+    if (access?.suspended === true) return json({ error: "Please contact your supervisor for reactivation." }, 403);
+
     const newPassword = typeof body.new_password === "string" ? body.new_password : "";
     // Do not let the temporary credential be reused as its replacement.
     const sameCredential = await createClient(supabaseUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
@@ -133,7 +141,11 @@ Deno.serve(async (request) => {
 
     const { error: updateError } = await admin.auth.admin.updateUserById(caller.id, {
       password: newPassword,
-      app_metadata: { ...caller.app_metadata, pharmflow_must_change_password: false },
+      app_metadata: {
+        ...caller.app_metadata,
+        pharmflow_must_change_password: false,
+        pharmflow_initial_activation_pending: false,
+      },
     });
     if (updateError?.code === "weak_password") {
       return json({

@@ -41,7 +41,7 @@
     <link rel="preload" as="script" href="js/auth-viewport.js?v=HANDHELD_VIEWPORT3">
     <link rel="preload" as="script" href="js/permissions.js?v=RECEIVING_SELECTED_20261110">
     <link rel="preload" as="script" href="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028">
-    <link rel="preload" as="script" href="js/auth.js?v=PHARMACY_ADMIN_LOGIN_20261114">
+    <link rel="preload" as="script" href="js/auth.js?v=PHARMACY_ACTIVATION_20261114">
     <link rel="preload" as="script" href="js/dev-isolation.js?v=B10CLEAN15_15">
     <link rel="preload" as="script" href="js/needs-review.js?v=RECEIVING_RELEASE_20261101">
     <link rel="preload" as="script" href="js/expiry-operation.js?v=EXPIRY_PHOTO_V5_20261021">
@@ -67,7 +67,7 @@
     <link rel="preload" as="script" href="js/header-account-menu.js">
     <link rel="preload" as="script" href="js/header-account-popover.js">
     <link rel="preload" as="script" href="js/header-account-ui.js?v=RECEIVING_EXTRA_FINAL_20261110">
-    <link rel="preload" as="script" href="js/settings-workspace.js?v=PHARMACY_ADMIN_LOGIN_20261114">
+    <link rel="preload" as="script" href="js/settings-workspace.js?v=PHARMACY_ACTIVATION_20261114">
     <link rel="preload" as="script" href="js/duty-model.js?v=DUTY_REFINE_20261106">
     <link rel="preload" as="script" href="js/duty-controls.js?v=DUTY_UI_20261109">
     <link rel="preload" as="script" href="js/duty-schedule.js?v=DUTY_POLISH_20261109">
@@ -125,7 +125,7 @@
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
-<link rel="stylesheet" href="css/settings-workspace.css?v=FINAL_REFINEMENTS_20261028">
+<link rel="stylesheet" href="css/settings-workspace.css?v=PHARMACY_ACTIVATION_20261114">
 <link rel="stylesheet" href="css/permissions.css?v=DUTY_READINESS_20261105">
 
 <link rel="stylesheet" href="css/receiving-order-toolbar.css?v=RECEIVING_ORDER_KPI_DETAILS">
@@ -313,7 +313,7 @@ window.PharmFlowDeviceMode = (() => {
                     <h2>Complete access</h2>
                     <p class="authLead"><strong id="pendingAccessEmail">Signed-in account</strong> is authenticated but does not yet have pharmacy access.</p>
 
-                    <div id="pendingSuspendedBox" class="pendingApprovalCard" hidden><h3>Pharmacy Suspended</h3><p>Your pharmacy access is suspended. Contact the System Administrator for reactivation. No new registration is required.</p></div>
+                    <div id="pendingSuspendedBox" class="pendingApprovalCard" hidden><p>Please contact your supervisor for reactivation.</p></div>
                     <div id="pendingStandardAccessBox">
                         <div class="authSetupNote">This account is signed in but has no active pharmacy workspace yet. Submit the pharmacy code you know for approval.</div>
                         <div class="authField"><label>Pharmacy Code</label><input id="pendingRegistrationPharmacyCode" type="text" placeholder="Example: HHP084"><small class="authFieldHelp">Enter the code you know. The official pharmacy identity will be verified before approval.</small></div>
@@ -2179,13 +2179,17 @@ window.PharmFlowDeviceMode = (() => {
                             <span>Active</span>
                             <strong id="ownerMetricActivePharmacies">0</strong>
                         </button>
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiOver" type="button" data-owner-view="activation" aria-pressed="false">
+                            <span>Pending Activation</span>
+                            <strong id="ownerMetricPendingActivation">0</strong>
+                        </button>
                         <button class="ownerMetricCard pfnIssueCard pfnKpiOver" type="button" data-owner-view="pending" aria-pressed="false">
                             <span>Pending Requests</span>
                             <strong id="ownerMetricPendingRequests">0</strong>
                         </button>
-                        <button class="ownerMetricCard pfnIssueCard pfnKpiShortage" type="button" data-owner-view="suspended" aria-pressed="false">
-                            <span>Suspended</span>
-                            <strong id="ownerMetricSuspendedPharmacies">0</strong>
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiShortage" type="button" data-owner-view="deactivated" aria-pressed="false">
+                            <span>Deactivated</span>
+                            <strong id="ownerMetricDeactivatedPharmacies">0</strong>
                         </button>
                     </div>
 
@@ -2643,7 +2647,7 @@ window.PharmFlowDeviceMode = (() => {
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
 <script src="js/permissions.js?v=RECEIVING_SELECTED_20261110"></script>
 <script src="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028"></script>
-<script src="js/auth.js?v=PHARMACY_ADMIN_LOGIN_20261114"></script>
+<script src="js/auth.js?v=PHARMACY_ACTIVATION_20261114"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
@@ -2680,7 +2684,7 @@ window.PharmFlowDeviceMode = (() => {
 <script src="js/header-account-ui.js?v=RECEIVING_EXTRA_FINAL_20261110"></script>
 
 
-<script src="js/settings-workspace.js?v=PHARMACY_ADMIN_LOGIN_20261114"></script>
+<script src="js/settings-workspace.js?v=PHARMACY_ACTIVATION_20261114"></script>
 <script src="js/duty-model.js?v=DUTY_REFINE_20261106"></script><script src="js/duty-controls.js?v=DUTY_UI_20261109"></script><script src="js/duty-schedule.js?v=DUTY_POLISH_20261109"></script><script src="js/duty-reports.js?v=DUTY_UI_20261109"></script><script src="js/duty.js?v=DUTY_EXCHANGE_20261109"></script>
 </body>
 
