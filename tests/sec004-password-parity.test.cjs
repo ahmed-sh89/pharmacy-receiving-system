@@ -1,9 +1,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{stripTypeScriptTypes}=require('node:module');
 const paths=['supabase/functions/pharmflow-password-admin/index.ts','supabase/functions/pharmflow-password-admin-settings-rc/index.ts'];
 function fixture(path,opts={}){
- const user={id:'isolated-a',email:'isolated-a@example.invalid',app_metadata:{pharmflow_must_change_password:opts.required!==false}},updates=[];
+ const user={id:'isolated-a',email:'isolated-a@example.invalid',app_metadata:{pharmflow_must_change_password:opts.required!==false,...opts.metadata}},updates=[];
  let handler;const signIns=[];
- function createClient(url,key,options){return {rpc:async name=>({data:name==='pharmflow_has_live_session_v1'?opts.live!==false:false,error:opts.rpcError?{}:null}),auth:{getUser:async()=>({data:{user:opts.invalid?null:user},error:opts.invalid?{}:null}),signInWithPassword:async input=>{signIns.push(input);return input.password==='temporary-secret'?{data:{},error:null}:{data:{},error:{code:'invalid_credentials',status:400}};},admin:{getUserById:async()=>({data:{user:{id:'isolated-b'}}}),updateUserById:async(id,value)=>{updates.push({id,value});return {error:opts.weak?{code:'weak_password'}:null};}}}};}
+ function createClient(url,key,options){return {rpc:async name=>({data:name==='pharmflow_has_live_session_v1'?opts.live!==false:name==='get_my_pharmacy_access_status_v1'?{suspended:opts.suspended===true}:opts.owner===true,error:opts.rpcError?{}:null}),auth:{getUser:async()=>({data:{user:opts.invalid?null:user},error:opts.invalid?{}:null}),signInWithPassword:async input=>{signIns.push(input);return input.password==='temporary-secret'?{data:{},error:null}:{data:{},error:{code:'invalid_credentials',status:400}};},admin:{getUserById:async()=>({data:{user:{id:'isolated-b',app_metadata:opts.metadata}}}),updateUserById:async(id,value)=>{updates.push({id,value});return {error:opts.weak?{code:'weak_password'}:null};}}}};}
  const code=stripTypeScriptTypes(fs.readFileSync(path,'utf8').replace(/^import .*\n/gm,''));const c={createClient,Deno:{env:{get:n=>({SUPABASE_URL:'https://isolated.invalid',SUPABASE_ANON_KEY:'fixture-public',SUPABASE_SERVICE_ROLE_KEY:'fixture-server'})[n]},serve:fn=>handler=fn},Request,Response,Headers,crypto:require('node:crypto').webcrypto,Uint8Array};vm.runInNewContext(code,c);
  return {updates,signIns,call:body=>handler(new Request('https://isolated.invalid/function',{method:'POST',headers:opts.unauth?{}:{Authorization:'Bearer isolated-token'},body:JSON.stringify(body)}))};
 }
@@ -19,3 +19,24 @@ for(const path of paths){
  test(path+': unrestricted normal session cannot invoke temporary completion',async()=>{const h=fixture(path,{required:false});assert.equal((await h.call({action:'complete',new_password:'distinct-secret'})).status,403);assert.equal(h.updates.length,0);});
  test(path+': short replacement rejected without update',async()=>{const h=fixture(path);assert.equal((await h.call({action:'complete',new_password:'short'})).status,400);assert.equal(h.updates.length,0);});
 }
+
+test('first activation is cleared in the same Auth update as password replacement',async()=>{
+ const h=fixture(paths[0],{metadata:{pharmflow_initial_activation_pending:true}});
+ assert.equal((await h.call({action:'complete',new_password:'distinct-secret'})).status,200);
+ assert.equal(h.updates[0].value.app_metadata.pharmflow_initial_activation_pending,false);
+});
+test('deactivated account cannot finish a temporary password change',async()=>{
+ const h=fixture(paths[0],{suspended:true,metadata:{pharmflow_initial_activation_pending:true}});
+ const result=await h.call({action:'complete',new_password:'distinct-secret'});
+ assert.equal(result.status,403);
+ assert.deepEqual(await result.json(),{error:'Please contact your supervisor for reactivation.'});
+ assert.equal(h.updates.length,0);
+});
+test('a reset preserves the first-activation state',async()=>{
+ for(const pending of [false,true]){
+  const h=fixture(paths[0],{owner:true,required:false,metadata:{pharmflow_initial_activation_pending:pending}});
+  assert.equal((await h.call({action:'reset',target_user_id:'isolated-b'})).status,200);
+  assert.equal(h.updates[0].value.app_metadata.pharmflow_initial_activation_pending,pending);
+  assert.equal(h.updates[0].value.app_metadata.pharmflow_must_change_password,true);
+ }
+});

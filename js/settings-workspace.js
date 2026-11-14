@@ -117,7 +117,7 @@ function settingsDialog({title='Confirm',message='',label,value,readOnly=false,c
   cancel.onclick=modal.requestClose;
  });
 }
-window.settingsConfirm=options=>settingsDialog({title:({identity:'Confirm Pharmacy Update',admin:'Confirm Admin Assignment','reset-password':'Reset Password',suspend:'Suspend Pharmacy',activate:'Reactivate Pharmacy'})[window.SettingsAccessActions?.action?.()]||'Confirm Action',confirmText:'Confirm',...options}).then(result=>result===true);
+window.settingsConfirm=options=>settingsDialog({title:({identity:'Confirm Pharmacy Update',admin:'Confirm Admin Assignment','reset-password':'Reset Password',deactivate:'Deactivate Pharmacy',reactivate:'Reactivate Pharmacy'})[window.SettingsAccessActions?.action?.()]||'Confirm Action',confirmText:'Confirm',...options}).then(result=>result===true);
 function settingsInlinePrompt(options){return settingsDialog({...options,confirmText:'Continue'});}
 // Preserve the unrelated accepted Expiry operator prompt.
 function legacySettingsDialog({title="Confirm",message="",label,value,readOnly=false,confirmText="Save"}){

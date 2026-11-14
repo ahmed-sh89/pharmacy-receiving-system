@@ -6,12 +6,13 @@ const {execFileSync}=require('node:child_process');
 
 const manifest=JSON.parse(fs.readFileSync('docs/receiving/email-wo-wrap/RELEASE_MANIFEST.json','utf8'));
 const login=JSON.parse(fs.readFileSync('docs/auth/pharmacy-admin-login-release.json','utf8'));
+const activation=JSON.parse(fs.readFileSync('docs/auth/pharmacy-activation-release.json','utf8'));
 const historical=JSON.parse(fs.readFileSync('docs/duty/RELEASE_MANIFEST.json','utf8'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const blobHash=bytes=>crypto.createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
 function verifyRelease(read=path=>fs.readFileSync(path)){
  for(const [path,productionBlob] of Object.entries(manifest.protected_files)){
-  const expected=login.changes[path] ?? manifest.approved_changes[path] ?? productionBlob;
+  const expected=activation.changes[path] ?? login.changes[path] ?? manifest.approved_changes[path] ?? productionBlob;
   assert.equal(blobHash(read(path)),expected,path);
  }
 }
@@ -42,6 +43,12 @@ test('release retains the protected files with only the pinned sign-in updates',
  assert.deepEqual(Object.keys(login.changes).sort(),['PHARMFLOW_CURRENT_CHECKPOINT.md','index.html','js/auth.js','vite.config.js']);
  for(const file of Object.keys(login.changes)){
   assert.equal(git('rev-parse',`${login.production_base}:${file}`),manifest.approved_changes[file] ?? manifest.protected_files[file]);
+ }
+ assert.deepEqual(Object.keys(activation.changes).sort(),[
+  'PHARMFLOW_CURRENT_CHECKPOINT.md','css/settings-workspace.css','index.html','js/auth.js','vite.config.js'
+ ]);
+ for(const file of Object.keys(activation.changes)){
+  assert.equal(git('rev-parse',`${activation.production_base}:${file}`),login.changes[file] ?? manifest.approved_changes[file] ?? manifest.protected_files[file]);
  }
  verifyRelease();
 });

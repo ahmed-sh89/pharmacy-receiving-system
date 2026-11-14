@@ -1,5 +1,9 @@
 # PharmFlow current checkpoint — 14 November 2026
 
+## Pharmacy activation status — Staging candidate
+
+Based on Production main `3911030186e2c94b4f2a671b9c51e0c7bd1c6238` (PR #62). Newly provisioned pharmacy admin accounts remain Pending Activation until their initial temporary password is replaced. Later resets preserve the initial activation state. Deactivate and Reactivate reuse the existing pharmacy access control, with the same supervisor message for valid email and code sign-ins. Existing accounts keep their activation classification. The owner can permanently delete an unactivated pharmacy after the server confirms it has no operational data. A dedicated, unactivated admin created for that pharmacy can be removed in the same transaction. Staging acceptance pending.
+
 ## Pharmacy Admin sign-in — Staging accepted
 
 Product Owner verified PASS on Staging and authorized Production on 14 November 2026. Accepted Staging head `a1960ff709c5f08fcb370e8a3af82cc59c9bd527`. Includes email or pharmacy code for Pharmacy Admin, email sign-in for System Owner, mandatory temporary-password replacement, Duty in initial permissions, and a suspension message after valid credentials. Production release also requires the two SQL migrations, two Edge Functions, and the hosted Auth signup setting disabled. Existing account credentials and pharmacy permissions require no backfill.
