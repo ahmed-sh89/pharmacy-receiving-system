@@ -1,10 +1,12 @@
 # PharmFlow current checkpoint — 14 November 2026
 
-## Pharmacy Admin sign-in — Staging candidate
+## Pharmacy Admin sign-in — Staging accepted
 
-Based on Production main `0fda480ba6945a905ea8c45df3ad091739b03df1` (PR #61). Adds Pharmacy Code as a sign-in ID, simplifies the sign-in form, and uses the browser password manager for autofill. Create Pharmacy & Admin adds Duty with the existing Enabled/Disabled control. Create and Reset issue a randomly generated two-letter, eight-digit temporary password that must be replaced using the existing password-change gate. Password recovery requests are handled by the pharmacy supervisor and the System Administrator.
+Product Owner verified PASS on Staging and authorized Production on 14 November 2026. Accepted Staging head `a1960ff709c5f08fcb370e8a3af82cc59c9bd527`. Includes email or pharmacy code for Pharmacy Admin, email sign-in for System Owner, mandatory temporary-password replacement, Duty in initial permissions, and a suspension message after valid credentials. Production release also requires the two SQL migrations, two Edge Functions, and the hosted Auth signup setting disabled. Existing account credentials and pharmacy permissions require no backfill.
 
-The backend release adds a service-role-only lookup and an additive provisioning RPC that saves Duty with the other initial permissions before activating the pharmacy. Existing account credentials and pharmacy permissions require no backfill. The hosted Auth setting **Allow new users to sign up** must be disabled and verified separately. Auth and functional checks must use Staging `tovkcakucyagvbzvlnks`. Owner acceptance is pending.
+## Receiving discrepancy email WO wrapping — Production approved
+
+Baseline `0fda480ba6945a905ea8c45df3ad091739b03df1` (PR #61), approved candidate `d33c167c130970c3a8af797bf2b7bb1aa3e80005`. The HTML email and preview allow a wrap after WO- and keep the digits together. The plain-text copy retains the full identifier. The focused email, Pages artifact and release-isolation checks pass. Direct Production release is authorized. Verify visually in a narrow Outlook reading pane after deployment.
 
 ## Receiving KPI order details — Staging review
 
