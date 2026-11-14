@@ -42,7 +42,7 @@ Deno.serve(async (request) => {
   if (error?.status === 429) return json({ error: "Too many sign-in attempts. Try again later." }, 429);
   if (!account?.email || error || !data.session) return json(invalid, 400);
   if (account.suspended) {
-    return json({ error: "Pharmacy Suspended. Contact your administrator." }, 403);
+    return json({ error: "Please contact your supervisor for reactivation." }, 403);
   }
   return json(data.session, 200);
 });

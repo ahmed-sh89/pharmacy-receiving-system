@@ -92,32 +92,52 @@ async function confirmSettingsDiscard(dirty){
  return !dirty || await window.settingsConfirm({title:'Discard changes?',message:'Discard unsaved changes and close this dialog?',confirmText:'Discard'});
 }
 
-function settingsDialog({title='Confirm',message='',label,value,readOnly=false,confirmText='Save',fields}){
+function settingsDialog({title='Confirm',message='',label,value,readOnly=false,confirmText='Save',fields,onConfirm,multiline=false,copyLabel}){
  return new Promise(resolve=>{
   const form=document.createElement('form');form.className='settingsModalForm';
   if(message){const p=document.createElement('p');p.textContent=message;form.append(p);}
   const inputs=[];
   for(const spec of fields||(label?[{name:'value',label,value}]:[])){
    const field=document.createElement('label');field.textContent=spec.label;
-   const input=document.createElement('input');input.name=spec.name;input.value=spec.value||'';input.type=spec.type||'text';input.autocomplete='off';input.readOnly=readOnly;field.append(input);form.append(field);inputs.push(input);
+   const input=document.createElement(multiline?'textarea':'input');
+   if(multiline){input.rows=7;input.spellcheck=false;}
+   else{input.type=spec.type||'text';}
+   input.name=spec.name;input.value=spec.value||'';input.autocomplete='off';input.readOnly=readOnly;field.append(input);form.append(field);inputs.push(input);
   }
   const original=inputs.map(input=>input.value);const dirty=()=>!readOnly&&inputs.some((input,i)=>input.value!==original[i]);
   const footer=document.createElement('footer'),cancel=document.createElement('button'),save=document.createElement('button');
   cancel.type='button';cancel.className='secondaryButton';cancel.textContent='Cancel';save.type='submit';save.className='primaryButton';save.textContent=confirmText;
   if(readOnly&&inputs[0]){
-   const copy=document.createElement('button');copy.type='button';copy.className='secondaryButton';copy.textContent=title.includes('Password')?'Copy Password':'Copy Email';
+   const copy=document.createElement('button');copy.type='button';copy.className='secondaryButton';copy.textContent=copyLabel || (title.includes('Password')?'Copy Password':'Copy Email');
    copy.onclick=async()=>{try{await navigator.clipboard.writeText(inputs[0].value);copy.textContent='Copied';}catch(_){inputs[0].focus();inputs[0].select();copy.textContent='Select and copy';}};footer.append(copy);
   }
   if(!readOnly)footer.append(cancel);footer.append(save);form.append(footer);
-  let settled=false,modal;
+  const errorMessage=onConfirm ? document.createElement('p') : null;
+  if(errorMessage){
+   errorMessage.className='authMessage error';
+   errorMessage.setAttribute('role','alert');
+   form.insertBefore(errorMessage,footer);
+  }
+  let settled=false,busy=false,modal;
   function finish(result){if(settled)return;settled=true;resolve(result);}
-  modal=createSettingsModal({title,content:form,onDismiss:async()=>{if(!(await confirmSettingsDiscard(dirty())))return false;modal.close();finish(null);return true;},initialFocus:inputs[0]||cancel});
+  modal=createSettingsModal({title,content:form,onDismiss:async()=>{if(busy||!(await confirmSettingsDiscard(dirty())))return false;modal.close();finish(null);return true;},initialFocus:inputs[0]||cancel});
   form.addEventListener('input',()=>window.SettingsAccessActions?.setDirty?.(dirty()));
-  form.addEventListener('submit',event=>{event.preventDefault();finish(fields?Object.fromEntries(inputs.map(input=>[input.name,input.value])):inputs[0]?inputs[0].value:true);modal.close();});
+  form.addEventListener('submit',async event=>{
+   event.preventDefault();
+   if(busy)return;
+   if(onConfirm){
+    busy=true;save.disabled=cancel.disabled=true;errorMessage.textContent='';
+    try{await onConfirm();}
+    catch(error){errorMessage.textContent=error.message||'Unable to delete pharmacy.';return;}
+    finally{busy=false;save.disabled=cancel.disabled=false;}
+   }
+   finish(fields?Object.fromEntries(inputs.map(input=>[input.name,input.value])):inputs[0]?inputs[0].value:true);
+   modal.close();
+  });
   cancel.onclick=modal.requestClose;
  });
 }
-window.settingsConfirm=options=>settingsDialog({title:({identity:'Confirm Pharmacy Update',admin:'Confirm Admin Assignment','reset-password':'Reset Password',suspend:'Suspend Pharmacy',activate:'Reactivate Pharmacy'})[window.SettingsAccessActions?.action?.()]||'Confirm Action',confirmText:'Confirm',...options}).then(result=>result===true);
+window.settingsConfirm=options=>settingsDialog({title:({identity:'Confirm Pharmacy Update',admin:'Confirm Admin Assignment','reset-password':'Reset Password',deactivate:'Deactivate Pharmacy',reactivate:'Reactivate Pharmacy'})[window.SettingsAccessActions?.action?.()]||'Confirm Action',confirmText:'Confirm',...options}).then(result=>result===true);
 function settingsInlinePrompt(options){return settingsDialog({...options,confirmText:'Continue'});}
 // Preserve the unrelated accepted Expiry operator prompt.
 function legacySettingsDialog({title="Confirm",message="",label,value,readOnly=false,confirmText="Save"}){
@@ -224,6 +244,76 @@ window.editPharmacyPermissions=async function(button){
  });
 };
 
+async function openPharmacyDeletionHistory(){
+ if(!isSystemOwner())return;
+ const content=document.createElement('div');
+ content.className='settingsModalForm';
+ const status=document.createElement('p');
+ status.setAttribute('role','status');
+ const tableArea=document.createElement('div');
+ tableArea.className='ownerDeletionHistory';
+ tableArea.innerHTML='<table class="ownerPharmacyTable" aria-label="Deleted pharmacies"><thead><tr><th scope="col">Pharmacy</th><th scope="col">Code</th><th scope="col">Deleted by</th><th scope="col">Date</th></tr></thead><tbody></tbody></table>';
+ const tableBody=tableArea.querySelector('tbody');
+ tableArea.hidden=true;
+ const footer=document.createElement('footer');
+ const more=document.createElement('button');
+ more.type='button';more.className='secondaryButton';more.textContent='Load older';more.hidden=true;
+ footer.append(more);content.append(status,tableArea,footer);
+ createSettingsModal({title:'Deletion History',size:'create',content});
+ let oldestId=null;
+
+ async function load(){
+  more.disabled=true;
+  status.className='';
+  more.textContent='Load older';
+  status.textContent='Loading deletion history…';
+  try{
+   const rows=await authRpc('owner_list_pharmacy_deletions_v1',{p_before_id:oldestId});
+   const date=new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Riyadh'});
+   for(const entry of rows){
+    const row=document.createElement('tr');
+    for(const value of [entry.pharmacy_name,entry.pharmacy_code,entry.deleted_by || 'System',date.format(new Date(entry.deleted_at))]){
+     const cell=document.createElement('td');cell.textContent=value;row.append(cell);
+    }
+    tableBody.append(row);
+   }
+   if(rows.length){oldestId=rows[rows.length-1].id;tableArea.hidden=false;}
+   more.hidden=rows.length<100;
+   status.textContent=oldestId===null?'No pharmacy deletions recorded.':'';
+  }catch(error){
+   status.className='authMessage error';
+   status.textContent=error.message || 'Unable to load deletion history.';
+   if(oldestId===null){more.textContent='Retry';}
+   more.hidden=false;
+  }finally{
+   more.disabled=false;
+  }
+ }
+ more.addEventListener('click',load);
+ await load();
+}
+
+function showCreatedPharmacyCredentials(pharmacy,result){
+ // Normalize row separators and keep spreadsheet formulas and numeric
+ // pharmacy identifiers as text when the message is pasted into Excel.
+ const textCell=(value,identifier=false)=>{
+  const text=String(value).replace(/[\t\r\n]/g,' ');
+  return /^[ ]*[=+@-]/.test(text) || (identifier && /^\d[\d-]*$/.test(text))
+   ? "'"+text : text;
+ };
+ const details=[
+  ['Pharmacy',textCell(pharmacy.pharmacy_name)],
+  ['Pharmacy Code',textCell(pharmacy.pharmacy_code.toUpperCase(),true)],
+  ['Admin Email',textCell(result.admin_email || pharmacy.admin_email.toLowerCase())],
+  ['Temporary Password',textCell(result.temporary_password)],
+  ['First sign-in','You’ll be asked to set a new password.']
+ ].map(row=>row.join('\t')).join('\n');
+ return settingsDialog({
+  title:'Pharmacy Account Created',label:'Account details',value:details,
+  readOnly:true,multiline:true,copyLabel:'Copy Account Details',confirmText:'Close'
+ });
+}
+
 (function bindDirectAccountCreation(){
  function bind(){
   const form=document.getElementById('ownerCreateAccountForm');if(!form)return;
@@ -242,6 +332,7 @@ window.editPharmacyPermissions=async function(button){
   const status=form.querySelector('[data-create-status]');form.insertBefore(status,form.querySelector('footer'));
   if(pending){fields().forEach((el,index)=>{el.value=pending[names[index]]||'';});dirty=true;}
   document.getElementById('btnOpenCreateAccount').onclick=open;
+  document.getElementById('btnOwnerDeletionHistory')?.addEventListener('click',openPharmacyDeletionHistory);
   form.addEventListener('input',()=>{dirty=true;});form.addEventListener('change',()=>{dirty=true;});
   form.onsubmit=async event=>{
    event.preventDefault();if(busy || !isSystemOwner() || !form.reportValidity())return;
@@ -253,7 +344,7 @@ window.editPharmacyPermissions=async function(button){
    try{
     const result=await callPasswordAdmin({action:'create-account',...pending});
     if(result.temporary_password){
-     await window.settingsTextPrompt({title:'Initial Temporary Password',label:'Copy and send securely. Replacement is mandatory at first login.',value:result.temporary_password,readOnly:true,confirmText:'Close'});
+     await showCreatedPharmacyCredentials(pending,result);
      delete result.temporary_password;
     }
     status.textContent=result.credential_status==='EXISTING_LOGIN'?'Pharmacy and permissions saved. Existing ADMIN password is unchanged.':result.credential_status==='USE_EXPLICIT_RESET'?'Pharmacy and permissions ready. Use the pharmacy Reset action to issue a new temporary password.':'Pharmacy, ADMIN and initial permissions saved. Password replacement is required.';

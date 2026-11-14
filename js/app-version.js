@@ -41,9 +41,15 @@
             notice=document.createElement("aside");
             notice.id="pharmflowVersionNotice";
             notice.className="pharmflowVersionNotice";
-            notice.setAttribute("role","status");
-            notice.setAttribute("aria-live","polite");
-            notice.innerHTML='<span>New PharmFlow version available — Refresh to update</span><button type="button" data-refresh>Refresh to update</button><small data-message></small>';
+            notice.setAttribute("aria-label","PharmFlow update");
+            notice.innerHTML=`
+                <img class="pharmflowVersionMark" src="assets/pharmflow-mark-blue.svg" alt="" width="30" height="30">
+                <div class="pharmflowVersionCopy" role="status">
+                    <strong>PharmFlow update available</strong>
+                    <span>Refresh to start using the latest version.</span>
+                </div>
+                <button type="button" data-refresh>Refresh now</button>
+                <small data-message aria-live="polite"></small>`;
             document.body.appendChild(notice);
             notice.querySelector("[data-refresh]").addEventListener("click",refreshWhenSafe);
         }
@@ -62,7 +68,7 @@
     }
 
     function hasOpenEditor(){
-        return [...document.querySelectorAll('[role="dialog"],.modalOverlay,.quickKpiOverlay')]
+        return [...document.querySelectorAll('[role="dialog"],dialog[open],.modalOverlay,.quickKpiOverlay')]
             .some(el=>el.getClientRects().length>0 && getComputedStyle(el).visibility!=="hidden");
     }
 

@@ -1,5 +1,9 @@
 # PharmFlow current checkpoint — 14 November 2026
 
+## Pharmacy activation and deletion — Production approved
+
+Based on Production main `3911030186e2c94b4f2a671b9c51e0c7bd1c6238` (PR #62). Newly provisioned pharmacy admin accounts remain Pending Activation until their initial temporary password is replaced. Later resets preserve the initial activation state. Deactivate and Reactivate reuse the existing pharmacy access control, with the same supervisor message for valid email and code sign-ins. Existing accounts keep their activation classification. The owner can permanently delete an empty pharmacy regardless of activation. The confirmation appears first and server rejections stay in the same dialog. Deletion removes pharmacy memberships and setup records while preserving Auth accounts and their other memberships. Pharmacies with operational history or files use Deactivate. Provisioning one new admin shows a one-time Copy Account Details action for the individual pharmacy. Deletion History records future successful deletes with the pharmacy name/code, actor, and timestamp. Pending Requests remains available while a request is open. Owner reported Staging PASS and authorized Production on 15 November 2026. Final adjustments make account details paste into Excel as two columns and restyle the bottom-of-page PharmFlow update notification.
+
 ## Pharmacy Admin sign-in — Staging accepted
 
 Product Owner verified PASS on Staging and authorized Production on 14 November 2026. Accepted Staging head `a1960ff709c5f08fcb370e8a3af82cc59c9bd527`. Includes email or pharmacy code for Pharmacy Admin, email sign-in for System Owner, mandatory temporary-password replacement, Duty in initial permissions, and a suspension message after valid credentials. Production release also requires the two SQL migrations, two Edge Functions, and the hosted Auth signup setting disabled. Existing account credentials and pharmacy permissions require no backfill.
