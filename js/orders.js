@@ -761,7 +761,10 @@ function buildFinalizedDiscrepancyEmailHTML(report,workOrders){
             if(row.workOrder&&!workOrderBackgrounds.has(row.workOrder)){
                 workOrderBackgrounds.set(row.workOrder,workOrderColors[workOrderBackgrounds.size%workOrderColors.length]);
             }
-            const workOrderCell=cell(font(esc(getReceivingEmailWorkOrder(row)),"#1d3954",Boolean(row.workOrder)),workOrderBackgrounds.get(row.workOrder)||bg,"white-space:nowrap");
+            const workOrderLabel=row.workOrder
+                ? `WO-<wbr><span style="white-space:nowrap">${esc(row.workOrder)}</span>`
+                : esc(getReceivingEmailWorkOrder(row));
+            const workOrderCell=cell(font(workOrderLabel,"#1d3954",Boolean(row.workOrder)),workOrderBackgrounds.get(row.workOrder)||bg,"white-space:normal");
             return `<tr>${workOrderCell}${cell(font(esc(row["Item Number"])))}${cell(`<span dir="auto">${font(esc(row["Item Name"]))}</span>`)}${cell(font(esc(row.ordered),"#103d66"))}${cell(font(esc(row.received),"#103d66"))}${cell(font(esc(getReceivingEmailDifference(row)),ink,true,11),tint)}${cell(`<span dir="rtl">${font(getReceivingEmailStatus(row),ink,true,11)}</span>`)}</tr>`;
         }).join("");
         const meta=getReceivingEmailSectionMeta(group);
