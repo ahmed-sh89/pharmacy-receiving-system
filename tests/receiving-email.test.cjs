@@ -171,6 +171,13 @@ test('manual WO entries stay with one TO in preview and both clipboard formats',
     assert.equal(color(first[3]),'#f8e7be');
     assert.notEqual(color(first[0]),tables[0].querySelector('th').getAttribute('bgcolor'));
     assertTypography(first[0].children[0],10,true);
+    const woCell=first[0].children[0];
+    assert.match(woCell.getAttribute('style'), /white-space:normal/);
+    assert.equal(woCell.querySelector('wbr').previousSibling.textContent,'WO-');
+    const digits=woCell.querySelector('wbr + span');
+    assert.equal(digits.textContent,'0001');
+    assert.equal(digits.getAttribute('style'),'white-space:nowrap');
+    assert.equal(first[1].children[0].querySelector('wbr'),null);
     assertTypography(first[1].children[0],10,false);
     assert.equal(color(first[1]),'#eaf4fb');
     assert.equal(rows(tables[1])[0].children[0].textContent,'WO-0030');
@@ -187,9 +194,9 @@ test('manual WO entries stay with one TO in preview and both clipboard formats',
     assert.match(text, /— \| 002/);
     assert.match(text, /-69 \| ناقص 69/);
     enter(initial,'');
-    assert.match(frame.srcdoc, /WO-0001/);
+    assert.match(parseHTML(frame.srcdoc).document.body.textContent, /WO-0001/);
     enter(fields[2],'');
-    assert.doesNotMatch(frame.srcdoc, /WO-0001/);
+    assert.doesNotMatch(parseHTML(frame.srcdoc).document.body.textContent, /WO-0001/);
     assert.equal(JSON.stringify(report), before);
     c.openFinalizedDiscrepancyEmailPreview(report);
     assert.equal(document.querySelector('[data-wo-number]').value, '');

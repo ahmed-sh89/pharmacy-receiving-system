@@ -1,5 +1,9 @@
 # PharmFlow current checkpoint — 14 November 2026
 
+## Receiving discrepancy email WO wrapping — Production approved
+
+Baseline `0fda480ba6945a905ea8c45df3ad091739b03df1` (PR #61), approved candidate `d33c167c130970c3a8af797bf2b7bb1aa3e80005`. The HTML email and preview allow a wrap after WO- and keep the digits together. The plain-text copy retains the full identifier. The focused email, Pages artifact and release-isolation checks pass. Direct Production release is authorized. Verify visually in a narrow Outlook reading pane after deployment.
+
 ## Receiving KPI order details — Staging review
 
 Based on Production main `1e0db955d2ee174cc9d95572af39d9532c9f23bd` (PR #60). Completed, Remaining Items, Remaining Units, and Over Received details classify each selected Order row independently. The Order No. and signed Received minus Ordered are drawn from the existing per-order Receiving projection. The cards keep their unique-item counts and aggregate remaining units. Review all four details on the Staging Preview, including the same item on two Orders, before requesting Production release.
