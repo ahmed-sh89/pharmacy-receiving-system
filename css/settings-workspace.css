@@ -216,6 +216,7 @@ dialog.settingsDialog::backdrop{background:#142a4066}
 #page-settings .settingsModalForm,#page-settings .settingsModal .ownerPermissionsForm{display:grid;gap:13px;margin:0;padding:18px;max-width:none}
 #page-settings .settingsModalForm label,#page-settings .settingsModal .ownerCreateAccountForm label{font:600 12px/1.4 'Segoe UI',Arial,sans-serif;gap:5px}
 #page-settings .settingsModalForm input,#page-settings .settingsModal select,#page-settings .settingsModal input{min-height:35px;padding:7px 9px;border-radius:5px;background:#fff;font:400 13px/1.4 'Segoe UI',Arial,sans-serif}
+#page-settings .settingsModalForm textarea{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--settings-line);border-radius:5px;background:#fff;color:inherit;font:400 13px/1.4 'Segoe UI',Arial,sans-serif;resize:vertical}
 #page-settings .settingsModalForm p{margin:0;color:#5b7083;font-size:12px;line-height:1.6}
 #page-settings .settingsModal :is(form>footer){display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;z-index:2;margin:4px -18px -18px;padding:12px 18px;border-top:1px solid #e2e8ee;background:#f8fafc}
 #page-settings .settingsModal footer button{min-height:32px;padding:6px 13px;font-size:12px;border-radius:5px}

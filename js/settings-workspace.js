@@ -92,20 +92,23 @@ async function confirmSettingsDiscard(dirty){
  return !dirty || await window.settingsConfirm({title:'Discard changes?',message:'Discard unsaved changes and close this dialog?',confirmText:'Discard'});
 }
 
-function settingsDialog({title='Confirm',message='',label,value,readOnly=false,confirmText='Save',fields,onConfirm}){
+function settingsDialog({title='Confirm',message='',label,value,readOnly=false,confirmText='Save',fields,onConfirm,multiline=false,copyLabel}){
  return new Promise(resolve=>{
   const form=document.createElement('form');form.className='settingsModalForm';
   if(message){const p=document.createElement('p');p.textContent=message;form.append(p);}
   const inputs=[];
   for(const spec of fields||(label?[{name:'value',label,value}]:[])){
    const field=document.createElement('label');field.textContent=spec.label;
-   const input=document.createElement('input');input.name=spec.name;input.value=spec.value||'';input.type=spec.type||'text';input.autocomplete='off';input.readOnly=readOnly;field.append(input);form.append(field);inputs.push(input);
+   const input=document.createElement(multiline?'textarea':'input');
+   if(multiline){input.rows=7;input.spellcheck=false;}
+   else{input.type=spec.type||'text';}
+   input.name=spec.name;input.value=spec.value||'';input.autocomplete='off';input.readOnly=readOnly;field.append(input);form.append(field);inputs.push(input);
   }
   const original=inputs.map(input=>input.value);const dirty=()=>!readOnly&&inputs.some((input,i)=>input.value!==original[i]);
   const footer=document.createElement('footer'),cancel=document.createElement('button'),save=document.createElement('button');
   cancel.type='button';cancel.className='secondaryButton';cancel.textContent='Cancel';save.type='submit';save.className='primaryButton';save.textContent=confirmText;
   if(readOnly&&inputs[0]){
-   const copy=document.createElement('button');copy.type='button';copy.className='secondaryButton';copy.textContent=title.includes('Password')?'Copy Password':'Copy Email';
+   const copy=document.createElement('button');copy.type='button';copy.className='secondaryButton';copy.textContent=copyLabel || (title.includes('Password')?'Copy Password':'Copy Email');
    copy.onclick=async()=>{try{await navigator.clipboard.writeText(inputs[0].value);copy.textContent='Copied';}catch(_){inputs[0].focus();inputs[0].select();copy.textContent='Select and copy';}};footer.append(copy);
   }
   if(!readOnly)footer.append(cancel);footer.append(save);form.append(footer);
@@ -241,6 +244,21 @@ window.editPharmacyPermissions=async function(button){
  });
 };
 
+function showCreatedPharmacyCredentials(pharmacy,result){
+ const details=[
+  `Pharmacy: ${pharmacy.pharmacy_name}`,
+  `Pharmacy Code: ${pharmacy.pharmacy_code.toUpperCase()}`,
+  `Admin Email: ${result.admin_email || pharmacy.admin_email.toLowerCase()}`,
+  `Temporary Password: ${result.temporary_password}`,
+  '',
+  'On your first sign-in, you’ll be asked to set a new password.'
+ ].join('\n');
+ return settingsDialog({
+  title:'Pharmacy Account Created',label:'Account details',value:details,
+  readOnly:true,multiline:true,copyLabel:'Copy Account Details',confirmText:'Close'
+ });
+}
+
 (function bindDirectAccountCreation(){
  function bind(){
   const form=document.getElementById('ownerCreateAccountForm');if(!form)return;
@@ -270,7 +288,7 @@ window.editPharmacyPermissions=async function(button){
    try{
     const result=await callPasswordAdmin({action:'create-account',...pending});
     if(result.temporary_password){
-     await window.settingsTextPrompt({title:'Initial Temporary Password',label:'Copy and send securely. Replacement is mandatory at first login.',value:result.temporary_password,readOnly:true,confirmText:'Close'});
+     await showCreatedPharmacyCredentials(pending,result);
      delete result.temporary_password;
     }
     status.textContent=result.credential_status==='EXISTING_LOGIN'?'Pharmacy and permissions saved. Existing ADMIN password is unchanged.':result.credential_status==='USE_EXPLICIT_RESET'?'Pharmacy and permissions ready. Use the pharmacy Reset action to issue a new temporary password.':'Pharmacy, ADMIN and initial permissions saved. Password replacement is required.';

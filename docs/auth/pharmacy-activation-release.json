@@ -1,9 +1,9 @@
 {
   "production_base": "3911030186e2c94b4f2a671b9c51e0c7bd1c6238",
   "changes": {
-    "PHARMFLOW_CURRENT_CHECKPOINT.md": "db40f9fa5585a35c6f94823cc09cd6c0badc2710",
-    "css/settings-workspace.css": "e4233f8ab21fe2e24a55c2c380d5653e6449d6f2",
-    "index.html": "3cbe59c83a0ad5762ac14440c6f1afed297f2eed",
+    "PHARMFLOW_CURRENT_CHECKPOINT.md": "0bfc987409715c8a080a9060ae31b815af3b120b",
+    "css/settings-workspace.css": "f1b122804ecadac742d1477cb39ebd3e5ba87042",
+    "index.html": "1dcdf570963d639584405b0b991d7c6ecad173e6",
     "js/auth.js": "610908cec96eb28570450a4bffdbf0001c6f5f16",
     "vite.config.js": "50654ba796249f7795f2c2bf1e12a51ea21dcaea"
   }
