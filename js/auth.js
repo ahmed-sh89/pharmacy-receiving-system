@@ -1918,24 +1918,16 @@ async function handleOwnerPharmacyAction(button){
         const pharmacy=AuthState.ownerPharmacies.find(row=>String(row.pharmacy_id)===pharmacyId);
         if(!pharmacy){ return; }
         const identity={p_pharmacy_id:pharmacyId,p_pharmacy_code:pharmacy.pharmacy_code};
-        setAuthBusy(true);
-        try{
-            await authRpc("owner_check_pharmacy_deletable_v1",identity);
-            setAuthBusy(false);
-            const confirmed=await window.settingsConfirm({
-                title:"Delete Pharmacy",
-                message:`Permanently delete ${pharmacy.pharmacy_name} (${pharmacy.pharmacy_code})? This cannot be undone.`,
-                confirmText:"Delete"
-            });
-            if(!confirmed){ return; }
-            setAuthBusy(true);
-            await authRpc("owner_delete_unactivated_pharmacy_v1",identity);
-            AuthState.ownerPharmacies=AuthState.ownerPharmacies.filter(row=>String(row.pharmacy_id)!==pharmacyId);
-            await loadOwnerPharmacies().catch(()=>{});
-            setOwnerManagementMessage("Pharmacy deleted.","success");
-        }catch(error){
-            setOwnerManagementMessage(error.message || "Unable to delete pharmacy.","error");
-        }finally{ setAuthBusy(false); }
+        const deleted=await window.settingsConfirm({
+            title:"Delete Pharmacy",
+            message:`Permanently delete ${pharmacy.pharmacy_name} (${pharmacy.pharmacy_code})? This cannot be undone.`,
+            confirmText:"Delete",
+            onConfirm:()=>authRpc("owner_delete_empty_pharmacy_v1",identity)
+        });
+        if(!deleted){ return; }
+        AuthState.ownerPharmacies=AuthState.ownerPharmacies.filter(row=>String(row.pharmacy_id)!==pharmacyId);
+        await loadOwnerPharmacies().catch(()=>{});
+        setOwnerManagementMessage("Pharmacy deleted.","success");
         return;
     }
 

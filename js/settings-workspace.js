@@ -92,7 +92,7 @@ async function confirmSettingsDiscard(dirty){
  return !dirty || await window.settingsConfirm({title:'Discard changes?',message:'Discard unsaved changes and close this dialog?',confirmText:'Discard'});
 }
 
-function settingsDialog({title='Confirm',message='',label,value,readOnly=false,confirmText='Save',fields}){
+function settingsDialog({title='Confirm',message='',label,value,readOnly=false,confirmText='Save',fields,onConfirm}){
  return new Promise(resolve=>{
   const form=document.createElement('form');form.className='settingsModalForm';
   if(message){const p=document.createElement('p');p.textContent=message;form.append(p);}
@@ -109,11 +109,28 @@ function settingsDialog({title='Confirm',message='',label,value,readOnly=false,c
    copy.onclick=async()=>{try{await navigator.clipboard.writeText(inputs[0].value);copy.textContent='Copied';}catch(_){inputs[0].focus();inputs[0].select();copy.textContent='Select and copy';}};footer.append(copy);
   }
   if(!readOnly)footer.append(cancel);footer.append(save);form.append(footer);
-  let settled=false,modal;
+  const errorMessage=onConfirm ? document.createElement('p') : null;
+  if(errorMessage){
+   errorMessage.className='authMessage error';
+   errorMessage.setAttribute('role','alert');
+   form.insertBefore(errorMessage,footer);
+  }
+  let settled=false,busy=false,modal;
   function finish(result){if(settled)return;settled=true;resolve(result);}
-  modal=createSettingsModal({title,content:form,onDismiss:async()=>{if(!(await confirmSettingsDiscard(dirty())))return false;modal.close();finish(null);return true;},initialFocus:inputs[0]||cancel});
+  modal=createSettingsModal({title,content:form,onDismiss:async()=>{if(busy||!(await confirmSettingsDiscard(dirty())))return false;modal.close();finish(null);return true;},initialFocus:inputs[0]||cancel});
   form.addEventListener('input',()=>window.SettingsAccessActions?.setDirty?.(dirty()));
-  form.addEventListener('submit',event=>{event.preventDefault();finish(fields?Object.fromEntries(inputs.map(input=>[input.name,input.value])):inputs[0]?inputs[0].value:true);modal.close();});
+  form.addEventListener('submit',async event=>{
+   event.preventDefault();
+   if(busy)return;
+   if(onConfirm){
+    busy=true;save.disabled=cancel.disabled=true;errorMessage.textContent='';
+    try{await onConfirm();}
+    catch(error){errorMessage.textContent=error.message||'Unable to delete pharmacy.';return;}
+    finally{busy=false;save.disabled=cancel.disabled=false;}
+   }
+   finish(fields?Object.fromEntries(inputs.map(input=>[input.name,input.value])):inputs[0]?inputs[0].value:true);
+   modal.close();
+  });
   cancel.onclick=modal.requestClose;
  });
 }
