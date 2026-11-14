@@ -75,7 +75,9 @@ const receivingArchiveStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'fix/receiving-archive-extra-menu';
 const receivingKpiStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'feature/receiving-kpi-order-details';
-const stagingPreview = startupStagingPreview || dutyStagingPreview || receivingAdminStagingPreview || receivingEmailStagingPreview || receivingArchiveStagingPreview || receivingKpiStagingPreview;
+const pharmacyAdminStagingPreview = process.env.VERCEL_ENV === 'preview'
+  && process.env.VERCEL_GIT_COMMIT_REF === 'feature/pharmacy-admin-login-staging';
+const stagingPreview = pharmacyAdminStagingPreview || startupStagingPreview || dutyStagingPreview || receivingAdminStagingPreview || receivingEmailStagingPreview || receivingArchiveStagingPreview || receivingKpiStagingPreview;
 const stagingRef = 'tovkcakucyagvbzvlnks';
 function startupStagingConfiguration(){
   return {

@@ -230,7 +230,8 @@ window.editPharmacyPermissions=async function(button){
   const panel=document.getElementById('ownerCreateAccountPanel'), workspace=document.getElementById('ownerManagementPanel');
   const key='PHARMFLOW_ACCOUNT_PROVISION_DRAFT_V2';let pending=null,busy=false,dirty=false,scroll=0;
   try{pending=JSON.parse(sessionStorage.getItem(key)||'null');}catch(_){}
-  const names=['pharmacy_name','pharmacy_code','admin_email','receiving','expiry','data_access'];
+  if(pending && pending.duty == null) pending.duty='DISABLED';
+  const names=['pharmacy_name','pharmacy_code','admin_email','receiving','expiry','data_access','duty'];
   const fields=()=>names.map(name=>form.querySelector(`[name="${name}"]`));
   let modal=null;
   function open(){
@@ -245,7 +246,7 @@ window.editPharmacyPermissions=async function(button){
   form.onsubmit=async event=>{
    event.preventDefault();if(busy || !isSystemOwner() || !form.reportValidity())return;
    const values=Object.fromEntries(fields().map(el=>[el.name,el.value.trim()]));
-   if(!['FULL','DISABLED'].includes(values.receiving)||!['FULL','DISABLED'].includes(values.expiry)||!['READ_ONLY','PHARMACY_ONLY','PHARMACY_GLOBAL'].includes(values.data_access)){status.textContent='Select all initial permissions.';return;}
+   if(!['FULL','DISABLED'].includes(values.receiving)||!['FULL','DISABLED'].includes(values.expiry)||!['READ_ONLY','PHARMACY_ONLY','PHARMACY_GLOBAL'].includes(values.data_access)||!['FULL','DISABLED'].includes(values.duty)){status.textContent='Select all initial permissions.';return;}
    if(pending && names.some(name=>pending[name]!==values[name])){status.textContent='Retry the original values or cancel this draft before starting a different request.';return;}
    pending=pending||{...values,operation_id:crypto.randomUUID()};sessionStorage.setItem(key,JSON.stringify(pending));
    busy=true;setAuthBusy(true);form.querySelectorAll('input,select,button').forEach(el=>el.disabled=true);status.textContent='Creating pharmacy and saving initial permissions…';

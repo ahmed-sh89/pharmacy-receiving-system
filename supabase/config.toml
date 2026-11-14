@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.pharmflow-password-admin]
 verify_jwt = true
+
+[auth]
+enable_signup = false
+
+[functions.pharmflow-code-sign-in]
+verify_jwt = false

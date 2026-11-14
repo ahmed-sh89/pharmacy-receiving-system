@@ -1,5 +1,9 @@
 # PharmFlow current checkpoint — 14 November 2026
 
+## Pharmacy Admin sign-in — Staging accepted
+
+Product Owner verified PASS on Staging and authorized Production on 14 November 2026. Accepted Staging head `a1960ff709c5f08fcb370e8a3af82cc59c9bd527`. Includes email or pharmacy code for Pharmacy Admin, email sign-in for System Owner, mandatory temporary-password replacement, Duty in initial permissions, and a suspension message after valid credentials. Production release also requires the two SQL migrations, two Edge Functions, and the hosted Auth signup setting disabled. Existing account credentials and pharmacy permissions require no backfill.
+
 ## Receiving discrepancy email WO wrapping — Production approved
 
 Baseline `0fda480ba6945a905ea8c45df3ad091739b03df1` (PR #61), approved candidate `d33c167c130970c3a8af797bf2b7bb1aa3e80005`. The HTML email and preview allow a wrap after WO- and keep the digits together. The plain-text copy retains the full identifier. The focused email, Pages artifact and release-isolation checks pass. Direct Production release is authorized. Verify visually in a narrow Outlook reading pane after deployment.
