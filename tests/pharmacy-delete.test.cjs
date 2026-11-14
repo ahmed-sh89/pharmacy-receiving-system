@@ -11,8 +11,9 @@ test('empty pharmacy deletion preserves shared accounts and blocks operational a
  await db.exec(`
  create role anon; create role authenticated;
  create schema pharmflow_auth_private; create schema storage; create schema auth;
- create table auth.users(id uuid primary key);
- create table public.pharmacies(id uuid primary key,code text,status text);
+ create table auth.users(id uuid primary key,email text);
+ create function auth.uid() returns uuid language sql as $$select nullif(current_setting('test.actor',true),'')::uuid$$;
+ create table public.pharmacies(id uuid primary key,code text,status text,name text);
  create table public.pharmacy_members(pharmacy_id uuid references pharmacies,id uuid references auth.users);
  create table public.pharmacy_admin_assignments(pharmacy_id uuid references pharmacies on delete cascade);
  create table public.pharmacy_invitations(pharmacy_id uuid references pharmacies on delete cascade);
@@ -35,8 +36,8 @@ test('empty pharmacy deletion preserves shared accounts and blocks operational a
  const empty='10000000-0000-0000-0000-000000000001';
  const other='10000000-0000-0000-0000-000000000002';
  const owner='20000000-0000-0000-0000-000000000001';
- await db.query("insert into pharmacies values ($1,'EMPTY','active'),($2,'OTHER','suspended')",[empty,other]);
- await db.query("insert into auth.users values ($1)",[owner]);
+ await db.query("insert into pharmacies values ($1,'EMPTY','active','Empty Pharmacy'),($2,'OTHER','suspended','Other Pharmacy')",[empty,other]);
+ await db.query("insert into auth.users values ($1,'owner@example.invalid')",[owner]);
  await db.query("insert into pharmacy_members values ($1,$3),($2,$3)",[empty,other,owner]);
  await db.query("insert into pharmflow_workspace_generation_v1 values ($1,0,null,null)",[empty]);
  await db.exec(`
@@ -51,6 +52,7 @@ test('empty pharmacy deletion preserves shared accounts and blocks operational a
  `);
  const defaults=fs.readFileSync('supabase/migrations/20261115021500_allow_expiry_defaults_on_empty_pharmacy_delete.sql','utf8');
  await db.exec(defaults);
+ await db.exec(fs.readFileSync('supabase/migrations/20261115030000_pharmacy_deletion_history.sql','utf8'));
  await db.exec(`create trigger expiry_system_operator_guard_v1 before insert or update or delete
   on public.pharmflow_expiry_workers_v1 for each row execute function pharmflow_expiry_private.protect_system_operator_v1()`);
  const worker='30000000-0000-0000-0000-000000000001';
@@ -60,7 +62,9 @@ test('empty pharmacy deletion preserves shared accounts and blocks operational a
  await assert.rejects(db.query("delete from pharmflow_expiry_workers_v1 where id=$1",[worker]),/Built-in Operators cannot be removed/);
  const remove=(id,code)=>db.query("select owner_delete_empty_pharmacy_v1($1,$2)",[id,code]);
  await assert.rejects(remove(empty,'EMPTY'),/System Administrator required/);
+ await assert.rejects(db.query("select * from owner_list_pharmacy_deletions_v1()"),/System Administrator required/);
  await db.exec("set test.owner='yes'");
+ await db.query("select set_config('test.actor',$1,false)",[owner]);
  await db.query("insert into receiving_history values ($1)",[empty]);
  await assert.rejects(remove(empty,'EMPTY'),/operational data or history/);
  await db.query("delete from receiving_history where pharmacy_id=$1",[empty]);
@@ -81,6 +85,8 @@ test('empty pharmacy deletion preserves shared accounts and blocks operational a
  assert.deepEqual((await db.query("select id from pharmflow_expiry_workers_v1")).rows,[]);
  assert.deepEqual((await db.query("select worker_id from pharmflow_expiry_private.operator_audit_v1")).rows,[]);
  await remove(empty,'EMPTY');
+ const history=await db.query("select pharmacy_name,pharmacy_code,deleted_by from owner_list_pharmacy_deletions_v1()");
+ assert.deepEqual(history.rows,[{pharmacy_name:'Empty Pharmacy',pharmacy_code:'EMPTY',deleted_by:'owner@example.invalid'}]);
  assert.deepEqual((await db.query("select * from pharmacy_members")).rows,[{pharmacy_id:other,id:owner}]);
  assert.deepEqual((await db.query("select id from auth.users")).rows,[{id:owner}]);
 });
@@ -110,4 +116,22 @@ test('confirmation runs the deletion only on submit and keeps the dialog open on
  form.dispatchEvent(new Event('submit'));
  assert.equal(await confirmed,true);
  assert.equal(closed,true);
+});
+
+test('the owner sees four metrics unless an open registration request exists',()=>{
+ const {document}=parseHTML(fs.readFileSync('index.html','utf8'));
+ const auth=fs.readFileSync('js/auth.js','utf8');
+ const context=vm.createContext({
+  document,
+  AuthState:{ownerPharmacies:[],ownerRegistrations:[]},
+  setText(id,text){document.getElementById(id).textContent=text;}
+ });
+ vm.runInContext(auth.slice(auth.indexOf('function ownerPharmacyState('),auth.indexOf('function ownerPharmacyMatchesSearch(')),context);
+ const visible=()=>[...document.querySelectorAll('[data-owner-view]:not([hidden])')].map(card=>card.dataset.ownerView);
+ context.renderOwnerMetrics();
+ assert.deepEqual(visible(),['total','active','activation','deactivated']);
+ context.AuthState.ownerRegistrations=[{request_status:'pending'},{request_status:'approved'}];
+ context.renderOwnerMetrics();
+ assert.deepEqual(visible(),['total','active','activation','pending','deactivated']);
+ assert.equal(document.getElementById('ownerMetricPendingRequests').textContent,'1');
 });

@@ -41,7 +41,7 @@
     <link rel="preload" as="script" href="js/auth-viewport.js?v=HANDHELD_VIEWPORT3">
     <link rel="preload" as="script" href="js/permissions.js?v=RECEIVING_SELECTED_20261110">
     <link rel="preload" as="script" href="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028">
-    <link rel="preload" as="script" href="js/auth.js?v=PHARMACY_DELETE_20261115">
+    <link rel="preload" as="script" href="js/auth.js?v=PHARMACY_HISTORY_20261115">
     <link rel="preload" as="script" href="js/dev-isolation.js?v=B10CLEAN15_15">
     <link rel="preload" as="script" href="js/needs-review.js?v=RECEIVING_RELEASE_20261101">
     <link rel="preload" as="script" href="js/expiry-operation.js?v=EXPIRY_PHOTO_V5_20261021">
@@ -67,7 +67,7 @@
     <link rel="preload" as="script" href="js/header-account-menu.js">
     <link rel="preload" as="script" href="js/header-account-popover.js">
     <link rel="preload" as="script" href="js/header-account-ui.js?v=RECEIVING_EXTRA_FINAL_20261110">
-    <link rel="preload" as="script" href="js/settings-workspace.js?v=PHARMACY_ACCOUNT_COPY_20261115">
+    <link rel="preload" as="script" href="js/settings-workspace.js?v=PHARMACY_HISTORY_20261115">
     <link rel="preload" as="script" href="js/duty-model.js?v=DUTY_REFINE_20261106">
     <link rel="preload" as="script" href="js/duty-controls.js?v=DUTY_UI_20261109">
     <link rel="preload" as="script" href="js/duty-schedule.js?v=DUTY_POLISH_20261109">
@@ -125,7 +125,7 @@
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
-<link rel="stylesheet" href="css/settings-workspace.css?v=PHARMACY_ACCOUNT_COPY_20261115">
+<link rel="stylesheet" href="css/settings-workspace.css?v=PHARMACY_HISTORY_20261115">
 <link rel="stylesheet" href="css/permissions.css?v=DUTY_READINESS_20261105">
 
 <link rel="stylesheet" href="css/receiving-order-toolbar.css?v=RECEIVING_ORDER_KPI_DETAILS">
@@ -2183,7 +2183,7 @@ window.PharmFlowDeviceMode = (() => {
                             <span>Pending Activation</span>
                             <strong id="ownerMetricPendingActivation">0</strong>
                         </button>
-                        <button class="ownerMetricCard pfnIssueCard pfnKpiOver" type="button" data-owner-view="pending" aria-pressed="false">
+                        <button class="ownerMetricCard pfnIssueCard pfnKpiOver" type="button" id="ownerPendingRequestsCard" data-owner-view="pending" aria-pressed="false" hidden>
                             <span>Pending Requests</span>
                             <strong id="ownerMetricPendingRequests">0</strong>
                         </button>
@@ -2212,7 +2212,7 @@ window.PharmFlowDeviceMode = (() => {
                     <section id="ownerManagementPanel" class="ownerManagementWorkspace" aria-labelledby="ownerManagementTitle">
                         <header class="ownerManagementToolbar">
                             <h3 id="ownerManagementTitle">All Pharmacies</h3>
-                            <div class="ownerManagementActions"><button type="button" id="btnOpenCreateAccount" class="primaryButton">Create Pharmacy &amp; Admin</button><button id="btnOwnerExportGlobalItems" class="secondaryButton" type="button" hidden>Export Data</button></div>
+                            <div class="ownerManagementActions"><button type="button" id="btnOpenCreateAccount" class="primaryButton">Create Pharmacy &amp; Admin</button><button id="btnOwnerDeletionHistory" class="secondaryButton" type="button">Deletion History</button><button id="btnOwnerExportGlobalItems" class="secondaryButton" type="button" hidden>Export Data</button></div>
                             <label class="ownerSortLabel">Sort<select id="ownerManagementSort"><option value="newest">Newest First</option><option value="oldest">Oldest First</option><option value="az">Pharmacy Name A–Z</option><option value="za">Pharmacy Name Z–A</option></select></label>
                             <label class="ownerManagementSearch" id="ownerManagementSearchWrap">
                                 <span>Search pharmacies</span>
@@ -2647,7 +2647,7 @@ window.PharmFlowDeviceMode = (() => {
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
 <script src="js/permissions.js?v=RECEIVING_SELECTED_20261110"></script>
 <script src="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028"></script>
-<script src="js/auth.js?v=PHARMACY_DELETE_20261115"></script>
+<script src="js/auth.js?v=PHARMACY_HISTORY_20261115"></script>
 
 <!-- DEV-ONLY: hard tenant/write isolation. Never copy to Production A. -->
 <script src="js/dev-isolation.js?v=B10CLEAN15_15"></script>
@@ -2684,7 +2684,7 @@ window.PharmFlowDeviceMode = (() => {
 <script src="js/header-account-ui.js?v=RECEIVING_EXTRA_FINAL_20261110"></script>
 
 
-<script src="js/settings-workspace.js?v=PHARMACY_ACCOUNT_COPY_20261115"></script>
+<script src="js/settings-workspace.js?v=PHARMACY_HISTORY_20261115"></script>
 <script src="js/duty-model.js?v=DUTY_REFINE_20261106"></script><script src="js/duty-controls.js?v=DUTY_UI_20261109"></script><script src="js/duty-schedule.js?v=DUTY_POLISH_20261109"></script><script src="js/duty-reports.js?v=DUTY_UI_20261109"></script><script src="js/duty.js?v=DUTY_EXCHANGE_20261109"></script>
 </body>
 

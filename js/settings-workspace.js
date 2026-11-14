@@ -244,6 +244,55 @@ window.editPharmacyPermissions=async function(button){
  });
 };
 
+async function openPharmacyDeletionHistory(){
+ if(!isSystemOwner())return;
+ const content=document.createElement('div');
+ content.className='settingsModalForm';
+ const status=document.createElement('p');
+ status.setAttribute('role','status');
+ const tableArea=document.createElement('div');
+ tableArea.className='ownerDeletionHistory';
+ tableArea.innerHTML='<table class="ownerPharmacyTable" aria-label="Deleted pharmacies"><thead><tr><th scope="col">Pharmacy</th><th scope="col">Code</th><th scope="col">Deleted by</th><th scope="col">Date</th></tr></thead><tbody></tbody></table>';
+ const tableBody=tableArea.querySelector('tbody');
+ tableArea.hidden=true;
+ const footer=document.createElement('footer');
+ const more=document.createElement('button');
+ more.type='button';more.className='secondaryButton';more.textContent='Load older';more.hidden=true;
+ footer.append(more);content.append(status,tableArea,footer);
+ createSettingsModal({title:'Deletion History',size:'create',content});
+ let oldestId=null;
+
+ async function load(){
+  more.disabled=true;
+  status.className='';
+  more.textContent='Load older';
+  status.textContent='Loading deletion history…';
+  try{
+   const rows=await authRpc('owner_list_pharmacy_deletions_v1',{p_before_id:oldestId});
+   const date=new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Riyadh'});
+   for(const entry of rows){
+    const row=document.createElement('tr');
+    for(const value of [entry.pharmacy_name,entry.pharmacy_code,entry.deleted_by || 'System',date.format(new Date(entry.deleted_at))]){
+     const cell=document.createElement('td');cell.textContent=value;row.append(cell);
+    }
+    tableBody.append(row);
+   }
+   if(rows.length){oldestId=rows[rows.length-1].id;tableArea.hidden=false;}
+   more.hidden=rows.length<100;
+   status.textContent=oldestId===null?'No pharmacy deletions recorded.':'';
+  }catch(error){
+   status.className='authMessage error';
+   status.textContent=error.message || 'Unable to load deletion history.';
+   if(oldestId===null){more.textContent='Retry';}
+   more.hidden=false;
+  }finally{
+   more.disabled=false;
+  }
+ }
+ more.addEventListener('click',load);
+ await load();
+}
+
 function showCreatedPharmacyCredentials(pharmacy,result){
  const details=[
   `Pharmacy: ${pharmacy.pharmacy_name}`,
@@ -277,6 +326,7 @@ function showCreatedPharmacyCredentials(pharmacy,result){
   const status=form.querySelector('[data-create-status]');form.insertBefore(status,form.querySelector('footer'));
   if(pending){fields().forEach((el,index)=>{el.value=pending[names[index]]||'';});dirty=true;}
   document.getElementById('btnOpenCreateAccount').onclick=open;
+  document.getElementById('btnOwnerDeletionHistory')?.addEventListener('click',openPharmacyDeletionHistory);
   form.addEventListener('input',()=>{dirty=true;});form.addEventListener('change',()=>{dirty=true;});
   form.onsubmit=async event=>{
    event.preventDefault();if(busy || !isSystemOwner() || !form.reportValidity())return;

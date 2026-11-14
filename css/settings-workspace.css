@@ -80,7 +80,11 @@ body:not(.zebraDevice) #page-settings.active{display:block}
 #page-settings .settingsDescription{margin:4px 0 0;color:var(--settings-muted);font-size:12px}
 #page-settings .expiryWorkerAddRow{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:8px;margin-bottom:14px}
 #page-settings .expiryWorkerRow{display:grid;grid-template-columns:minmax(120px,1fr) auto auto;gap:8px;align-items:center;margin:0;padding:10px 0;border-bottom:1px solid var(--settings-line);background:transparent}
-#page-settings .ownerMetricGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:0}
+#page-settings .ownerMetricGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0}
+#page-settings #ownerPendingRequestsCard[hidden]{display:none!important}
+@media(min-width:761px){#page-settings .ownerMetricGrid:has(#ownerPendingRequestsCard:not([hidden])){grid-template-columns:repeat(5,minmax(0,1fr))}}
+#page-settings .ownerDeletionHistory{overflow-x:auto}
+#page-settings .ownerDeletionHistory .ownerPharmacyTable{min-width:480px}
 #page-settings .ownerManagementSearch{width:min(390px,100%);min-width:0}
 #page-settings .ownerPharmacyCodeBadge{justify-self:start;padding:3px 7px;border-radius:5px;background:#eaf2fa;color:#365f82;font-size:11px;font-weight:700}
 #page-settings .ownerPharmacyName,#page-settings .ownerPharmacyAdmin{overflow-wrap:anywhere}

@@ -1644,7 +1644,10 @@ function renderOwnerMetrics(){
     const requests = AuthState.ownerRegistrations || [];
     setText("ownerMetricTotalPharmacies",String(pharmacies.length));
     setText("ownerMetricActivePharmacies",String(pharmacies.filter(p=>ownerPharmacyState(p)==="active").length));
-    setText("ownerMetricPendingRequests",String(requests.filter(r=>r.request_status === "pending").length));
+    const pendingCount=requests.filter(r=>r.request_status==="pending").length;
+    setText("ownerMetricPendingRequests",String(pendingCount));
+    const pendingCard=document.getElementById("ownerPendingRequestsCard");
+    if(pendingCard){ pendingCard.hidden=pendingCount===0; }
     setText("ownerMetricPendingActivation",String(pharmacies.filter(p=>ownerPharmacyState(p)==="pending").length));
     setText("ownerMetricDeactivatedPharmacies",String(pharmacies.filter(p=>ownerPharmacyState(p)==="deactivated").length));
     const view=AuthState.ownerManagementView || "total";
@@ -1752,6 +1755,11 @@ function renderOwnerManagementPanel(){
     const pharmacyList=document.getElementById("ownerPharmacyList");
     const requests=document.getElementById("ownerRegistrationRequests");
     if(!panel || !pharmacyList || !requests){ return; }
+    if(AuthState.ownerManagementView==="pending" &&
+        !AuthState.ownerRegistrations.some(r=>r.request_status==="pending")){
+        AuthState.ownerManagementView="total";
+    }
+    renderOwnerMetrics();
     const view=AuthState.ownerManagementView || "total";
     const titles={total:"All Pharmacies",active:"Active Pharmacies",activation:"Pending Activation",pending:"Pending Requests",deactivated:"Deactivated Pharmacies"};
     setText("ownerManagementTitle",titles[view] || titles.total);
