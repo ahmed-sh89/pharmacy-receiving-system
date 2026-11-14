@@ -29,17 +29,20 @@ Deno.serve(async (request) => {
   }
 
   const auth = { persistSession: false, autoRefreshToken: false };
-  const { data: email, error: lookupError } = await createClient(url, serviceKey, { auth })
-    .rpc("pharmflow_admin_email_for_code_v1", { p_code: code });
+  const { data: account, error: lookupError } = await createClient(url, serviceKey, { auth })
+    .rpc("pharmflow_admin_login_for_code_v2", { p_code: code });
   if (lookupError) return json({ error: "Sign in is unavailable." }, 503);
 
   // Use the same Auth grant for unknown codes so failures have the same
   // response and go through the provider's authentication rate limit.
   const { data, error } = await createClient(url, publicKey, { auth }).auth.signInWithPassword({
-    email: email || "pharmflow-no-code-match@example.invalid",
+    email: account?.email || "pharmflow-no-code-match@example.invalid",
     password,
   });
   if (error?.status === 429) return json({ error: "Too many sign-in attempts. Try again later." }, 429);
-  if (!email || error || !data.session) return json(invalid, 400);
+  if (!account?.email || error || !data.session) return json(invalid, 400);
+  if (account.suspended) {
+    return json({ error: "Pharmacy Suspended. Contact your administrator." }, 403);
+  }
   return json(data.session, 200);
 });
