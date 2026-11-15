@@ -327,77 +327,173 @@ function pfhExportListPeriod(selection) {
         missingSource: Math.max(0, ...items.map(item => item.missingSource || 0))};
 }
 
-function pfhExportResult(result, format) {
-    const {type, periods} = result;
-    const title = PFH_TITLE[type];
-    const filename = "PharmFlow " + title + " " + periods[0].from;
-    if (format === "excel") {
-        if (typeof XLSX === "undefined") throw new Error("Excel library is unavailable");
-        const workbook = XLSX.utils.book_new();
-        periods.forEach((period, index) => {
-            const notes = type === "item" ? pfhItemNotes(period) : [];
-            const totals = type === "item" ? [PFH_ITEM_SUMMARY_COLUMNS, ...pfhItemTotals(period.rows), []] : [];
-            const sheet = XLSX.utils.aoa_to_sheet([[title], [pfhPeriodLabel(period) + " · Riyadh"],
-                ...totals, ...notes.map(note => [note]), PFH_COLUMNS[type], ...period.rows.map(row => pfhCells(type, row))]);
-            sheet["!cols"] = PFH_COLUMNS[type].map((_, column) => ({wch: column === 4 ? 44 : 22}));
-            XLSX.utils.book_append_sheet(workbook, sheet, "Period " + (index + 1));
-        });
-        XLSX.writeFile(workbook, filename + ".xlsx");
-        return;
-    }
+function pfhExportTables(type, period) {
+    const details = {
+        name: type === "item" ? "Order Details" : PFH_TITLE[type],
+        columns: PFH_COLUMNS[type], rows: period.rows.map(row => pfhCells(type, row)),
+        widths: type === "item" ? [20, 15, 24, 15, 47, 15, 16, 18]
+            : type === "new" ? [20, 15, 24, 15, 47, 15, 13]
+            : [20, 15, 24, 15, 47, 15, 15, 15, 22]
+    };
+    if (type !== "item") return [details];
+    return [{
+        name: "Summary", columns: PFH_ITEM_SUMMARY_COLUMNS, rows: pfhItemTotals(period.rows),
+        widths: [18, 52, 20, 24], notes: pfhItemNotes(period)
+    }, details];
+}
+
+function pfhWorkbook(tableSet, title, dateLabel) {
+    if (typeof XLSX === "undefined" || !XLSX.CFB) throw new Error("Excel library is unavailable");
+    const workbook = XLSX.utils.book_new();
+    const lastCol = table => table.columns.length - 1;
+    const range = (start, end, column) => ({s: {r: start, c: 0}, e: {r: end, c: column}});
+    const headers = tableSet.map(table => {
+        const notes = table.notes || [];
+        const header = notes.length + 3;
+        const rows = [[title], [dateLabel], ...notes.map(note => [note]), [], table.columns, ...table.rows];
+        const sheet = XLSX.utils.aoa_to_sheet(rows);
+        const last = lastCol(table);
+        sheet["!cols"] = table.widths.map(wch => ({wch}));
+        sheet["!merges"] = [0, 1, ...notes.map((_, index) => index + 2)].map(index => range(index, index, last));
+        sheet["!rows"] = rows.map((row, index) => ({
+            hpt: index === 0 ? 27 : index === header ? 23 :
+                Math.max(19, ...row.map((value, column) => String(value ?? "").length > table.widths[column] ?
+                    15 * Math.ceil(String(value).length / table.widths[column]) + 4 : 19))
+        }));
+        sheet["!autofilter"] = {ref: XLSX.utils.encode_range(range(header, rows.length - 1, last))};
+        XLSX.utils.book_append_sheet(workbook, sheet, table.name);
+        return header;
+    });
+
+    // SheetJS CE writes the typed cells and filter. Apply the visual styles and frozen pane to the saved XML.
+    const archive = XLSX.CFB.read(new Uint8Array(XLSX.write(workbook, {bookType: "xlsx", type: "array"})), {type: "buffer"});
+    const encoder = new TextEncoder(), decoder = new TextDecoder();
+    const patch = (path, transform) => {
+        const entry = archive.FileIndex[archive.FullPaths.findIndex(name => name.endsWith("/" + path))];
+        if (!entry) throw new Error("Excel workbook is missing " + path);
+        entry.content = encoder.encode(transform(decoder.decode(entry.content)));
+        entry.size = entry.content.length;
+    };
+    const fill = color => '<fill><patternFill patternType="solid"><fgColor rgb="FF' + color + '"/><bgColor indexed="64"/></patternFill></fill>';
+    const font = (size, color, bold = false) => '<font>' + (bold ? '<b/>' : '') + '<sz val="' + size +
+        '"/><color rgb="FF' + color + '"/><name val="Calibri"/></font>';
+    const styles = [[0, 0, 0], [1, 2, 0], [0, 3, 0], [2, 2, 1], [0, 4, 1], [0, 5, 1]];
+    const cells = styles.map(([fontId, fillId, borderId]) => '<xf numFmtId="0" fontId="' + fontId +
+        '" fillId="' + fillId + '" borderId="' + borderId +
+        '" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>');
+    const line = edge => '<' + edge + ' style="thin"><color rgb="FFD6E3EF"/></' + edge + '>';
+    patch("xl/styles.xml", () => '<?xml version="1.0" encoding="UTF-8"?>' +
+        '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        '<fonts count="3">' + font(11, "203B54") + font(16, "FFFFFF", true) + font(11, "FFFFFF", true) + '</fonts>' +
+        '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+        ["174A79", "E6EFF8", "FFFFFF", "F0F6FC"].map(fill).join("") + '</fills>' +
+        '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border>' +
+        ["left", "right", "top", "bottom"].map(line).join("") + '<diagonal/></border></borders>' +
+        '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+        '<cellXfs count="' + cells.length + '">' + cells.join("") + '</cellXfs>' +
+        '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+    headers.forEach((header, index) => patch("xl/worksheets/sheet" + (index + 1) + ".xml", xml => {
+        const pane = '<sheetViews><sheetView workbookViewId="0" showGridLines="0"><pane ySplit="' + (header + 1) +
+            '" topLeftCell="A' + (header + 2) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>';
+        return xml.replace(/<sheetViews>[\s\S]*?<\/sheetViews>/, pane)
+            .replace(/<c r="([A-Z]+[0-9]+)"(?: s="[0-9]+")?/g, (_, address) => {
+                const row = XLSX.utils.decode_cell(address).r;
+                const style = row === 0 ? 1 : row < header ? 2 : row === header ? 3 : 4 + ((row - header - 1) % 2);
+                return '<c r="' + address + '" s="' + style + '"';
+            });
+    }));
+    for (const entry of archive.FileIndex) entry.mt = new Date(1980, 0, 1);
+    return new Uint8Array(XLSX.CFB.write(archive, {fileType: "zip", type: "array", compression: true}));
+}
+
+function pfhPdf(tableSet, title, dateLabel) {
     if (!window.jspdf?.jsPDF) throw new Error("PDF library is unavailable");
     const doc = new window.jspdf.jsPDF({orientation: "landscape", unit: "pt", format: "a4"});
-    const width = doc.internal.pageSize.getWidth();
-    const height = doc.internal.pageSize.getHeight();
-    const columns = PFH_COLUMNS[type];
-    const weights = columns.map((_, index) => index === 4 ? 2.5 : index === 2 ? 1.5 : 1);
-    const unit = (width - 56) / weights.reduce((sum, weight) => sum + weight, 0);
-    const widths = weights.map(weight => weight * unit);
-    periods.forEach((period, index) => {
-        if (index) doc.addPage();
-        const header = () => {
-            doc.setTextColor(24, 67, 104);
-            doc.setFontSize(16);
-            doc.text("PharmFlow | " + title, 28, 34);
-            doc.setFontSize(9);
-            doc.text(pfhPeriodLabel(period) + " | Riyadh", 28, 50);
-            let y = 65;
-
-            let x = 28;
-            doc.setFillColor(234, 244, 252);
-            doc.rect(x, y - 2, width - 56, 19, "F");
-            columns.forEach((column, i) => { doc.text(column, x + 4, y + 10); x += widths[i]; });
-            doc.setTextColor(23, 43, 61);
-            doc.setFontSize(8);
-            return y + 27;
+    const margin = 28, width = doc.internal.pageSize.getWidth() - 2 * margin;
+    const bottom = doc.internal.pageSize.getHeight() - 40;
+    const navy = "#174A79", ink = "#203B54", border = "#D6E3EF";
+    let y = 0;
+    const pageHeader = () => {
+        doc.setFillColor(navy);
+        doc.rect(margin, 25, width, 30, "F");
+        doc.setFont("helvetica", "bold").setFontSize(15).setTextColor("#FFFFFF");
+        doc.text("PharmFlow | " + title, margin + 10, 45);
+        doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(ink);
+        doc.text(dateLabel, margin, 70);
+        y = 88;
+    };
+    const nextPage = () => { doc.addPage(); pageHeader(); };
+    pageHeader();
+    for (const table of tableSet) {
+        const unit = width / table.widths.reduce((sum, value) => sum + value, 0);
+        const widths = table.widths.map(value => value * unit);
+        const rowLines = cells => cells.map((value, column) =>
+            doc.splitTextToSize(String(value ?? ""), widths[column] - 12));
+        const rowHeight = lines => Math.max(21, 8 + Math.max(...lines.map(cell => cell.length)) * 11);
+        const drawRow = (cells, lines, fillColor, heading = false) => {
+            const height = rowHeight(lines);
+            let x = margin;
+            cells.forEach((value, index) => {
+                const span = widths[index];
+                const numeric = typeof value === "number";
+                doc.setFillColor(fillColor).setDrawColor(border).setLineWidth(0.4);
+                doc.rect(x, y, span, height, "FD");
+                doc.setTextColor(heading ? "#FFFFFF" : ink);
+                doc.text(lines[index], x + (numeric ? span - 6 : 6), y + 13, {align: numeric ? "right" : "left"});
+                x += span;
+            });
+            y += height;
         };
-        let y;
-        if (type === "item") {
-            doc.setFontSize(16);
-            doc.text("PharmFlow | Item Receiving History", 28, 34);
-            doc.setFontSize(10);
-            doc.text(pfhPeriodLabel(period) + " | Riyadh", 28, 50);
-            const summary = [...pfhItemTotals(period.rows).map(([code, name, ordered, received]) =>
-                code + " | " + name + " | Total Ordered: " + ordered + " | Confirmed Received: " + received), ...pfhItemNotes(period)];
-            y = 70;
-            for (const line of summary.flatMap(note => doc.splitTextToSize(note, width - 56))) {
-                if (y > height - 28) { doc.addPage(); y = 30; }
-                doc.text(line, 28, y);
-                y += 14;
+        const sectionHeading = (continued = false) => {
+            doc.setFont("helvetica", "bold").setFontSize(12).setTextColor(navy);
+            doc.text(table.name + (continued ? " (continued)" : ""), margin, y + 10);
+            y += 18;
+            doc.setFont("helvetica", "bold").setFontSize(9);
+            drawRow(table.columns, rowLines(table.columns), navy, true);
+            doc.setFont("helvetica", "normal").setFontSize(9);
+        };
+        doc.setFont("helvetica", "bold").setFontSize(9);
+        const headerHeight = rowHeight(rowLines(table.columns));
+        doc.setFont("helvetica", "normal").setFontSize(9);
+        const firstRowHeight = table.rows.length ? rowHeight(rowLines(table.rows[0])) : 0;
+        if (y + 18 + headerHeight + firstRowHeight > bottom) nextPage();
+        sectionHeading();
+        table.rows.forEach((row, index) => {
+            const lines = rowLines(row);
+            if (y + rowHeight(lines) > bottom) { nextPage(); sectionHeading(true); }
+            drawRow(row, lines, index % 2 ? "#F0F6FC" : "#FFFFFF");
+        });
+        y += 12;
+        for (const note of table.notes || []) {
+            for (const line of doc.splitTextToSize(note, width)) {
+                if (y + 12 > bottom) nextPage();
+                doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(ink);
+                doc.text(line, margin, y + 9);
+                y += 12;
             }
-            doc.addPage();
         }
-        y = header();
-        for (const row of period.rows) {
-            const lines = pfhCells(type, row).map((value, i) => doc.splitTextToSize(String(value ?? ""), widths[i] - 8));
-            const rowHeight = Math.max(...lines.map(cell => cell.length)) * 10 + 6;
-            if (y + rowHeight > height - 25) { doc.addPage(); y = header(); }
-            let x = 28;
-            lines.forEach((cell, i) => { doc.text(cell, x + 4, y); x += widths[i]; });
-            y += rowHeight;
-        }
-    });
-    doc.save(filename + ".pdf");
+    }
+    const pages = doc.getNumberOfPages();
+    for (let page = 1; page <= pages; page++) {
+        doc.setPage(page).setFontSize(9).setTextColor(ink);
+        doc.text("Page " + page + " of " + pages, margin + width, bottom + 21, {align: "right"});
+    }
+    return doc;
+}
+
+function pfhExportResult({type, periods: [period]}, format) {
+    const title = PFH_TITLE[type];
+    const filename = "PharmFlow " + title + " " + period.from + " to " + period.to;
+    const dateLabel = pfhPeriodLabel(period) + " | Riyadh" + (period.order ? " | Order " + period.order : "");
+    const tables = pfhExportTables(type, period);
+    if (format !== "excel") { pfhPdf(tables, title, dateLabel).save(filename + ".pdf"); return; }
+    const bytes = pfhWorkbook(tables, "PharmFlow | " + title, dateLabel);
+    const url = URL.createObjectURL(new Blob([bytes], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename + ".xlsx";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 const PFH_CALENDAR_MONTH = new Intl.DateTimeFormat("en-GB", {
@@ -533,6 +629,12 @@ function pfhBoot() {
     const toolbar = document.getElementById("pfhToolbar");
     const itemField = document.getElementById("pfhItemField");
     const exportListPanel = document.getElementById("pfhExportList");
+    const tabs = document.getElementById("pfhTabs");
+    const searchTab = document.getElementById("pfhSearchTab");
+    const listTab = document.getElementById("pfhListTab");
+    const searchPanel = document.getElementById("pfhSearchPanel");
+    const listActions = document.getElementById("pfhListActions");
+    const emptyList = document.getElementById("pfhEmptyList");
     const selectedItems = document.getElementById("pfhSelectedItems");
     const listNotice = document.getElementById("pfhListNotice");
     const dateActions = document.getElementById("pfhDateActions");
@@ -540,6 +642,7 @@ function pfhBoot() {
     const retry = document.getElementById("pfhRetry");
     const submit = form.querySelector('[type="submit"]');
     let selection = null;
+    let listView = false;
     let selectionEpoch;
     let busy = false;
     let retryAction;
@@ -578,16 +681,43 @@ function pfhBoot() {
     window.addEventListener("resize", reposition);
     window.addEventListener("scroll", reposition, true);
     function renderSelection(message = "") {
-        const visible = Boolean(selection?.items.size) && field("reportType").value === "item";
+        const count = selection?.items.size || 0;
+        const visible = listView && field("reportType").value === "item";
+        listTab.textContent = "Export List (" + count + ")";
+        searchPanel.hidden = visible;
         exportListPanel.hidden = !visible;
+        listActions.hidden = !count;
+        emptyList.hidden = Boolean(count);
         listNotice.textContent = message;
-        if (!visible) { selectedItems.replaceChildren(); return; }
+        if (!visible || !count) {
+            document.getElementById("pfhExportListLabel").textContent = "";
+            selectedItems.replaceChildren();
+            return;
+        }
         const period = pfhExportListPeriod(selection);
         document.getElementById("pfhExportListLabel").textContent = pfhPeriodLabel(period) +
             (period.order ? " · Order " + period.order : "");
         selectedItems.innerHTML = pfhTable(PFH_ITEM_SUMMARY_COLUMNS, pfhItemTotals(period.rows), "pfhItemSummary", -1,
             index => '<button class="pfhButton pfhRowAction" type="button" data-pfh-remove="' + index + '">Remove</button>');
     }
+    function showListView(show, moveFocus = false) {
+        listView = show;
+        datePicker.close();
+        closeType();
+        searchTab.setAttribute("aria-selected", String(!show));
+        listTab.setAttribute("aria-selected", String(show));
+        searchTab.tabIndex = show ? -1 : 0;
+        listTab.tabIndex = show ? 0 : -1;
+        renderSelection();
+        if (moveFocus) (show ? listTab : searchTab).focus();
+    }
+    searchTab.addEventListener("click", () => showListView(false));
+    listTab.addEventListener("click", () => showListView(true));
+    tabs.addEventListener("keydown", event => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        showListView(event.key === "End" || (event.key !== "Home" && !listView), true);
+    });
     document.getElementById("pfhListClear").addEventListener("click", () => {
         selection = null;
         renderSelection();
@@ -621,8 +751,8 @@ function pfhBoot() {
         itemField.hidden = !useItem;
         dateActions.hidden = useItem;
         (useItem ? document.getElementById("pfhItemEntry") : dateActions).append(submit);
-        renderSelection();
-        datePicker.close();
+        tabs.hidden = !useItem;
+        showListView(false);
         datePicker.sync();
         clear();
     };
@@ -713,8 +843,7 @@ function pfhBoot() {
         if (!add || result?.type !== "item" || !result.current()) return;
         const [period] = result.periods;
         if (selection && !pfhListMatches(selection.period, period)) {
-            renderSelection("The list uses a different date range or order filter. Export or clear it before adding this item.");
-            listNotice.scrollIntoView({block: "nearest"});
+            announce("The export list uses a different date range or order filter. Open Export List to export or clear it.");
             return;
         }
         const item = pfhItemTotals(period.rows)[Number(add.dataset.pfhSave)];

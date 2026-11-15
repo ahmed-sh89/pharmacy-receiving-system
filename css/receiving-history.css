@@ -24,6 +24,8 @@
 .pfhItemEntry, .pfhStatusActions { display: flex; align-items: center; gap: 6px; }
 .pfhItemEntry input { min-width: 0; flex: 1; }
 .pfhItemEntry .pfhSearch { min-width: 76px; flex: 0 0 auto; }
+.pfhTabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.pfhTabs .pfhButton[aria-selected="true"] { color: #fff; background: #195d99; border-color: #195d99; }
 .pfhListHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 #pfhListNotice:empty { display: none; }
 .pfhPage .pfhTable .pfhRowAction { min-height: 30px; padding: 0 10px; font-size: 12px; }

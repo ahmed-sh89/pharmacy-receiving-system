@@ -124,10 +124,8 @@ test('RPC pagination reaches the network and scoped history reads require the ac
 });
 
 test('items selected from separate searches keep ordered totals per code and export the same summary', () => {
-    let workbook;
-    const context = runtime({XLSX: {utils: {book_new: () => ({}), aoa_to_sheet: rows => ({rows}),
-        book_append_sheet: (book, sheet) => { book.sheet = sheet; }},
-        writeFile: book => { workbook = book; }}});
+    const context = runtime({TextEncoder, TextDecoder, Uint8Array, ArrayBuffer});
+    vm.runInContext(readFileSync('js/vendor/sheetjs-0.20.3/xlsx.full.min.js', 'utf8'), context);
     const rows = [
         {item_code: '101', item_name: 'Klavox 1G', ordered_qty: 318, received_qty: 0},
         {item_code: '101', item_name: 'Klavox 1G', ordered_qty: '4', received_qty: null},
@@ -145,9 +143,23 @@ test('items selected from separate searches keep ordered totals per code and exp
         [['101', 'Klavox 1G', 322, 0], ['102', 'Klavox 375', 4, 'Not available']]);
     assert.match(context.pfhRenderResult(result), /Total Ordered/);
     assert.doesNotMatch(context.pfhRenderResult(result), /No matching rows/);
-    context.pfhExportResult(result, 'excel');
-    assert.equal(workbook.sheet.rows[3][2], 322);
-    assert.equal(workbook.sheet.rows[4][2], 4);
+    const tables = context.pfhExportTables(result.type, result.periods[0]);
+    const bytes = context.pfhWorkbook(tables, 'PharmFlow | Item Receiving History', '2026-11-01 | Riyadh');
+    const {XLSX} = context;
+    const workbook = XLSX.read(bytes, {type: 'array'});
+    assert.deepEqual(Array.from(workbook.SheetNames), ['Summary', 'Order Details']);
+    assert.equal(workbook.Sheets.Summary.C6.v, 322);
+    assert.equal(workbook.Sheets.Summary.C7.t, 'n');
+    assert.equal(workbook.Sheets.Summary.C7.v, 4);
+    assert.equal(workbook.Sheets['Order Details'].E5.v, 'Klavox 1G');
+    const archive = XLSX.CFB.read(bytes, {type: 'buffer'});
+    const part = path => new TextDecoder().decode(archive.FileIndex[
+        archive.FullPaths.findIndex(name => name.endsWith(path))].content);
+    assert.match(part('/sheet1.xml'), /<pane ySplit="5"[^>]*state="frozen"/);
+    assert.match(part('/sheet1.xml'), /<autoFilter ref="A5:D7"/);
+    assert.match(part('/sheet2.xml'), /<pane ySplit="4"[^>]*state="frozen"/);
+    assert.match(part('/styles.xml'), /FF174A79/);
+    assert.match(part('/styles.xml'), /FFF0F6FC/);
 });
 
 test('query pagination stops fetching as soon as the account or report changes', async () => {
