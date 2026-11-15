@@ -520,6 +520,7 @@ function pfhBoot() {
         catch (error) { showToast(error.message, "warning"); return; }
         if (!AuthState.context?.pharmacy_id) return;
         form.reset();
+        field("reportType").value = "item";
         const today = PFH_DAY.format(new Date());
         field("from").value = today.slice(0, 8) + "01";
         field("to").value = today;
