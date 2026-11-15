@@ -8,7 +8,7 @@
 #page-receiving .pfhHistoryButton:hover, .pfhPage .pfhButton:hover { background: #d8edff; }
 @media (min-width: 769px) {
   #page-receiving #btnBackToReceivingDashboard { margin-right: 0 !important; }
-  #page-receiving .pfhHistoryButton { margin-right: auto; }
+  #page-receiving .pfnReceivingReportToolbar > .pfhHistoryButton { margin-inline: auto; }
 }
 .pfhHistoryButton span { font-size: 17px; }
 .pfhPage [hidden], #receivingReportContent[hidden], #receivingHistoryContent[hidden] { display: none !important; }
@@ -82,6 +82,14 @@
 .pfhTable { min-width: 680px; }
 .pfhTable th, .pfhTable td { text-align: left; }
 .pfhTable .pfhNum { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#page-receiving .pfhTable :is(th, td).pfhQty {
+  text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.pfhTotalBadge {
+  display: inline-block; min-width: 44px; box-sizing: border-box; padding: 4px 10px;
+  border: 1px solid #a9c9e6; border-radius: 7px; background: #dfedfb;
+  color: #164d7c; font-size: 16px; font-weight: 850; line-height: 1.2;
+}
 .pfhTable .pfhShort { color: #a33838; font-weight: 700; }
 .pfhTable .pfhOver { color: #84601a; font-weight: 700; }
 .pfhPeriod { margin: 10px 0 16px; padding: 12px; border: 1px solid #c7dced; border-radius: 12px; background: #f7fbff; }

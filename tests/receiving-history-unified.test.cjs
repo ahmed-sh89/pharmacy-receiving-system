@@ -241,3 +241,22 @@ test('report and date pickers use the top layer and open where the viewport has 
     assert.equal(picker.style.top, (210 + 6) / .75 + 'px');
     assert.equal(picker.style.width, 180 / .75 + 'px');
 });
+
+test('item history centers quantity columns and emphasizes only a single item total', () => {
+    const context = runtime();
+    const rows = [
+        {order_number: 'TO-1', item_code: '101', item_name: 'Fevadol', ordered_qty: 20, received_qty: 0},
+        {order_number: 'TO-2', item_code: '101', item_name: 'Fevadol', ordered_qty: 12, received_qty: null}
+    ];
+    const single = context.pfhRenderResult({type: 'item', periods: [{...period, rows}]});
+    for (const heading of ['Total Ordered', 'Confirmed Received', 'Ordered', 'Received']) {
+        assert.ok(single.includes('<th scope="col" class="pfhQty">' + heading + '</th>'));
+    }
+    assert.match(single, /<td class="pfhQty"><strong class="pfhTotalBadge">32<\/strong><\/td>/);
+    assert.match(single, /<td class="pfhQty">Not available<\/td>/);
+    assert.match(single, /TO-1[\s\S]*TO-2/);
+    const mixed = context.pfhRenderResult({type: 'item', periods: [{...period, rows: [
+        ...rows, {...rows[0], item_code: '102'}
+    ]}]});
+    assert.doesNotMatch(mixed, /pfhTotalBadge/);
+});

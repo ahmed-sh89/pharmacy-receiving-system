@@ -280,14 +280,21 @@ function pfhItemNotes(period, includeReceived = true) {
     ];
 }
 
-function pfhTable(headings, rows, className = "", differenceColumn = -1, renderAction) {
+function pfhTable(headings, rows, {className = "", differenceColumn = -1,
+    renderAction, quantityColumns = [], emphasizeColumn = -1} = {}) {
     if (!rows.length) return "";
-    const head = headings.map(value => '<th scope="col">' + pfhEsc(value) + "</th>").join("") +
+    const cellAlignment = index => quantityColumns.includes(index) ? "pfhQty" : "";
+    const head = headings.map((value, index) =>
+        '<th scope="col" class="' + cellAlignment(index) + '">' + pfhEsc(value) + "</th>").join("") +
         (renderAction ? '<th scope="col">Action</th>' : "");
     const body = rows.map((row, rowIndex) => "<tr>" + row.map((value, index) => {
-        const css = typeof value !== "number" ? "" : "pfhNum" +
-            (index === differenceColumn && value ? (value < 0 ? " pfhShort" : " pfhOver") : "");
-        return '<td class="' + css + '">' + pfhEsc(value) + "</td>";
+        const numeric = typeof value === "number";
+        const alignment = cellAlignment(index) || (numeric ? "pfhNum" : "");
+        const difference = numeric && index === differenceColumn && value ?
+            (value < 0 ? " pfhShort" : " pfhOver") : "";
+        const display = numeric && index === emphasizeColumn
+            ? '<strong class="pfhTotalBadge">' + pfhEsc(value) + "</strong>" : pfhEsc(value);
+        return '<td class="' + alignment + difference + '">' + display + "</td>";
     }).join("") + (renderAction ? "<td>" + renderAction(rowIndex) + "</td>" : "") + "</tr>").join("");
     return '<div class="pfhTableWrap ' + className + '"><table class="dataTable pfhTable"><thead><tr>' +
         head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
@@ -295,11 +302,18 @@ function pfhTable(headings, rows, className = "", differenceColumn = -1, renderA
 
 function pfhRenderResult({type, periods}, renderItemAction) {
     return periods.map(period => {
-        const summary = type === "item" ? pfhTable(PFH_ITEM_SUMMARY_COLUMNS, pfhItemTotals(period.rows), "pfhItemSummary", -1, renderItemAction) : "";
+        const totals = type === "item" ? pfhItemTotals(period.rows) : [];
+        const summary = pfhTable(PFH_ITEM_SUMMARY_COLUMNS, totals, {
+            className: "pfhItemSummary", quantityColumns: [2, 3],
+            emphasizeColumn: totals.length === 1 ? 2 : -1, renderAction: renderItemAction
+        });
         const notes = type === "item" ? pfhItemNotes(period).map(note => "<p>" + pfhEsc(note) + "</p>").join("") : "";
         const rows = period.rows.map(row => pfhCells(type, row));
         return '<section class="pfhPeriod"><h3>' + pfhEsc(pfhPeriodLabel(period)) + "</h3>" +
-            summary + notes + (pfhTable(PFH_COLUMNS[type], rows, "", type === "discrepancy" ? 7 : -1) ||
+            summary + notes + (pfhTable(PFH_COLUMNS[type], rows, {
+                quantityColumns: type === "item" ? [5, 6] : [],
+                differenceColumn: type === "discrepancy" ? 7 : -1
+            }) ||
                 "<p>No matching records in this period.</p>") + "</section>";
     }).join("");
 }
@@ -728,8 +742,10 @@ function pfhBoot() {
         document.getElementById("pfhExportListLabel").textContent = pfhPeriodLabel(period) +
             (period.order ? " · Order " + period.order : "");
         const summary = pfhSummaryTable(period);
-        selectedItems.innerHTML = pfhTable(summary.columns, summary.rows, "pfhItemSummary", -1,
-            index => '<button class="pfhButton pfhRowAction" type="button" data-pfh-remove="' + index + '">Remove</button>');
+        selectedItems.innerHTML = pfhTable(summary.columns, summary.rows, {
+            className: "pfhItemSummary", quantityColumns: [2, 3],
+            renderAction: index => '<button class="pfhButton pfhRowAction" type="button" data-pfh-remove="' + index + '">Remove</button>'
+        });
     }
     function showListView(show, moveFocus = false) {
         listView = show;
