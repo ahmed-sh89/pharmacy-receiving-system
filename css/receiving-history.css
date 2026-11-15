@@ -190,3 +190,6 @@
    line-height:1!important;
  }
 }
+
+.pfhAddFeedback { flex-wrap: wrap; margin: 8px 0; padding: 8px 10px; border: 1px solid #c7dced; border-radius: 8px; background: #edf5fc; }
+.pfhAddFeedback p { margin: 0; }

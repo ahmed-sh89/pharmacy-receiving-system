@@ -62,7 +62,7 @@
     <link rel="preload" as="script" href="js/app.js?v=STARTUP_HANDHELD_20261108">
     <link rel="preload" as="script" href="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102">
     <link rel="preload" as="script" href="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028">
-    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY13">
+    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY14">
     <link rel="preload" as="script" href="js/header-account-responsive.js">
     <link rel="preload" as="script" href="js/header-account-menu.js">
     <link rel="preload" as="script" href="js/header-account-popover.js">
@@ -121,7 +121,7 @@
             visibility: hidden !important;
         }
     </style>
-<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI10">
+<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI11">
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
@@ -1185,6 +1185,10 @@ window.PharmFlowDeviceMode = (() => {
                                 <button id="pfhExcel" class="pfhButton" type="button">Excel</button>
                                 <button id="pfhPdf" class="pfhButton" type="button">PDF</button>
                             </div>
+                        </div>
+                        <div id="pfhAddFeedback" class="pfhStatusActions pfhAddFeedback" hidden>
+                            <p id="pfhAddStatus" role="status"></p>
+                            <button id="pfhSearchListDates" class="pfhButton" type="button">Search List Dates</button>
                         </div>
                         <div id="pfhResults"></div>
                         <button id="pfhMore" class="pfhButton" type="button" hidden>Load More</button>
@@ -2753,7 +2757,7 @@ window.PharmFlowDeviceMode = (() => {
 
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>
-<script src="js/receiving-history.js?v=HISTORY13"></script>
+<script src="js/receiving-history.js?v=HISTORY14"></script>
 <script src="js/header-account-responsive.js"></script>
 <script src="js/header-account-menu.js"></script>
 <script src="js/header-account-popover.js"></script>

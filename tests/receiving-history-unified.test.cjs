@@ -162,6 +162,30 @@ test('items selected from separate searches keep ordered totals per code and exp
     assert.match(part('/styles.xml'), /FFF0F6FC/);
 });
 
+test('list admits distinct items across order filters and the PDF plan contains totals only', () => {
+    const context = runtime();
+    const first = {...period, order: 'TO-1', rows: [
+        {item_code: '101', item_name: 'Item one', ordered_qty: 5, received_qty: 5}
+    ]};
+    const next = {...period, order: '', rows: [
+        {item_code: '102', item_name: 'Item two', ordered_qty: 9, received_qty: 0},
+        {item_code: '102', item_name: 'Item two', ordered_qty: 3, received_qty: null}
+    ]};
+    const list = context.pfhAddToExportList(null, first, '101');
+    context.pfhAddToExportList(list, next, '102');
+    assert.equal(list.items.size, 2);
+    assert.equal(context.pfhAddToExportList(list, {...next, to: '2026-11-02'}, '103').items.size, 2);
+    const report = context.pfhExportListPeriod(list);
+    const summaryOnly = context.pfhExportTables('item', report, true);
+    assert.equal(summaryOnly.length, 1);
+    assert.equal(summaryOnly[0].name, 'Summary');
+    assert.deepEqual(JSON.parse(JSON.stringify(summaryOnly[0].rows)), [
+        ['101', 'Item one', 5, 5, 'TO-1'],
+        ['102', 'Item two', 12, 0, 'All orders']
+    ]);
+    assert.equal(context.pfhExportTables('item', report)[1].rows.length, 3);
+});
+
 test('query pagination stops fetching as soon as the account or report changes', async () => {
     let active = true;
     let calls = 0;

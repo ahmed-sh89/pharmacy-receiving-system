@@ -305,7 +305,7 @@ function pfhRenderResult({type, periods}, renderItemAction) {
 }
 
 function pfhListMatches(left, right) {
-    return left.from === right.from && left.to === right.to && left.order === right.order;
+    return left.from === right.from && left.to === right.to;
 }
 
 function pfhAddToExportList(list, period, code) {
@@ -314,20 +314,38 @@ function pfhAddToExportList(list, period, code) {
     const rows = period.rows.filter(row => String(row.item_code).toLowerCase() === key);
     if (!rows.length || list?.items.has(key)) return list;
     const selection = list || {
-        period: {from: period.from, to: period.to, order: period.order},
+        period: {from: period.from, to: period.to},
         items: new Map()
     };
-    selection.items.set(key, {rows, missingSource: period.missingSource});
+    selection.items.set(key, {rows, order: period.order || "", missingSource: period.missingSource});
     return selection;
 }
 
 function pfhExportListPeriod(selection) {
     const items = [...selection.items.values()];
+    const orders = new Set(items.map(item => item.order));
     return {...selection.period, rows: items.flatMap(item => item.rows),
-        missingSource: Math.max(0, ...items.map(item => item.missingSource || 0))};
+        order: orders.size === 1 ? items[0].order : "",
+        itemOrders: orders.size > 1 ? new Map([...selection.items].map(([code, item]) => [code, item.order])) : null,
+        missingSource: items.reduce((max, item) => Math.max(max, item.missingSource || 0), 0)};
 }
 
-function pfhExportTables(type, period) {
+function pfhSummaryTable(period) {
+    const rows = pfhItemTotals(period.rows);
+    const mixedOrderFilters = Boolean(period.itemOrders);
+    return {
+        name: "Summary",
+        columns: mixedOrderFilters ? [...PFH_ITEM_SUMMARY_COLUMNS, "Order Filter"] : PFH_ITEM_SUMMARY_COLUMNS,
+        rows: mixedOrderFilters ? rows.map(row => [
+            ...row, period.itemOrders.get(String(row[0]).toLowerCase()) || "All orders"
+        ]) : rows,
+        widths: mixedOrderFilters ? [18, 52, 20, 24, 23] : [18, 52, 20, 24],
+        notes: pfhItemNotes(period)
+    };
+}
+
+function pfhExportTables(type, period, summaryOnly = false) {
+    if (type === "item" && summaryOnly) return [pfhSummaryTable(period)];
     const details = {
         name: type === "item" ? "Order Details" : PFH_TITLE[type],
         columns: PFH_COLUMNS[type], rows: period.rows.map(row => pfhCells(type, row)),
@@ -336,10 +354,7 @@ function pfhExportTables(type, period) {
             : [20, 15, 24, 15, 47, 15, 15, 15, 22]
     };
     if (type !== "item") return [details];
-    return [{
-        name: "Summary", columns: PFH_ITEM_SUMMARY_COLUMNS, rows: pfhItemTotals(period.rows),
-        widths: [18, 52, 20, 24], notes: pfhItemNotes(period)
-    }, details];
+    return [pfhSummaryTable(period), details];
 }
 
 function pfhWorkbook(tableSet, title, dateLabel) {
@@ -481,11 +496,11 @@ function pfhPdf(tableSet, title, dateLabel) {
     return doc;
 }
 
-function pfhExportResult({type, periods: [period]}, format) {
-    const title = PFH_TITLE[type];
+function pfhExportResult({type, periods: [period], summaryOnly = false}, format) {
+    const title = summaryOnly ? "Item Totals" : PFH_TITLE[type];
     const filename = "PharmFlow " + title + " " + period.from + " to " + period.to;
     const dateLabel = pfhPeriodLabel(period) + " | Riyadh" + (period.order ? " | Order " + period.order : "");
-    const tables = pfhExportTables(type, period);
+    const tables = pfhExportTables(type, period, summaryOnly);
     if (format !== "excel") { pfhPdf(tables, title, dateLabel).save(filename + ".pdf"); return; }
     const bytes = pfhWorkbook(tables, "PharmFlow | " + title, dateLabel);
     const url = URL.createObjectURL(new Blob([bytes], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
@@ -636,6 +651,8 @@ function pfhBoot() {
     const listActions = document.getElementById("pfhListActions");
     const emptyList = document.getElementById("pfhEmptyList");
     const selectedItems = document.getElementById("pfhSelectedItems");
+    const addFeedback = document.getElementById("pfhAddFeedback");
+    const addStatus = document.getElementById("pfhAddStatus");
     const listNotice = document.getElementById("pfhListNotice");
     const dateActions = document.getElementById("pfhDateActions");
     const more = document.getElementById("pfhMore");
@@ -660,7 +677,7 @@ function pfhBoot() {
     const clear = (message = "") => {
         search++;
         setBusy(false);
-        retry.hidden = more.hidden = true;
+        retry.hidden = more.hidden = addFeedback.hidden = true;
         result = null;
         exports.hidden = true;
         status.textContent = message;
@@ -697,7 +714,8 @@ function pfhBoot() {
         const period = pfhExportListPeriod(selection);
         document.getElementById("pfhExportListLabel").textContent = pfhPeriodLabel(period) +
             (period.order ? " · Order " + period.order : "");
-        selectedItems.innerHTML = pfhTable(PFH_ITEM_SUMMARY_COLUMNS, pfhItemTotals(period.rows), "pfhItemSummary", -1,
+        const summary = pfhSummaryTable(period);
+        selectedItems.innerHTML = pfhTable(summary.columns, summary.rows, "pfhItemSummary", -1,
             index => '<button class="pfhButton pfhRowAction" type="button" data-pfh-remove="' + index + '">Remove</button>');
     }
     function showListView(show, moveFocus = false) {
@@ -720,6 +738,7 @@ function pfhBoot() {
     });
     document.getElementById("pfhListClear").addEventListener("click", () => {
         selection = null;
+        addFeedback.hidden = true;
         renderSelection();
         if (result?.type === "item") render();
     });
@@ -728,7 +747,7 @@ function pfhBoot() {
         if (!remove || !selection) return;
         const code = [...selection.items.keys()][Number(remove.dataset.pfhRemove)];
         selection.items.delete(code);
-        if (!selection.items.size) selection = null;
+        if (!selection.items.size) { selection = null; addFeedback.hidden = true; }
         renderSelection();
         if (result?.type === "item") render();
     });
@@ -736,7 +755,8 @@ function pfhBoot() {
         const button = event.target.closest("[data-pfh-list-export]");
         if (!button || !selection || selectionEpoch !== AuthState.identityEpoch) return;
         try {
-            pfhExportResult({type: "item", periods: [pfhExportListPeriod(selection)]}, button.dataset.pfhListExport);
+            const format = button.dataset.pfhListExport;
+            pfhExportResult({type: "item", periods: [pfhExportListPeriod(selection)], summaryOnly: format === "pdf"}, format);
         } catch (error) {
             renderSelection(error.message || "Unable to export list.");
         }
@@ -843,15 +863,26 @@ function pfhBoot() {
         if (!add || result?.type !== "item" || !result.current()) return;
         const [period] = result.periods;
         if (selection && !pfhListMatches(selection.period, period)) {
-            announce("The export list uses a different date range or order filter. Open Export List to export or clear it.");
+            addStatus.textContent = "The export list covers " + pfhPeriodLabel(selection.period) + ". Search those dates to add this item.";
+            addFeedback.hidden = false;
+            addFeedback.scrollIntoView({block: "nearest"});
             return;
         }
         const item = pfhItemTotals(period.rows)[Number(add.dataset.pfhSave)];
         if (!item) return;
         selection = pfhAddToExportList(selection, period, item[0]);
+        addFeedback.hidden = true;
         renderSelection();
         render();
         field("item").focus({preventScroll: true});
+        field("item").select();
+    });
+    document.getElementById("pfhSearchListDates").addEventListener("click", () => {
+        if (!selection || busy) return;
+        field("from").value = selection.period.from;
+        field("to").value = selection.period.to;
+        datePicker.sync();
+        form.requestSubmit();
     });
     const failed = (error, action) => {
         Logger?.error?.("Receiving History request failed", error);
