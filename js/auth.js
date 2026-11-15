@@ -640,7 +640,8 @@ async function authRequest(path, options = {}){
 }
 
 async function publicRpc(functionName, params = {}){
-    return authRequest("/rest/v1/rpc/" + encodeURIComponent(functionName), {
+    const suffix = query ? "?" + new URLSearchParams(query).toString() : "";
+        return authRequest("/rest/v1/rpc/" + encodeURIComponent(functionName) + suffix, {
         method:"POST",
         headers:{
             "Authorization":"Bearer " + getSupabasePublishableKey(),
@@ -699,7 +700,7 @@ async function recoverPasswordRequirementRejection(session, epoch, allowRefresh 
         AuthState.user?.id===user.id && !AuthState.mustChangePassword;
 }
 
-async function authRpc(functionName, params = {}){
+async function authRpc(functionName, params = {}, query){
     if(typeof window!=="undefined")window.PharmFlowPermissions?.checkRpc?.(functionName,params);
     const execute = async () => {
         const token = getSupabaseAccessToken();

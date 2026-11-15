@@ -712,7 +712,7 @@ async function dbClearStore(
    ARCHIVE CURRENT ORDER
 ===================================================== */
 
-async function closeAndArchiveAllCurrentOrders(orderNumbers){
+async function closeAndArchiveAllCurrentOrders(orderNumbers,itemHistory){
 
     const workspace=AppState.workspace;
     const targets=[...new Set((Array.isArray(orderNumbers)?orderNumbers:[])
@@ -779,6 +779,7 @@ async function closeAndArchiveAllCurrentOrders(orderNumbers){
             sessionId:AppState.session.id,
             deviceId:AppState.session.deviceId,
             discrepancyReport:discrepancyCount>0?discrepancySnapshot:null,
+            itemReceivingHistory:itemHistory?.get(targetOrder),
             fullReceivingReport:null
         };
 
@@ -836,7 +837,7 @@ async function closeAndArchiveAllCurrentOrders(orderNumbers){
 
 window.closeAndArchiveAllCurrentOrders=closeAndArchiveAllCurrentOrders;
 
-async function closeAndArchiveCurrentOrder(targetOrderNumber){
+async function closeAndArchiveCurrentOrder(targetOrderNumber,itemHistory){
 
     const workspace =
         AppState.workspace;
@@ -940,6 +941,7 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber){
             sessionId:AppState.session.id,
             deviceId:AppState.session.deviceId,
             discrepancyReport:discrepancyCount>0?discrepancySnapshot:null,
+            itemReceivingHistory:itemHistory,
             fullReceivingReport:null
         };
 

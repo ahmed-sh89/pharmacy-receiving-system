@@ -1,25 +1,7 @@
 "use strict";
-/* PharmFlow lightweight Receiving History + NEW High Priority history. */
-const PharmFlowReceivingHistory={mode:"receiving",workspaces:[],details:new Map(),newItems:[],from:"",to:"",accountScope:""};
-
-function pfhCurrentAccountScope(){return String(AuthState?.context?.pharmacy_id||"");}
-function pfhResetAccountData(){
-    PharmFlowReceivingHistory.workspaces=[];
-    PharmFlowReceivingHistory.newItems=[];
-    PharmFlowReceivingHistory.details.clear();
-    PharmFlowReceivingHistory.from="";
-    PharmFlowReceivingHistory.to="";
-    PharmFlowReceivingHistory.accountScope=pfhCurrentAccountScope();
-    const host=document.getElementById("pfhResults"),summary=document.getElementById("pfhSummary"),label=document.getElementById("pfhResultLabel");
-    if(host)host.innerHTML=""; if(summary)summary.innerHTML=""; if(label)label.textContent="Select a date range";
-}
-function pfhEnforceAccountScope(){const scope=pfhCurrentAccountScope();if(PharmFlowReceivingHistory.accountScope!==scope)pfhResetAccountData();return scope;}
-window.addEventListener("pharmflow:authenticated-context-ready",pfhResetAccountData);
 
 function pfhEsc(value){return String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function pfhNum(value){const n=Number(value||0);return Number.isFinite(n)?n:0;}
-function pfhDate(value){if(!value)return "-";const d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString();}
-function pfhDateTime(value){if(!value)return "-";const d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleString();}
 function pfhNormalizeOrder(value){return typeof normalizeOrderNumber==="function"?normalizeOrderNumber(value):String(value||"").trim().toUpperCase().replace(/\s+/g,"");}
 
 function pfhOrderMeta(orderNumber){
@@ -103,176 +85,391 @@ async function finalizeReceivingWorkspaceWithHistory(summary,discrepancyReport){
 }
 window.finalizeReceivingWorkspaceWithHistory=finalizeReceivingWorkspaceWithHistory;
 
-function pfhEnsureUI(){
-    if(document.getElementById("pfhOverlay"))return;
-    const toolbar=document.querySelector(".pfnReceivingReportToolbar");
-    const share=toolbar?.querySelector(".pfnReportActionMenu");
-    if(toolbar&&share&&!document.getElementById("btnReceivingHistoryReport")){
-        const button=document.createElement("button");
-        button.id="btnReceivingHistoryReport";button.type="button";button.className="pfhHistoryButton";
-        button.innerHTML='<span aria-hidden="true">◷</span><span>History Report</span>';
-        share.insertAdjacentElement("afterend",button);
-        button.addEventListener("click",()=>pfhOpen("receiving"));
+// Stored inside the existing per-order archive record. Only order-level quantities are retained.
+function buildPharmFlowItemHistorySnapshots(orderNumbers) {
+    const receivedMap = buildReceivedQuantityByOrder();
+    return new Map(orderNumbers.map(number => {
+        const order = pfhNormalizeOrder(number);
+        const rows = getPerOrderReceivingRows(order, {receivedMap}).map(row => ({
+            item_code: String(row["Item Number"]),
+            item_name: String(row["Item Name"] || ""),
+            ordered_qty: row["Ordered Qty"],
+            received_qty: row["Received Qty"]
+        }));
+        return [order, rows];
+    }));
+}
+
+const PFH_ZONE = "Asia/Riyadh";
+const PFH_DAY = new Intl.DateTimeFormat("sv-SE", {timeZone: PFH_ZONE});
+const PFH_TIME = new Intl.DateTimeFormat("en-GB", {
+    timeZone: PFH_ZONE, dateStyle: "medium", timeStyle: "short"
+});
+const PFH_TITLE = {
+    discrepancy: "Discrepancies",
+    new: "New Items",
+    item: "Item Receiving History"
+};
+const PFH_COLUMNS = {
+    discrepancy: ["Order Number", "Order Date", "Completed Date", "Item Code", "Item Name", "Ordered", "Received", "Difference", "Issue"],
+    new: ["Order Number", "Order Date", "Completed Date", "Item Code", "Item Name", "Ordered", "Type"],
+    item: ["Order Number", "Order Date", "Completed Date", "Item Code", "Item Name", "Ordered", "Received", "Verification"]
+};
+
+function pfhDayBefore(day) {
+    const date = new Date(day + "T00:00:00Z");
+    date.setUTCDate(date.getUTCDate() - 1);
+    return date.toISOString().slice(0, 10);
+}
+
+function pfhCompletionDay(date) {
+    const timestamp = new Date(date || "");
+    return Number.isNaN(timestamp.getTime()) ? "" : PFH_DAY.format(timestamp);
+}
+
+function pfhWithin(date, {from, to}) {
+    const day = pfhCompletionDay(date);
+    return day >= from && day <= to;
+}
+
+async function pfhReadRows(name, params, query, current) {
+    const rows = [];
+    const limit = 250;
+    for (let offset = 0; current(); offset += limit) {
+        const page = await authRpc(name, params, [...query, ["limit", limit], ["offset", offset]]);
+        if (!Array.isArray(page)) throw new Error("Unexpected Receiving History response");
+        rows.push(...page);
+        if (page.length < limit) return rows;
     }
-    const staticHistoryButton=document.getElementById("btnReceivingHistoryReport");
-    if(staticHistoryButton && staticHistoryButton.dataset.pfhBound!=="1"){
-        staticHistoryButton.dataset.pfhBound="1";
-        staticHistoryButton.addEventListener("click",()=>pfhOpen("receiving"));
+    return [];
+}
+
+async function pfhReadBatches(values, load, current) {
+    const rows = [];
+    for (let i = 0; i < values.length && current(); i += 4) {
+        rows.push(...await Promise.all(values.slice(i, i + 4).map(load)));
     }
-    const overlay=document.createElement("div");
-    overlay.id="pfhOverlay";overlay.className="pfhOverlay";overlay.hidden=true;
-    overlay.innerHTML='<section class="pfhPanel" role="dialog" aria-modal="true" aria-labelledby="pfhTitle">'+
-      '<header class="pfhHeader"><div><span class="sectionEyebrow">RECEIVING HISTORY</span><h2 id="pfhTitle">Historical Receiving Reports</h2><p id="pfhDescription">Review completed workspaces and discrepancies grouped by Order Number.</p></div><button class="pfhClose" type="button" data-pfh-close aria-label="Close">✕</button></header>'+
-      '<div class="pfhBody"><div class="pfhTabs"><button class="pfhTab active" type="button" data-pfh-mode="receiving">Receiving History</button><button class="pfhTab" type="button" data-pfh-mode="new">New Items History</button></div>'+
-      '<div class="pfhFilters"><div class="pfhField"><span>FROM DATE</span><button id="pfhFromButton" class="pfhDateButton" type="button" data-pfh-date="from"><span id="pfhFromDisplay">Select date</span><b aria-hidden="true">▦</b></button></div><div class="pfhField"><span>TO DATE</span><button id="pfhToButton" class="pfhDateButton" type="button" data-pfh-date="to"><span id="pfhToDisplay">Select date</span><b aria-hidden="true">▦</b></button></div><button id="pfhGenerate" class="pfhGenerate" type="button">Generate Report</button></div>'+
-      '<div id="pfhSummary" class="pfhSummary"></div><div class="pfhToolbar"><strong id="pfhResultLabel">Select a date range</strong><div class="pfhExports"><button id="pfhExcel" class="pfhExport" type="button">Export Excel</button><button id="pfhPdf" class="pfhExport" type="button">Export PDF</button></div></div><div id="pfhResults"></div></div></section>';
-    document.body.appendChild(overlay);
-    overlay.querySelector("[data-pfh-close]").addEventListener("click",pfhClose);
-    overlay.addEventListener("click",e=>{if(e.target===overlay)pfhClose();});
-    overlay.querySelectorAll("[data-pfh-mode]").forEach(btn=>btn.addEventListener("click",()=>pfhSetMode(btn.dataset.pfhMode)));
-    overlay.querySelectorAll("[data-pfh-date]").forEach(btn=>btn.addEventListener("click",()=>pfhOpenCalendar(btn.dataset.pfhDate,btn)));
-    overlay.querySelector("#pfhGenerate").addEventListener("click",pfhGenerate);
-    overlay.querySelector("#pfhExcel").addEventListener("click",pfhExportExcel);
-    overlay.querySelector("#pfhPdf").addEventListener("click",pfhExportPdf);
+    return rows;
 }
-function pfhDefaultDates(){
-    const now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1);
-    const iso=d=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);};
-    return {from:iso(first),to:iso(now)};
+
+async function pfhReadExistingHistory(type, params, period, order, current) {
+    // Existing RPC dates use UTC. Widen the first day, then apply local completion dates.
+    const dates = {...params, p_from: pfhDayBefore(period.from), p_to: period.to};
+    const matchesOrder = row => !order || pfhNormalizeOrder(row.order_number) === order;
+    if (type === "new") {
+        const rows = await pfhReadRows("list_pharmflow_new_item_history_v1", dates,
+            [["order", "completed_at.desc,workspace_history_id,order_number,item_code"]], current);
+        return rows.filter(row => pfhWithin(row.completed_at, period) && matchesOrder(row));
+    }
+    const workspaces = await pfhReadRows("list_pharmflow_receiving_workspace_history_v1", dates,
+        [["order", "completed_at.desc,workspace_history_id"]], current);
+    const eligible = workspaces.filter(row => pfhWithin(row.completed_at, period) &&
+        Number(row.discrepancy_count) > 0 &&
+        (!order || (row.order_numbers || []).some(number => pfhNormalizeOrder(number) === order)));
+    const groups = await pfhReadBatches(eligible, async workspace => {
+        const rows = await pfhReadRows("get_pharmflow_receiving_workspace_history_v1",
+            {...params, p_workspace_history_id: workspace.workspace_history_id},
+            [["event_type", "eq.DISCREPANCY"], ["order", "order_number,item_code,item_name,issue_type,ordered_qty,received_qty"]], current);
+        return rows.filter(matchesOrder).map(row => ({...row, completed_at: workspace.completed_at}));
+    }, current);
+    return groups.flat();
 }
-function pfhOpen(mode="receiving"){pfhEnforceAccountScope();pfhEnsureUI();const d=pfhDefaultDates();PharmFlowReceivingHistory.from=PharmFlowReceivingHistory.from||d.from;PharmFlowReceivingHistory.to=PharmFlowReceivingHistory.to||d.to;pfhSyncDateButtons();document.getElementById("pfhOverlay").hidden=false;pfhSetMode(mode);document.getElementById("pfhFromButton").focus();}
-function pfhClose(){const x=document.getElementById("pfhOverlay");if(x)x.hidden=true;}
-function pfhSetMode(mode){PharmFlowReceivingHistory.mode=mode==="new"?"new":"receiving";document.querySelectorAll("[data-pfh-mode]").forEach(b=>b.classList.toggle("active",b.dataset.pfhMode===PharmFlowReceivingHistory.mode));document.getElementById("pfhTitle").textContent=PharmFlowReceivingHistory.mode==="new"?"NEW High Priority History":"Historical Receiving Reports";const desc=document.getElementById("pfhDescription");if(desc)desc.textContent=PharmFlowReceivingHistory.mode==="new"?"Review only items marked NEW High Priority during completed Receiving workspaces.":"Review completed workspaces and discrepancies grouped by Order Number.";pfhRender();}
-function pfhFormatDate(value){if(!value)return "Select date";const [y,m,d]=String(value).split("-").map(Number);return new Intl.DateTimeFormat(undefined,{day:"2-digit",month:"short",year:"numeric"}).format(new Date(y,m-1,d));}
-function pfhSyncDateButtons(){const a=document.getElementById("pfhFromDisplay"),b=document.getElementById("pfhToDisplay");if(a)a.textContent=pfhFormatDate(PharmFlowReceivingHistory.from);if(b)b.textContent=pfhFormatDate(PharmFlowReceivingHistory.to);}
-function pfhIsoLocal(date){const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,"0"),d=String(date.getDate()).padStart(2,"0");return y+"-"+m+"-"+d;}
-function pfhOpenCalendar(kind,anchor){
-    document.querySelector(".pfhCalendarPopover")?.remove();
-    const current=kind==="from"?PharmFlowReceivingHistory.from:PharmFlowReceivingHistory.to;
-    const selected=current?new Date(current+"T12:00:00"):new Date();
-    const pop=document.createElement("div");pop.className="pfhCalendarPopover";pop.dataset.kind=kind;
-    document.getElementById("pfhOverlay").querySelector(".pfhPanel").appendChild(pop);
-    pfhRenderCalendar(pop,selected.getFullYear(),selected.getMonth(),current);
-    const ar=anchor.getBoundingClientRect(),pr=document.querySelector(".pfhPanel").getBoundingClientRect();
-    pop.style.top=(ar.bottom-pr.top+7)+"px";pop.style.left=Math.max(16,Math.min(ar.left-pr.left,pr.width-326))+"px";
-    setTimeout(()=>document.addEventListener("pointerdown",pfhCalendarOutside,{once:true}),0);
+
+function pfhQuantity(value) {
+    return value != null && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
 }
-function pfhCalendarOutside(e){const pop=document.querySelector(".pfhCalendarPopover");if(pop&&!pop.contains(e.target)&&!e.target.closest("[data-pfh-date]"))pop.remove();}
-function pfhRenderCalendar(pop,year,month,selectedIso){
-    const first=new Date(year,month,1),last=new Date(year,month+1,0),start=first.getDay(),today=pfhIsoLocal(new Date());
-    const monthTitle=new Intl.DateTimeFormat(undefined,{month:"long",year:"numeric"}).format(first);
-    const weekdays=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-    let cells="";
-    for(let i=0;i<start;i++)cells+='<span class="pfhCalBlank"></span>';
-    for(let day=1;day<=last.getDate();day++){const iso=pfhIsoLocal(new Date(year,month,day));cells+='<button type="button" class="pfhCalDay'+(iso===selectedIso?" selected":"")+(iso===today?" today":"")+'" data-date="'+iso+'">'+day+'</button>';}
-    pop.innerHTML='<div class="pfhCalHead"><button type="button" data-cal-nav="-1" aria-label="Previous month">‹</button><strong>'+pfhEsc(monthTitle)+'</strong><button type="button" data-cal-nav="1" aria-label="Next month">›</button></div><div class="pfhCalWeek">'+weekdays.map(x=>'<span>'+x+'</span>').join("")+'</div><div class="pfhCalGrid">'+cells+'</div><div class="pfhCalFoot"><button type="button" data-cal-today>Today</button></div>';
-    pop.querySelectorAll("[data-cal-nav]").forEach(btn=>btn.addEventListener("click",()=>{const d=new Date(year,month+Number(btn.dataset.calNav),1);pfhRenderCalendar(pop,d.getFullYear(),d.getMonth(),selectedIso);}));
-    pop.querySelectorAll("[data-date]").forEach(btn=>btn.addEventListener("click",()=>{if(pop.dataset.kind==="from")PharmFlowReceivingHistory.from=btn.dataset.date;else PharmFlowReceivingHistory.to=btn.dataset.date;pfhSyncDateButtons();pop.remove();}));
-    pop.querySelector("[data-cal-today]").addEventListener("click",()=>{const iso=pfhIsoLocal(new Date());if(pop.dataset.kind==="from")PharmFlowReceivingHistory.from=iso;else PharmFlowReceivingHistory.to=iso;pfhSyncDateButtons();pop.remove();});
+
+function pfhLegacyItemRows(archive, order, uploaded) {
+    const snapshot = archive.discrepancyReport;
+    const groups = snapshot?.orderGroups || [];
+    const discrepancyRows = groups.length
+        ? groups.filter(group => pfhNormalizeOrder(group.orderNumber) === order).flatMap(group => group.rows || [])
+        : (snapshot?.rows || []).filter(row => pfhNormalizeOrder(row.orderNumber || row["Order Number"] ||
+            snapshot.orderNumber || (snapshot.orderNumbers?.length === 1 ? snapshot.orderNumbers[0] : "")) === order);
+    const items = new Map();
+    const itemKey = value => typeof normalizeItemCode === "function" ? normalizeItemCode(value) : String(value || "").trim();
+    for (const line of uploaded) {
+        const code = itemKey(line.item_code);
+        if (!code) continue;
+        const existing = items.get(code);
+        items.set(code, {
+            item_code: code,
+            item_name: existing?.item_name || line.item_name,
+            ordered_qty: (existing?.ordered_qty || 0) + (pfhQuantity(line.ordered_qty) || 0),
+            received_qty: null
+        });
+    }
+    for (const row of discrepancyRows) {
+        const code = itemKey(row["Item Number"]);
+        if (!code) continue;
+        items.set(code, {
+            item_code: code,
+            item_name: row["Item Name"] || items.get(code)?.item_name,
+            ordered_qty: pfhQuantity(row["Ordered Qty"]),
+            received_qty: pfhQuantity(row["Received Qty"])
+        });
+    }
+    return [...items.values()];
 }
-async function pfhGenerate(){
-    pfhEnforceAccountScope();
-    const from=PharmFlowReceivingHistory.from||"",to=PharmFlowReceivingHistory.to||"";
-    if(!from||!to){showToast?.("Select From Date and To Date","warning");return;}
-    if(from>to){showToast?.("From Date cannot be after To Date","warning");return;}
-    if(!AuthState?.context?.pharmacy_id){showToast?.("Pharmacy context is unavailable","error");return;}
-    PharmFlowReceivingHistory.from=from;PharmFlowReceivingHistory.to=to;
-    document.getElementById("pfhResults").innerHTML='<div class="pfhLoading">Generating report…</div>';
-    try{
-        if(PharmFlowReceivingHistory.mode==="new"){
-            const rows=await authRpc("list_pharmflow_new_item_history_v1",{p_pharmacy_id:AuthState.context.pharmacy_id,p_from:from,p_to:to});
-            PharmFlowReceivingHistory.newItems=Array.isArray(rows)?rows:[];pfhRender();
-        }else{
-            const rows=await authRpc("list_pharmflow_receiving_workspace_history_v1",{p_pharmacy_id:AuthState.context.pharmacy_id,p_from:from,p_to:to});
-            PharmFlowReceivingHistory.workspaces=Array.isArray(rows)?rows:[];PharmFlowReceivingHistory.details.clear();pfhRender();
+
+async function pfhReadItemHistory(params, periods, order, item, current) {
+    const from = periods.map(period => period.from).sort()[0];
+    const to = periods.map(period => period.to).sort().at(-1);
+    const nextDay = new Date(new Date(to + "T00:00:00Z").getTime() + 86400000).toISOString().slice(0, 10);
+    const archives = await pfhReadRows("list_pharmflow_finalized_archives", params, [
+        ["closed_at", "gte." + from + "T00:00:00+03:00"],
+        ["closed_at", "lt." + nextDay + "T00:00:00+03:00"],
+        ["order", "closed_at.desc,archive_id.desc"]
+    ], current);
+
+    const orders = new Map();
+    for (const row of archives) {
+        if (!periods.some(period => pfhWithin(row.closed_at, period))) continue;
+        const archive = row.archive_payload || {};
+        for (const number of new Set((row.order_numbers || []).map(pfhNormalizeOrder))) {
+            if (!number || (order && number !== order) || orders.has(number)) continue;
+            orders.set(number, {archive, completed_at: row.closed_at});
         }
-    }catch(error){Logger?.error?.("Receiving history report failed",error);document.getElementById("pfhResults").innerHTML='<div class="pfhEmpty">Unable to load the historical report.</div>';showToast?.(error.message||"Unable to load history","error");}
+    }
+    const results = await pfhReadBatches([...orders], async ([number, record]) => {
+        const {archive, completed_at} = record;
+        const saved = Array.isArray(archive.itemReceivingHistory) && pfhNormalizeOrder(archive.orderNumber) === number;
+        const uploaded = saved ? [] : await pfhReadRows("get_pharmflow_order_source_items",
+            {...params, p_order_number: number}, [["order", "line_no,id"]], current);
+        const items = saved ? archive.itemReceivingHistory : pfhLegacyItemRows(archive, number, uploaded);
+        const file = (archive.orderFiles || []).find(row => pfhNormalizeOrder(row.documentId || row.orderNumber) === number);
+        const rows = items.filter(row => String(row.item_code).toLowerCase() === item ||
+            String(row.item_name || "").toLowerCase().includes(item)).map(row => ({
+                ...row, received_qty: pfhQuantity(row.received_qty), order_number: number,
+                order_date: file?.orderDate, completed_at
+            }));
+        return {rows, completed_at, missingSource: !saved && !uploaded.length};
+    }, current);
+    return periods.map(period => {
+        const matches = results.filter(row => pfhWithin(row.completed_at, period));
+        return {...period, rows: matches.flatMap(result => result.rows),
+            missingSource: matches.filter(result => result.missingSource).length};
+    });
 }
-function pfhRender(){
-    const summary=document.getElementById("pfhSummary"),host=document.getElementById("pfhResults"),label=document.getElementById("pfhResultLabel");
-    if(!summary||!host)return;
-    if(PharmFlowReceivingHistory.mode==="new"){
-        const rows=PharmFlowReceivingHistory.newItems||[];const orders=new Set(rows.map(r=>r.order_number)).size;const workspaces=new Set(rows.map(r=>r.workspace_history_id)).size;
-        summary.innerHTML=pfhMetrics([["NEW ITEMS",rows.length],["WORKSPACES",workspaces],["ORDERS",orders]])+pfhPeriodMetric(PharmFlowReceivingHistory.from,PharmFlowReceivingHistory.to);
-        label.textContent=rows.length+" NEW item record(s)";
-        if(!rows.length){host.innerHTML='<div class="pfhEmpty">No NEW High Priority items in the selected period.</div>';return;}
-        const grouped=pfhGroup(rows,r=>r.order_number);
-        host.innerHTML='<div class="pfhWorkspaceList">'+Array.from(grouped.entries()).map(([order,list])=>'<article class="pfhWorkspace open"><div class="pfhOrder"><div class="pfhOrderHeader"><strong>Order '+pfhEsc(order)+'</strong><span>'+list.length+' NEW item(s)</span></div>'+pfhNewTable(list)+'</div></article>').join("")+'</div>';
+
+function pfhCells(type, row) {
+    const base = [row.order_number, row.order_date || "—",
+        row.completed_at ? PFH_TIME.format(new Date(row.completed_at)) : "—",
+        row.item_code, row.item_name, pfhQuantity(row.ordered_qty) ?? "Not available"];
+    if (type === "new") return [...base, "NEW"];
+    if (type === "item") return [...base, row.received_qty ?? "Not available",
+        row.received_qty == null ? "Not available" : "Confirmed"];
+    return [...base, pfhQuantity(row.received_qty) ?? "Not available",
+        pfhQuantity(row.difference) ?? "Not available", row.issue_type];
+}
+
+function pfhPeriodLabel(period) {
+    return period.from + " to " + period.to;
+}
+
+function pfhItemSummary(period) {
+    const verified = period.rows.filter(row => row.received_qty != null);
+    const total = verified.length
+        ? verified.reduce((sum, row) => sum + row.received_qty, 0)
+        : "Not available";
+    return [
+        "Confirmed received total: " + total,
+        ...(verified.length < period.rows.length ? [(period.rows.length - verified.length) + " matching rows lack a confirmed quantity"] : []),
+        ...(period.missingSource ? [period.missingSource + " older orders lack complete searchable item records for this account"] : [])
+    ];
+}
+
+function pfhRenderResult({type, periods}) {
+    return periods.map(period => {
+        const rows = period.rows.map(row => pfhCells(type, row));
+        const headings = PFH_COLUMNS[type].map(value => "<th scope=\"col\">" + pfhEsc(value) + "</th>").join("");
+        const body = rows.map(row => "<tr>" + row.map((value, index) => {
+            const className = typeof value !== "number" ? "" :
+                "pfhNum" + (type === "discrepancy" && index === 7 ? (value < 0 ? " pfhShort" : " pfhOver") : "");
+            return '<td class="' + className + '">' + pfhEsc(value) + "</td>";
+        }).join("") + "</tr>").join("");
+        const summary = type === "item" ? pfhItemSummary(period) : [];
+        return '<section class="pfhPeriod"><h3>' + pfhEsc(pfhPeriodLabel(period)) + "</h3>" +
+            (summary.length ? "<p><strong class=\"pfhTotal\">" + pfhEsc(summary[0]) + "</strong>" +
+                (summary.length > 1 ? " · " + pfhEsc(summary.slice(1).join(" · ")) : "") + "</p>" : "") +
+            (rows.length ? '<div class="pfhTableWrap"><table class="dataTable pfhTable"><thead><tr>' +
+                headings + "</tr></thead><tbody>" + body + "</tbody></table></div>" :
+                "<p>No matching records in this period.</p>") + "</section>";
+    }).join("");
+}
+
+function pfhExportResult(result, format) {
+    const {type, periods} = result;
+    const title = PFH_TITLE[type];
+    const filename = "PharmFlow " + title + " " + periods[0].from;
+    if (format === "excel") {
+        if (typeof XLSX === "undefined") throw new Error("Excel library is unavailable");
+        const workbook = XLSX.utils.book_new();
+        periods.forEach((period, index) => {
+            const notes = type === "item" ? pfhItemSummary(period) : [];
+            const sheet = XLSX.utils.aoa_to_sheet([[title], [pfhPeriodLabel(period) + " · Riyadh"],
+                ...notes.map(note => [note]), PFH_COLUMNS[type], ...period.rows.map(row => pfhCells(type, row))]);
+            sheet["!cols"] = PFH_COLUMNS[type].map((_, column) => ({wch: column === 4 ? 44 : 22}));
+            XLSX.utils.book_append_sheet(workbook, sheet, "Period " + (index + 1));
+        });
+        XLSX.writeFile(workbook, filename + ".xlsx");
         return;
     }
-    const rows=PharmFlowReceivingHistory.workspaces||[];const orders=rows.reduce((n,r)=>n+pfhNum(r.orders_count),0),disc=rows.reduce((n,r)=>n+pfhNum(r.discrepancy_count),0),affected=rows.filter(r=>pfhNum(r.discrepancy_count)>0).length;
-    summary.innerHTML=pfhMetrics([["WORKSPACES",rows.length],["ORDERS",orders],["DISCREPANCIES",disc],["WITH ISSUES",affected]]);
-    label.textContent=rows.length+" completed workspace(s)";
-    if(!rows.length){host.innerHTML='<div class="pfhEmpty">No completed Receiving workspaces in the selected period.</div>';return;}
-    host.innerHTML='<div class="pfhWorkspaceList">'+rows.map(r=>'<article class="pfhWorkspace" data-pfh-workspace="'+pfhEsc(r.workspace_history_id)+'"><button type="button" class="pfhWorkspaceHead"><strong>'+pfhEsc(pfhDateTime(r.completed_at))+'</strong><span>'+pfhNum(r.orders_count)+' Orders</span><span>'+pfhNum(r.discrepancy_count)+' Discrepancies</span><span class="pfhChevron">⌄</span></button><div class="pfhWorkspaceDetail" hidden></div></article>').join("")+'</div>';
-    host.querySelectorAll(".pfhWorkspaceHead").forEach(btn=>btn.addEventListener("click",()=>pfhToggleWorkspace(btn.closest(".pfhWorkspace"))));
-}
-function pfhMetrics(items){return items.map(([k,v])=>'<article class="pfhMetric"><span>'+pfhEsc(k)+'</span><strong>'+pfhEsc(v)+'</strong></article>').join("");}
-function pfhPeriodMetric(from,to){
-    if(!from||!to)return '<article class="pfhMetric pfhPeriodMetric"><span>PERIOD</span><strong>—</strong></article>';
-    return '<article class="pfhMetric pfhPeriodMetric"><span>PERIOD</span><div class="pfhPeriodDates"><div><small>FROM</small><strong>'+pfhEsc(pfhFormatDate(from))+'</strong></div><i aria-hidden="true">→</i><div><small>TO</small><strong>'+pfhEsc(pfhFormatDate(to))+'</strong></div></div></article>';
-}
-function pfhGroup(rows,keyFn){const m=new Map();rows.forEach(r=>{const k=keyFn(r)||"-";if(!m.has(k))m.set(k,[]);m.get(k).push(r);});return m;}
-async function pfhToggleWorkspace(card){
-    const id=card?.dataset?.pfhWorkspace;if(!id)return;const detail=card.querySelector(".pfhWorkspaceDetail"),opening=detail.hidden;
-    card.classList.toggle("open",opening);detail.hidden=!opening;if(!opening)return;
-    if(PharmFlowReceivingHistory.details.has(id)){pfhRenderWorkspaceDetail(detail,PharmFlowReceivingHistory.details.get(id));return;}
-    detail.innerHTML='<div class="pfhLoading">Loading workspace…</div>';
-    try{const rows=await authRpc("get_pharmflow_receiving_workspace_history_v1",{p_pharmacy_id:AuthState.context.pharmacy_id,p_workspace_history_id:id});const list=Array.isArray(rows)?rows:[];PharmFlowReceivingHistory.details.set(id,list);pfhRenderWorkspaceDetail(detail,list);}catch(error){detail.innerHTML='<div class="pfhEmpty">Unable to load workspace details.</div>';showToast?.(error.message||"Unable to load workspace","error");}
-}
-function pfhRenderWorkspaceDetail(host,rows){
-    const disc=(rows||[]).filter(r=>r.event_type==="DISCREPANCY");
-    if(!disc.length){host.innerHTML='<div class="pfhEmpty">Completed with no discrepancies.</div>';return;}
-    const groups=pfhGroup(disc,r=>r.order_number);
-    host.innerHTML=Array.from(groups.entries()).map(([order,list])=>'<section class="pfhOrder"><div class="pfhOrderHeader"><strong>Order '+pfhEsc(order)+'</strong><span>'+list.length+' discrepancy item(s)</span></div>'+pfhDiscrepancyTable(list)+'</section>').join("");
-}
-function pfhDiscrepancyTable(rows){return '<div class="pfhTableWrap"><table class="pfhTable"><thead><tr><th>Item Number</th><th>Item Name</th><th>Ordered</th><th>Received</th><th>Difference</th><th>Issue</th></tr></thead><tbody>'+rows.map(r=>{const issue=String(r.issue_type||"");const cls=/SHORT|NOT RECEIVED/.test(issue)?"short":/OVER/.test(issue)?"over":"extra";const diff=pfhNum(r.difference);return '<tr><td>'+pfhEsc(r.item_code)+'</td><td>'+pfhEsc(r.item_name)+'</td><td class="pfhNum">'+pfhEsc(r.ordered_qty)+'</td><td class="pfhNum">'+pfhEsc(r.received_qty)+'</td><td class="pfhNum">'+(diff>0?"+":"")+pfhEsc(diff)+'</td><td><span class="pfhIssue '+cls+'">'+pfhEsc(issue)+'</span></td></tr>';}).join("")+'</tbody></table></div>';}
-function pfhNewTable(rows){return '<div class="pfhTableWrap"><table class="pfhTable"><thead><tr><th>Date</th><th>Item Number</th><th>Item Name</th><th>Quantity</th><th>Type</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+pfhEsc(pfhDate(r.completed_at))+'</td><td>'+pfhEsc(r.item_code)+'</td><td>'+pfhEsc(r.item_name)+'</td><td class="pfhNum">'+pfhEsc(r.ordered_qty)+'</td><td><span class="pfhNewBadge">NEW</span></td></tr>').join("")+'</tbody></table></div>';}
-
-async function pfhAllDiscrepancies(){
-    const out=[];
-    for(const ws of PharmFlowReceivingHistory.workspaces||[]){
-        let rows=PharmFlowReceivingHistory.details.get(ws.workspace_history_id);
-        if(!rows){rows=await authRpc("get_pharmflow_receiving_workspace_history_v1",{p_pharmacy_id:AuthState.context.pharmacy_id,p_workspace_history_id:ws.workspace_history_id});rows=Array.isArray(rows)?rows:[];PharmFlowReceivingHistory.details.set(ws.workspace_history_id,rows);}
-        rows.filter(r=>r.event_type==="DISCREPANCY").forEach(r=>out.push({...r,completed_at:ws.completed_at,workspace_history_id:ws.workspace_history_id}));
-    }
-    return out;
-}
-async function pfhExportExcel(){
-    if(typeof XLSX==="undefined"){showToast?.("Excel library is unavailable","error");return;}
-    try{
-        const isNew=PharmFlowReceivingHistory.mode==="new",rows=isNew?(PharmFlowReceivingHistory.newItems||[]):await pfhAllDiscrepancies();
-        if(!rows.length){showToast?.("No report rows to export","warning");return;}
-        const aoa=isNew
-          ? [["Completed Date","Order Number","Order Name","Order Date","Item Number","Item Name","Quantity","Type"],...rows.map(r=>[pfhDateTime(r.completed_at),r.order_number,r.order_name,r.order_date,r.item_code,r.item_name,r.ordered_qty,"NEW"])]
-          : [["Completed Date","Order Number","Order Name","Order Date","Item Number","Item Name","Ordered","Received","Difference","Issue Type"],...rows.map(r=>[pfhDateTime(r.completed_at),r.order_number,r.order_name,r.order_date,r.item_code,r.item_name,r.ordered_qty,r.received_qty,r.difference,r.issue_type])];
-        const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=aoa[0].map((_,i)=>({wch:i===5?42:i===2?28:16}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,isNew?"NEW Items":"Discrepancies");XLSX.writeFile(wb,(isNew?"PharmFlow NEW Items ":"PharmFlow Receiving History ")+PharmFlowReceivingHistory.from+" to "+PharmFlowReceivingHistory.to+".xlsx");showToast?.("Historical report exported to Excel","success");
-    }catch(error){Logger?.error?.("History Excel export failed",error);showToast?.("Unable to export Excel","error");}
-}
-async function pfhExportPdf(){
-    if(!window.jspdf?.jsPDF){showToast?.("PDF library is unavailable","error");return;}
-    try{
-        const isNew=PharmFlowReceivingHistory.mode==="new",rows=isNew?(PharmFlowReceivingHistory.newItems||[]):await pfhAllDiscrepancies();
-        if(!rows.length){showToast?.("No report rows to export","warning");return;}
-        const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"}),pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight(),margin=34;
-        let y=38,page=1;const title=isNew?"NEW High Priority History":"Receiving Discrepancy History";
-        const header=()=>{doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text("PHARMFLOW",margin,y);doc.setFontSize(18);doc.text(title,margin,y+23);doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text(PharmFlowReceivingHistory.from+" to "+PharmFlowReceivingHistory.to,margin,y+40);y+=62;};
-        const footer=()=>{doc.setFontSize(8);doc.text("Page "+page,pageW-margin-40,pageH-18);};
-        header();
-        let lastOrder="";
-        for(const r of rows){
-            if(y>pageH-70){footer();doc.addPage();page++;y=38;header();lastOrder="";}
-            if(r.order_number!==lastOrder){doc.setFillColor(247,242,238);doc.rect(margin,y,pageW-margin*2,22,"F");doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("Order "+String(r.order_number||"-"),margin+8,y+15);y+=30;lastOrder=r.order_number;}
-            doc.setFont("helvetica","normal");doc.setFontSize(8);
-            const name=doc.splitTextToSize(String(r.item_name||""),250).slice(0,2);
-            doc.text(String(r.item_code||""),margin,y);doc.text(name,margin+100,y);
-            if(isNew){doc.text("Qty "+String(r.ordered_qty??0),margin+370,y);doc.text("NEW",margin+455,y);doc.text(pfhDate(r.completed_at),margin+520,y);}
-            else{doc.text("Ord "+String(r.ordered_qty??0),margin+370,y);doc.text("Rec "+String(r.received_qty??0),margin+430,y);doc.text("Diff "+String(r.difference??0),margin+495,y);doc.text(String(r.issue_type||""),margin+560,y);}
-            y+=name.length>1?24:18;
+    if (!window.jspdf?.jsPDF) throw new Error("PDF library is unavailable");
+    const doc = new window.jspdf.jsPDF({orientation: "landscape", unit: "pt", format: "a4"});
+    const width = doc.internal.pageSize.getWidth();
+    const height = doc.internal.pageSize.getHeight();
+    const columns = PFH_COLUMNS[type];
+    const weights = columns.map((_, index) => index === 4 ? 2.5 : index === 2 ? 1.5 : 1);
+    const unit = (width - 56) / weights.reduce((sum, weight) => sum + weight, 0);
+    const widths = weights.map(weight => weight * unit);
+    periods.forEach((period, index) => {
+        if (index) doc.addPage();
+        const header = () => {
+            doc.setTextColor(24, 67, 104);
+            doc.setFontSize(16);
+            doc.text("PharmFlow | " + title, 28, 34);
+            doc.setFontSize(9);
+            doc.text(pfhPeriodLabel(period) + " | Riyadh", 28, 50);
+            let y = 65;
+            for (const note of type === "item" ? pfhItemSummary(period) : []) {
+                doc.text(note, 28, y);
+                y += 13;
+            }
+            let x = 28;
+            doc.setFillColor(234, 244, 252);
+            doc.rect(x, y - 2, width - 56, 19, "F");
+            columns.forEach((column, i) => { doc.text(column, x + 4, y + 10); x += widths[i]; });
+            doc.setTextColor(23, 43, 61);
+            doc.setFontSize(8);
+            return y + 27;
+        };
+        let y = header();
+        for (const row of period.rows) {
+            const lines = pfhCells(type, row).map((value, i) => doc.splitTextToSize(String(value ?? ""), widths[i] - 8));
+            const rowHeight = Math.max(...lines.map(cell => cell.length)) * 10 + 6;
+            if (y + rowHeight > height - 25) { doc.addPage(); y = header(); }
+            let x = 28;
+            lines.forEach((cell, i) => { doc.text(cell, x + 4, y); x += widths[i]; });
+            y += rowHeight;
         }
-        footer();doc.save((isNew?"PharmFlow NEW Items ":"PharmFlow Receiving History ")+PharmFlowReceivingHistory.from+" to "+PharmFlowReceivingHistory.to+".pdf");showToast?.("Historical report exported to PDF","success");
-    }catch(error){Logger?.error?.("History PDF export failed",error);showToast?.("Unable to export PDF","error");}
+    });
+    doc.save(filename + ".pdf");
 }
-function pfhBoot(){pfhEnsureUI();}
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",pfhBoot,{once:true});else setTimeout(pfhBoot,0);
-window.PharmFlowReceivingHistory=PharmFlowReceivingHistory;
+
+function pfhBoot() {
+    const openButton = document.getElementById("btnReceivingHistoryReport");
+    const page = document.getElementById("receivingHistoryContent");
+    const report = document.getElementById("receivingReportContent");
+    if (!openButton || !page || !report) return;
+    const form = document.getElementById("pfhForm");
+    const field = name => form.elements.namedItem(name);
+    const itemField = document.getElementById("pfhItemField");
+    const extraPeriod = document.getElementById("pfhExtraPeriod");
+    const addPeriod = document.getElementById("pfhAddPeriod");
+    const list = document.getElementById("pfhResults");
+    const status = document.getElementById("pfhStatus");
+    const exports = document.getElementById("pfhExports");
+    let result = null;
+    let search = 0;
+    const clear = (message = "") => {
+        search++;
+        result = null;
+        exports.hidden = true;
+        status.textContent = message;
+        list.replaceChildren();
+    };
+    const secondPeriod = enabled => {
+        extraPeriod.hidden = !enabled;
+        addPeriod.hidden = enabled || field("reportType").value !== "item";
+        for (const name of ["from2", "to2"]) {
+            field(name).disabled = !enabled;
+            field(name).required = enabled;
+            if (!enabled) field(name).value = "";
+        }
+    };
+    const changeType = () => {
+        const useItem = field("reportType").value === "item";
+        itemField.hidden = !useItem;
+        field("item").required = useItem;
+        secondPeriod(false);
+        clear();
+    };
+    const close = focus => {
+        if (page.hidden) return;
+        clear();
+        page.hidden = true;
+        report.hidden = false;
+        if (focus) openButton.focus();
+    };
+
+    openButton.addEventListener("click", () => {
+        try { window.PharmFlowPermissions?.require("RECEIVING", false); }
+        catch (error) { showToast(error.message, "warning"); return; }
+        if (!AuthState.context?.pharmacy_id) return;
+        form.reset();
+        const today = PFH_DAY.format(new Date());
+        field("from").value = today.slice(0, 8) + "01";
+        field("to").value = today;
+        changeType();
+        report.hidden = true;
+        page.hidden = false;
+        field("reportType").focus();
+    });
+    document.getElementById("pfhBack").addEventListener("click", () => close(true));
+    window.addEventListener("auth:context-ready", event => {
+        if (event.detail?.changed || !event.detail?.currentScope) close(false);
+    });
+    AppEvents.on("route:changed", ({routeName}) => { if (routeName !== "receiving") close(false); });
+    field("reportType").addEventListener("change", changeType);
+    form.addEventListener("input", () => clear());
+    addPeriod.addEventListener("click", () => { secondPeriod(true); clear(); field("from2").focus(); });
+    document.getElementById("pfhRemovePeriod").addEventListener("click", () => { secondPeriod(false); clear(); addPeriod.focus(); });
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const type = field("reportType").value;
+        const item = field("item").value.trim().toLowerCase();
+        const order = pfhNormalizeOrder(field("order").value);
+        const periods = [{from: field("from").value, to: field("to").value}];
+        if (!extraPeriod.hidden) periods.push({from: field("from2").value, to: field("to2").value});
+        if (periods.some(period => period.from > period.to)) {
+            clear("From must be on or before To.");
+            return;
+        }
+        if (type === "item" && !item) { clear("Enter an item code or name."); return; }
+        const pharmacy = AuthState.context?.pharmacy_id;
+        const epoch = AuthState.identityEpoch;
+        if (!pharmacy) { clear("Sign in to search Receiving History."); return; }
+        clear("Searching…");
+        const request = search;
+        const current = () => request === search && AuthState.identityEpoch === epoch &&
+            AuthState.context?.pharmacy_id === pharmacy;
+        const params = {p_pharmacy_id: pharmacy};
+        try {
+            const data = type === "item" ? await pfhReadItemHistory(params, periods, order, item, current) :
+                [{...periods[0], rows: await pfhReadExistingHistory(type, params, periods[0], order, current)}];
+            if (!current()) return;
+            result = {type, periods: data};
+            const count = data.reduce((sum, period) => sum + period.rows.length, 0);
+            status.textContent = count ? "Completed dates shown in Saudi Arabia time." : "Search complete.";
+            list.innerHTML = pfhRenderResult(result);
+            exports.hidden = count === 0;
+        } catch (error) {
+            if (!current()) return;
+            Logger?.error?.("Receiving History search failed", error);
+            clear("Unable to load Receiving History. Try again.");
+        }
+    });
+
+    for (const [id, format] of [["pfhExcel", "excel"], ["pfhPdf", "pdf"]]) {
+        document.getElementById(id).addEventListener("click", () => {
+            if (!result) return;
+            try { pfhExportResult(result, format); }
+            catch (error) { showToast(error.message || "Unable to export report", "error"); }
+        });
+    }
+}
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pfhBoot, {once: true});
+else pfhBoot();
