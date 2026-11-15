@@ -179,10 +179,13 @@ test('list admits distinct items across order filters and the PDF plan contains 
     const summaryOnly = context.pfhExportTables('item', report, true);
     assert.equal(summaryOnly.length, 1);
     assert.equal(summaryOnly[0].name, 'Summary');
+    assert.deepEqual(Array.from(summaryOnly[0].columns), ['Item Code', 'Item Name', 'Total Quantity']);
     assert.deepEqual(JSON.parse(JSON.stringify(summaryOnly[0].rows)), [
-        ['101', 'Item one', 5, 5, 'TO-1'],
-        ['102', 'Item two', 12, 0, 'All orders']
+        ['101', 'Item one', 5],
+        ['102', 'Item two', 12]
     ]);
+    assert.match(summaryOnly[0].notes.join(' '), /101 is scoped to order TO-1/);
+    assert.doesNotMatch(summaryOnly[0].notes.join(' '), /received/i);
     assert.equal(context.pfhExportTables('item', report)[1].rows.length, 3);
 });
 

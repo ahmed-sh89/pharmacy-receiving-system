@@ -268,8 +268,8 @@ function pfhItemTotals(rows) {
     return [...totals.values()].map(row => row.map(value => value ?? "Not available"));
 }
 
-function pfhItemNotes(period) {
-    const unverified = period.rows.filter(row => row.received_qty == null).length;
+function pfhItemNotes(period, includeReceived = true) {
+    const unverified = includeReceived ? period.rows.filter(row => row.received_qty == null).length : 0;
     const missingOrdered = period.rows.filter(row => pfhQuantity(row.ordered_qty) == null).length;
     const unmatched = period.item && !period.rows.some(row => pfhItemMatches(row, period.item));
     return [
@@ -345,7 +345,20 @@ function pfhSummaryTable(period) {
 }
 
 function pfhExportTables(type, period, summaryOnly = false) {
-    if (type === "item" && summaryOnly) return [pfhSummaryTable(period)];
+    if (type === "item" && summaryOnly) {
+        const notes = pfhItemNotes(period, false);
+        if (period.itemOrders) {
+            const scoped = [...period.itemOrders].filter(([, order]) => order);
+            for (const [code, order] of scoped) notes.push(code + " is scoped to order " + order + ".");
+        }
+        return [{
+            name: "Summary",
+            columns: ["Item Code", "Item Name", "Total Quantity"],
+            rows: pfhItemTotals(period.rows).map(([code, name, ordered]) => [code, name, ordered]),
+            widths: [18, 65, 20],
+            notes
+        }];
+    }
     const details = {
         name: type === "item" ? "Order Details" : PFH_TITLE[type],
         columns: PFH_COLUMNS[type], rows: period.rows.map(row => pfhCells(type, row)),
