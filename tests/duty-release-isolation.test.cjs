@@ -8,12 +8,13 @@ const manifest=JSON.parse(fs.readFileSync('docs/receiving/email-wo-wrap/RELEASE_
 const login=JSON.parse(fs.readFileSync('docs/auth/pharmacy-admin-login-release.json','utf8'));
 const activation=JSON.parse(fs.readFileSync('docs/auth/pharmacy-activation-release.json','utf8'));
 const itemHistory=JSON.parse(fs.readFileSync('docs/receiving/item-history-release.json','utf8'));
+const transfer=JSON.parse(fs.readFileSync('docs/receiving/item-transfer-staging-release.json','utf8'));
 const historical=JSON.parse(fs.readFileSync('docs/duty/RELEASE_MANIFEST.json','utf8'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const blobHash=bytes=>crypto.createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
 function verifyRelease(read=path=>fs.readFileSync(path)){
  for(const [path,productionBlob] of Object.entries(manifest.protected_files)){
-  const expected=itemHistory.changes[path] ?? activation.changes[path] ?? login.changes[path] ?? manifest.approved_changes[path] ?? productionBlob;
+  const expected=transfer.changes[path] ?? itemHistory.changes[path] ?? activation.changes[path] ?? login.changes[path] ?? manifest.approved_changes[path] ?? productionBlob;
   assert.equal(blobHash(read(path)),expected,path);
  }
 }
@@ -62,6 +63,13 @@ test('Receiving History release only changes its declared protected surfaces',()
  for(const file of Object.keys(itemHistory.changes)){
   assert.ok(Object.hasOwn(manifest.protected_files,file),file);
  }
+});
+
+test('transfer pilot only changes its declared protected surfaces',()=>{
+ assert.deepEqual(Object.keys(transfer.changes).sort(),[
+  'PHARMFLOW_CURRENT_CHECKPOINT.md','index.html','js/permissions.js','vite.config.js'
+ ]);
+ for(const file of Object.keys(transfer.changes))assert.ok(Object.hasOwn(manifest.protected_files,file),file);
 });
 
 test('release isolation rejects mutations to Duty, deployment, and accepted Receiving files',()=>{
