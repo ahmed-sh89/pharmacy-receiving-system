@@ -52,12 +52,11 @@ test('item search uses verified zero, uploaded-only unknown and de-duplicates or
         return [{item_code: '101', item_name: 'Panadol', ordered_qty: 3},
             {item_code: '101', item_name: 'Panadol', ordered_qty: 2}];
     }});
-    const [result, empty] = await context.pfhReadItemHistory(params, [period,
-        {from: '2026-11-02', to: '2026-11-02'}], '', 'panad', () => true);
+    const result = await context.pfhReadItemHistory(params, period, '', ['panad', '101'], () => true);
     assert.deepEqual(Array.from(result.rows, row => row.received_qty), [0, null]);
     assert.equal(result.rows[1].ordered_qty, 5);
-    assert.equal(empty.rows.length, 0);
-    assert.match(context.pfhItemSummary(result).join('. '), /Confirmed received total: 0.*1 matching rows/);
+    assert.deepEqual(JSON.parse(JSON.stringify(context.pfhItemTotals(result.rows))), [['101', 'Panadol', 12, 0]]);
+    assert.match(context.pfhItemNotes(result).join('. '), /1 matching rows lack a confirmed received quantity/);
     assert.equal(calls.length, 2);
     assert.match(JSON.stringify(calls[0][2]), /2026-11-01T00:00:00\+03:00/);
 });
@@ -74,25 +73,75 @@ test('older grouped archives only apply the matching order discrepancy', () => {
     assert.equal(context.pfhLegacyItemRows(report, 'TO-3', []).length, 0);
 });
 
-test('existing discrepancy and NEW reports remain order and Riyadh-date scoped', async () => {
+test('Discrepancies and NEW items use one joined request per page with dates, order and stable paging', async () => {
     const calls = [];
-    const context = runtime({authRpc: async (name, args) => {
-        calls.push([name, args]);
-        if (name.startsWith('list_pharmflow_receiving')) return [
-            {workspace_history_id: 'yes', completed_at: '2026-10-31T21:01:00Z', discrepancy_count: 1, order_numbers: ['TO-1', 'TO-2']},
-            {workspace_history_id: 'no', completed_at: '2026-11-01T21:01:00Z', discrepancy_count: 1, order_numbers: ['TO-1']}
-        ];
-        if (name.startsWith('get_')) return [{order_number: 'TO-1'}, {order_number: 'TO-2'}];
-        return [
-            {order_number: 'TO-1', completed_at: '2026-10-31T20:59:59Z'},
-            {order_number: 'TO-1', completed_at: '2026-10-31T21:00:00Z'},
-            {order_number: 'TO-2', completed_at: '2026-11-01T19:00:00Z'}
-        ];
+    const context = runtime({readPharmFlowReceivingHistoryRows: async (pharmacy, query) => {
+        calls.push([pharmacy, query]);
+        return Array.from({length: calls.length === 1 ? 101 : 2}, () =>
+            ({order_number: 'TO-1', workspace: {completed_at: '2026-10-31T21:00:00Z'}}));
     }});
-    assert.equal((await context.pfhReadExistingHistory('discrepancy', params, period, 'TO-1', () => true)).length, 1);
-    assert.equal((await context.pfhReadExistingHistory('new', params, period, 'TO-1', () => true)).length, 1);
-    assert.equal(calls[0][1].p_from, '2026-10-31');
-    assert.equal(calls[1][1].p_workspace_history_id, 'yes');
+    const first = await context.pfhReadHistoryPage('discrepancy', params.p_pharmacy_id, period, 'TO-1');
+    assert.equal(calls.length, 1);
+    assert.equal(first.rows.length, 100);
+    assert.equal(first.nextOffset, 100);
+    assert.equal(first.rows[0].completed_at, '2026-10-31T21:00:00Z');
+    const filters = new URLSearchParams(calls[0][1]);
+    assert.equal(filters.get('event_type'), 'eq.DISCREPANCY');
+    assert.equal(filters.get('order_number'), 'eq.TO-1');
+    assert.equal(filters.get('order'), 'workspace(completed_at).desc,id.desc');
+    assert.deepEqual(filters.getAll('workspace.completed_at'),
+        ['gte.2026-11-01T00:00:00+03:00', 'lt.2026-11-02T00:00:00+03:00']);
+    const next = await context.pfhReadHistoryPage('discrepancy', params.p_pharmacy_id, period, 'TO-1', first.nextOffset);
+    assert.equal(next.rows.length, 2);
+    assert.equal(next.nextOffset, null);
+    assert.equal(new URLSearchParams(calls[1][1]).get('offset'), '100');
+    await context.pfhReadHistoryPage('new', params.p_pharmacy_id, period, '');
+    assert.equal(new URLSearchParams(calls[2][1]).get('event_type'), 'eq.NEW_ITEM');
+});
+
+test('RPC pagination reaches the network and scoped history reads require the active pharmacy', async () => {
+    const source = readFileSync('js/auth.js', 'utf8');
+    const requests = [];
+    const checks = [];
+    const context = {
+        URLSearchParams, AuthState: {context: {pharmacy_id: 'p1'}},
+        window: {PharmFlowPermissions: {require: (...value) => checks.push(value)}},
+        authRequest: (path, options) => requests.push({path, options}),
+        getSupabaseAccessToken: () => 'test', getSupabasePublishableKey: () => 'publishable'
+    };
+    vm.createContext(context);
+    vm.runInContext(source.slice(source.indexOf('async function publicRpc'), source.indexOf('// SEC-007 also rejects')) +
+        source.slice(source.indexOf('async function authRpc'), source.indexOf('async function loadPublicSetupStatus')), context);
+    await context.publicRpc('get_public_setup_status');
+    await context.authRpc('list_pharmflow_finalized_archives', {p_pharmacy_id: 'p1'}, [['limit', 250], ['offset', 250]]);
+    await context.readPharmFlowReceivingHistoryRows('p1', [['pharmacy_id', 'eq.other'], ['workspace.pharmacy_id', 'eq.other']]);
+    assert.equal(requests[0].path, '/rest/v1/rpc/get_public_setup_status');
+    assert.equal(requests[1].path, '/rest/v1/rpc/list_pharmflow_finalized_archives?limit=250&offset=250');
+    assert.equal(requests[2].path, '/rest/v1/pharmflow_receiving_history_items_v1?pharmacy_id=eq.p1&workspace.pharmacy_id=eq.p1');
+    assert.deepEqual(checks[0], ['RECEIVING', false]);
+    assert.throws(() => context.readPharmFlowReceivingHistoryRows('other', []), /Pharmacy context/);
+    assert.equal(requests.length, 3);
+});
+
+test('multiple pasted or added items keep ordered totals per code and export the same summary', () => {
+    let workbook;
+    const context = runtime({XLSX: {utils: {book_new: () => ({}), aoa_to_sheet: rows => ({rows}),
+        book_append_sheet: (book, sheet) => { book.sheet = sheet; }},
+        writeFile: book => { workbook = book; }}});
+    assert.deepEqual(Array.from(context.pfhSearchTerms('101, 102\nKlavox; 101')), ['101', '102', 'klavox']);
+    const rows = [
+        {item_code: '101', item_name: 'Klavox 1G', ordered_qty: 318, received_qty: 0},
+        {item_code: '101', item_name: 'Klavox 1G', ordered_qty: '4', received_qty: null},
+        {item_code: '102', item_name: 'Klavox 375', ordered_qty: 4, received_qty: null}
+    ];
+    const result = {type: 'item', periods: [{...period, rows, terms: ['101', '102', '103']}]};
+    assert.deepEqual(JSON.parse(JSON.stringify(context.pfhItemTotals(rows))),
+        [['101', 'Klavox 1G', 322, 0], ['102', 'Klavox 375', 4, 'Not available']]);
+    assert.match(context.pfhRenderResult(result), /Total Ordered/);
+    assert.match(context.pfhRenderResult(result), /No matching rows: 103/);
+    context.pfhExportResult(result, 'excel');
+    assert.equal(workbook.sheet.rows[3][2], 322);
+    assert.equal(workbook.sheet.rows[4][2], 4);
 });
 
 test('query pagination stops fetching as soon as the account or report changes', async () => {
@@ -114,7 +163,7 @@ test('the report picker defaults to Item Receiving History and retains both exis
         ['item', 'new', 'discrepancy']);
     assert.match(section, /name="reportType" value="item"/);
     assert.deepEqual([...section.matchAll(/data-pfh-date="([^"]+)"/g)].map(match => match[1]),
-        ['from', 'to', 'from2', 'to2']);
+        ['from', 'to']);
     assert.doesNotMatch(section, /type="date"/);
 });
 

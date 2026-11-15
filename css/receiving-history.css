@@ -20,7 +20,14 @@
 .pfhPrimaryFilters { grid-template-columns: minmax(185px, 1fr) minmax(240px, 1.4fr) minmax(185px, 1fr); }
 .pfhDateFilters { grid-template-columns: minmax(145px, 1fr) minmax(145px, 1fr) auto; max-width: 700px; margin-top: 12px; }
 .pfhFilterActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-#pfhExtraPeriod { padding-top: 12px; border-top: 1px solid #dce8f3; }
+#pfhItemField { grid-template-columns: minmax(0, 1fr); }
+.pfhItemEntry, .pfhItems, .pfhStatusActions { display: flex; align-items: center; gap: 6px; }
+.pfhItemEntry textarea { min-width: 0; flex: 1; resize: vertical; padding-block: 9px; }
+.pfhItems { flex-wrap: wrap; }
+.pfhItems .pfhButton { min-height: 28px; max-width: 100%; padding-inline: 8px; white-space: normal; overflow-wrap: anywhere; }
+.pfhItemSummary { margin: 8px 0 12px; }
+.pfhItemSummary .pfhTable { min-width: 420px; }
+#pfhMore { margin: 6px 0 12px; }
 .pfhField { display: grid; gap: 5px; min-width: 0; color: #284e6d; font-size: 13px; font-weight: 750; }
 .pfhField small { margin-left: 4px; color: #59748d; font-size: 11px; font-weight: 600; }
 .pfhPage .pfhControl {
@@ -76,7 +83,6 @@
 .pfhPeriod { margin: 10px 0 16px; padding: 12px; border: 1px solid #c7dced; border-radius: 12px; background: #f7fbff; }
 .pfhPeriod h3 { margin: 0 0 6px; color: #123e69; font-size: 15px; }
 .pfhPeriod p { margin: 0 0 8px; color: #425f78; }
-.pfhTotal { display: inline-block; padding: 3px 8px; border: 1px solid #acd4ba; border-radius: 6px; color: #1b6746; background: #eef8f2; }
 @media (max-width: 850px) {
   .pfhPrimaryFilters { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
   .pfhDateFilters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
