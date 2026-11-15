@@ -1,5 +1,5 @@
 "use strict";
-importScripts("vendor/sheetjs-0.20.3/xlsx.full.min.js", "excel-security.js?v=SEC001_1", "item-transfer-parser.js?v=2");
+importScripts("vendor/sheetjs-0.20.3/xlsx.full.min.js", "excel-security.js?v=SEC001_1", "item-transfer-parser.js?v=3");
 self.onmessage = async ({data}) => {
     try {
         if (XLSX.version !== PharmFlowExcel.version) throw new Error("Excel reader version mismatch.");

@@ -19,9 +19,16 @@
         const text = clean(value);
         const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
         const local = text.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$/);
-        if (!iso && !local) throw new Error("Expected a receiving date in day/month/year format.");
-        const [y, m, d] = iso ? iso.slice(1).map(Number) :
-            [Number(local[3]), Number(local[2]), Number(local[1])];
+        if (!iso && !local) throw new Error("Expected an Excel date or a date with a four-digit year.");
+        let y, m, d;
+        if (iso) {
+            [y, m, d] = iso.slice(1).map(Number);
+        } else {
+            const [first, second, year] = local.slice(1).map(Number);
+            y = year;
+            // Prefer month-first text. A first component above 12 can only be the day.
+            [m, d] = first > 12 ? [second, first] : [first, second];
+        }
         const date = new Date(Date.UTC(y, m - 1, d));
         if (date.getUTCFullYear() !== y || date.getUTCMonth() + 1 !== m || date.getUTCDate() !== d) {
             throw new Error("Invalid receiving date.");

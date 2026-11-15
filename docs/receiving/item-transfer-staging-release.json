@@ -1,9 +1,9 @@
 {
   "staging_base": "5a8dc4a647b6ffca7be3bdfa2bd99de472afe207",
   "changes": {
-    "PHARMFLOW_CURRENT_CHECKPOINT.md": "97bc8a3ba166380dddb9f101b8c39a990fe63b14",
+    "PHARMFLOW_CURRENT_CHECKPOINT.md": "9043da67cf6ca7f70672b055e4eb14bd94787bdd",
     "css/receiving-history.css": "541dcd44e03ff40650b573e1cdba047743fe526d",
-    "index.html": "a6014bcf6876e1d6bb2e85716fdc7c08e421d1c9",
+    "index.html": "a88b6ee9b953bbf73235edea14ef99b09d1a3254",
     "js/config.js": "4a8cedbcc89dd2904498639bf31d5dae58bf6aee",
     "js/permissions.js": "4fc292814c203b889b14bdd40f35733263d5a16d",
     "js/receiving-history.js": "6423cde7dbc8d0d1632944ae7b4912c2f9d7e1c1",

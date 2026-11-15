@@ -74,7 +74,7 @@
                 busy = true;
                 refresh();
                 status.textContent = "Reading " + selected.length + " files…";
-                worker = new Worker(new URL("item-transfer-worker.js?v=2", scriptUrl));
+                worker = new Worker(new URL("item-transfer-worker.js?v=3", scriptUrl));
                 const byNumber = new Map(), conflicts = new Set();
                 let repeats = 0, invalid = 0;
                 for (let i = 0; i < selected.length && current(); i++) {

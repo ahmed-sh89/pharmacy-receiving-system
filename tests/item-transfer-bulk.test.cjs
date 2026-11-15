@@ -22,19 +22,28 @@ function parse(files) {
         xlsx, validation, 'BENCHMARK'));
 }
 
-test('real source layout, pharmacy identity and day-first dates', () => {
+test('real source layout, pharmacy identity and flexible transfer dates', () => {
     const rows = [
         ['Bulk-TO Receive'], ['User ID', 'benchmark'], ['TO Number', 'TO-001'], ['From Warehouse', 'TEST-A'],
         ['To Warehouse', 'TEST-B'], ['Receiveing Date', '9/3/2026'],
         ['Item Number', 'Item Name', 'Category', 'Price', 'Size', 'Color', 'Quantity'], ['0012', 'Synthetic name', '', '', '', '', '100.0']
     ];
-    const wb = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(rows.map(row => [null,...row])), 'Sheet1');
-    const data = xlsx.write(wb, {type: 'array', bookType: 'xlsx'});
-    const file = {name: 'fixture.xlsx', size: data.byteLength};
-    assert.throws(() => parser.parseTransfer(data, file, xlsx, validation, 'OTHER'), /User ID/);
-    const result = parser.parseTransfer(data, file, xlsx, validation, 'BENCHMARK');
-    assert.equal(result.date, '2026-03-09');
+    function receiveDate(receivingDate, pharmacy = 'BENCHMARK') {
+        rows[5][1] = receivingDate;
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(rows.map(row => [null,...row])), 'Sheet1');
+        const data = xlsx.write(wb, {type: 'array', bookType: 'xlsx'});
+        return parser.parseTransfer(data, {name: 'fixture.xlsx', size: data.byteLength}, xlsx, validation, pharmacy);
+    }
+    assert.throws(() => receiveDate('9/3/2026', 'OTHER'), /User ID/);
+    const result = receiveDate('9/3/2026');
+    assert.equal(result.date, '2026-09-03');
+    assert.equal(receiveDate('22/9/2026').date, '2026-09-22');
+    assert.equal(receiveDate('9/22/2026').date, '2026-09-22');
+    assert.equal(receiveDate('2026-09-03').date, '2026-09-03');
+    assert.equal(receiveDate(vm.runInContext('new Date(2026, 8, 3)', context)).date, '2026-09-03');
+    assert.throws(() => receiveDate('2/30/2026'), /Invalid receiving date/);
+    assert.throws(() => receiveDate('27/13/2026'), /Invalid receiving date/);
     assert.equal(result.items[0].code, '0012');
     assert.equal(result.items[0].quantity, 100);
 });
