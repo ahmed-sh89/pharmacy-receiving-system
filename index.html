@@ -62,7 +62,7 @@
     <link rel="preload" as="script" href="js/app.js?v=STARTUP_HANDHELD_20261108">
     <link rel="preload" as="script" href="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102">
     <link rel="preload" as="script" href="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028">
-    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY11">
+    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY12">
     <link rel="preload" as="script" href="js/header-account-responsive.js">
     <link rel="preload" as="script" href="js/header-account-menu.js">
     <link rel="preload" as="script" href="js/header-account-popover.js">
@@ -121,7 +121,7 @@
             visibility: hidden !important;
         }
     </style>
-<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI8">
+<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI9">
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
@@ -1147,12 +1147,11 @@ window.PharmFlowDeviceMode = (() => {
                                 <input type="hidden" name="reportType" value="item">
                             </div>
                             <div class="pfhField" id="pfhItemField">
-                                <label for="pfhItemInput">Item Codes or Names</label>
-                                <div class="pfhItemEntry">
-                                    <textarea id="pfhItemInput" class="pfhControl" name="item" rows="1" placeholder="Enter names or paste codes separated by commas or lines" autocomplete="off"></textarea>
-                                    <button id="pfhAddItem" class="pfhButton" type="button">Add Item</button>
+                                <label for="pfhItemInput">Item Code or Name</label>
+                                <div class="pfhItemEntry" id="pfhItemEntry">
+                                    <input id="pfhItemInput" class="pfhControl" name="item" type="search" maxlength="160" placeholder="Enter item code or name" autocomplete="off">
+                                    <button class="pfhButton pfhSearch" type="submit">Search</button>
                                 </div>
-                                <div id="pfhItems" class="pfhItems" aria-label="Selected items" hidden></div>
                             </div>
                             <label class="pfhField"><span>Order Number <small>Optional</small></span>
                                 <input class="pfhControl" name="order" type="search" maxlength="100" placeholder="Enter order number" autocomplete="off">
@@ -1169,9 +1168,7 @@ window.PharmFlowDeviceMode = (() => {
                                 <button class="pfhControl pfhDateButton" type="button" data-pfh-date="to" aria-labelledby="pfhLabelTo pfhDateTo" aria-haspopup="dialog" aria-expanded="false"><span id="pfhDateTo">Select date</span></button>
                                 <input type="hidden" name="to">
                             </div>
-                            <div class="pfhFilterActions">
-                                <button class="pfhButton pfhSearch" type="submit">Search</button>
-                            </div>
+                            <div class="pfhFilterActions" id="pfhDateActions" hidden></div>
                         </div>
                     </form>
                     <div class="pfhToolbar" id="pfhToolbar" hidden>
@@ -1186,6 +1183,18 @@ window.PharmFlowDeviceMode = (() => {
                     </div>
                     <div id="pfhResults"></div>
                     <button id="pfhMore" class="pfhButton" type="button" hidden>Load More</button>
+                    <section id="pfhExportList" class="pfhPeriod" hidden aria-labelledby="pfhExportListTitle">
+                        <div class="pfhListHeader">
+                            <div><h3 id="pfhExportListTitle">Export List</h3><p id="pfhExportListLabel"></p></div>
+                            <div class="pfhFilterActions">
+                                <button id="pfhListClear" class="pfhButton" type="button">Clear List</button>
+                                <button class="pfhButton" type="button" data-pfh-list-export="excel">Export Excel</button>
+                                <button class="pfhButton" type="button" data-pfh-list-export="pdf">Export PDF</button>
+                            </div>
+                        </div>
+                        <p id="pfhListNotice" role="status"></p>
+                        <div id="pfhSelectedItems"></div>
+                    </section>
                 </section>
 
 
@@ -2737,7 +2746,7 @@ window.PharmFlowDeviceMode = (() => {
 
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>
-<script src="js/receiving-history.js?v=HISTORY11"></script>
+<script src="js/receiving-history.js?v=HISTORY12"></script>
 <script src="js/header-account-responsive.js"></script>
 <script src="js/header-account-menu.js"></script>
 <script src="js/header-account-popover.js"></script>

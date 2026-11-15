@@ -123,8 +123,8 @@ function pfhPeriodBounds(period) {
     return [period.from + "T00:00:00+03:00", nextDay + "T00:00:00+03:00"];
 }
 
-function pfhSearchTerms(value) {
-    return [...new Set(value.split(/[,;\n]+/).map(term => term.trim().toLowerCase()).filter(Boolean))];
+function pfhItemMatches(row, item) {
+    return String(row.item_code).toLowerCase() === item || String(row.item_name || "").toLowerCase().includes(item);
 }
 
 async function pfhReadRows(name, params, query, current) {
@@ -203,7 +203,7 @@ function pfhLegacyItemRows(archive, order, uploaded) {
     return [...items.values()];
 }
 
-async function pfhReadItemHistory(params, period, order, terms, current) {
+async function pfhReadItemHistory(params, period, order, item, current) {
     const [from, to] = pfhPeriodBounds(period);
     const filters = [
         ["closed_at", "gte." + from], ["closed_at", "lt." + to],
@@ -227,11 +227,7 @@ async function pfhReadItemHistory(params, period, order, terms, current) {
             {...params, p_order_number: number}, [["select", "item_code,item_name,ordered_qty"], ["order", "line_no,id"]], current);
         const items = saved ? archive.itemReceivingHistory : pfhLegacyItemRows(archive, number, uploaded);
         const file = (archive.orderFiles || []).find(row => pfhNormalizeOrder(row.documentId || row.orderNumber) === number);
-        const rows = items.filter(row => {
-            const code = String(row.item_code).toLowerCase();
-            const name = String(row.item_name || "").toLowerCase();
-            return terms.some(term => term === code || name.includes(term));
-        }).map(row => ({
+        const rows = items.filter(row => pfhItemMatches(row, item)).map(row => ({
             ...row, received_qty: pfhQuantity(row.received_qty), order_number: number,
             order_date: file?.orderDate, completed_at
         }));
@@ -275,37 +271,60 @@ function pfhItemTotals(rows) {
 function pfhItemNotes(period) {
     const unverified = period.rows.filter(row => row.received_qty == null).length;
     const missingOrdered = period.rows.filter(row => pfhQuantity(row.ordered_qty) == null).length;
-    const unmatched = (period.terms || []).filter(term => !period.rows.some(row =>
-        String(row.item_code).toLowerCase() === term || String(row.item_name || "").toLowerCase().includes(term)));
+    const unmatched = period.item && !period.rows.some(row => pfhItemMatches(row, period.item));
     return [
         ...(unverified ? [unverified + " matching rows lack a confirmed received quantity"] : []),
         ...(missingOrdered ? [missingOrdered + " matching rows lack an ordered quantity"] : []),
         ...(period.missingSource ? [period.missingSource + " older orders lack complete searchable item records for this account"] : []),
-        ...(unmatched.length ? ["No matching rows: " + unmatched.join(", ")] : [])
+        ...(unmatched ? ["No matching rows: " + period.item] : [])
     ];
 }
 
-function pfhTable(headings, rows, className = "", differenceColumn = -1) {
+function pfhTable(headings, rows, className = "", differenceColumn = -1, renderAction) {
     if (!rows.length) return "";
-    const head = headings.map(value => '<th scope="col">' + pfhEsc(value) + "</th>").join("");
-    const body = rows.map(row => "<tr>" + row.map((value, index) => {
+    const head = headings.map(value => '<th scope="col">' + pfhEsc(value) + "</th>").join("") +
+        (renderAction ? '<th scope="col">Action</th>' : "");
+    const body = rows.map((row, rowIndex) => "<tr>" + row.map((value, index) => {
         const css = typeof value !== "number" ? "" : "pfhNum" +
             (index === differenceColumn && value ? (value < 0 ? " pfhShort" : " pfhOver") : "");
         return '<td class="' + css + '">' + pfhEsc(value) + "</td>";
-    }).join("") + "</tr>").join("");
+    }).join("") + (renderAction ? "<td>" + renderAction(rowIndex) + "</td>" : "") + "</tr>").join("");
     return '<div class="pfhTableWrap ' + className + '"><table class="dataTable pfhTable"><thead><tr>' +
         head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
 }
 
-function pfhRenderResult({type, periods}) {
+function pfhRenderResult({type, periods}, renderItemAction) {
     return periods.map(period => {
-        const summary = type === "item" ? pfhTable(PFH_ITEM_SUMMARY_COLUMNS, pfhItemTotals(period.rows), "pfhItemSummary") : "";
+        const summary = type === "item" ? pfhTable(PFH_ITEM_SUMMARY_COLUMNS, pfhItemTotals(period.rows), "pfhItemSummary", -1, renderItemAction) : "";
         const notes = type === "item" ? pfhItemNotes(period).map(note => "<p>" + pfhEsc(note) + "</p>").join("") : "";
         const rows = period.rows.map(row => pfhCells(type, row));
         return '<section class="pfhPeriod"><h3>' + pfhEsc(pfhPeriodLabel(period)) + "</h3>" +
             summary + notes + (pfhTable(PFH_COLUMNS[type], rows, "", type === "discrepancy" ? 7 : -1) ||
                 "<p>No matching records in this period.</p>") + "</section>";
     }).join("");
+}
+
+function pfhListMatches(left, right) {
+    return left.from === right.from && left.to === right.to && left.order === right.order;
+}
+
+function pfhAddToExportList(list, period, code) {
+    const key = String(code).toLowerCase();
+    if (list && !pfhListMatches(list.period, period)) return list;
+    const rows = period.rows.filter(row => String(row.item_code).toLowerCase() === key);
+    if (!rows.length || list?.items.has(key)) return list;
+    const selection = list || {
+        period: {from: period.from, to: period.to, order: period.order},
+        items: new Map()
+    };
+    selection.items.set(key, {rows, missingSource: period.missingSource});
+    return selection;
+}
+
+function pfhExportListPeriod(selection) {
+    const items = [...selection.items.values()];
+    return {...selection.period, rows: items.flatMap(item => item.rows),
+        missingSource: Math.max(0, ...items.map(item => item.missingSource || 0))};
 }
 
 function pfhExportResult(result, format) {
@@ -513,11 +532,15 @@ function pfhBoot() {
     const reportOptions = typePicker.querySelectorAll("[data-pfh-type]");
     const toolbar = document.getElementById("pfhToolbar");
     const itemField = document.getElementById("pfhItemField");
-    const tags = document.getElementById("pfhItems");
+    const exportListPanel = document.getElementById("pfhExportList");
+    const selectedItems = document.getElementById("pfhSelectedItems");
+    const listNotice = document.getElementById("pfhListNotice");
+    const dateActions = document.getElementById("pfhDateActions");
     const more = document.getElementById("pfhMore");
     const retry = document.getElementById("pfhRetry");
     const submit = form.querySelector('[type="submit"]');
-    let terms = [];
+    let selection = null;
+    let selectionEpoch;
     let busy = false;
     let retryAction;
     const list = document.getElementById("pfhResults");
@@ -554,31 +577,39 @@ function pfhBoot() {
     };
     window.addEventListener("resize", reposition);
     window.addEventListener("scroll", reposition, true);
-    const renderTerms = () => {
-        tags.replaceChildren(...terms.map(term => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "pfhButton";
-            button.textContent = term + " ×";
-            button.setAttribute("aria-label", "Remove " + term);
-            button.addEventListener("click", () => {
-                terms = terms.filter(value => value !== term);
-                renderTerms();
-                clear();
-                field("item").focus();
-            });
-            return button;
-        }));
-        tags.hidden = !terms.length;
-    };
-    document.getElementById("pfhAddItem").addEventListener("click", () => {
-        const added = pfhSearchTerms(field("item").value);
-        if (!added.length) { field("item").focus(); return; }
-        terms = [...new Set([...terms, ...added])];
-        field("item").value = "";
-        renderTerms();
-        clear();
-        field("item").focus();
+    function renderSelection(message = "") {
+        const visible = Boolean(selection?.items.size) && field("reportType").value === "item";
+        exportListPanel.hidden = !visible;
+        listNotice.textContent = message;
+        if (!visible) { selectedItems.replaceChildren(); return; }
+        const period = pfhExportListPeriod(selection);
+        document.getElementById("pfhExportListLabel").textContent = pfhPeriodLabel(period) +
+            (period.order ? " · Order " + period.order : "");
+        selectedItems.innerHTML = pfhTable(PFH_ITEM_SUMMARY_COLUMNS, pfhItemTotals(period.rows), "pfhItemSummary", -1,
+            index => '<button class="pfhButton pfhRowAction" type="button" data-pfh-remove="' + index + '">Remove</button>');
+    }
+    document.getElementById("pfhListClear").addEventListener("click", () => {
+        selection = null;
+        renderSelection();
+        if (result?.type === "item") render();
+    });
+    selectedItems.addEventListener("click", event => {
+        const remove = event.target.closest("[data-pfh-remove]");
+        if (!remove || !selection) return;
+        const code = [...selection.items.keys()][Number(remove.dataset.pfhRemove)];
+        selection.items.delete(code);
+        if (!selection.items.size) selection = null;
+        renderSelection();
+        if (result?.type === "item") render();
+    });
+    exportListPanel.addEventListener("click", event => {
+        const button = event.target.closest("[data-pfh-list-export]");
+        if (!button || !selection || selectionEpoch !== AuthState.identityEpoch) return;
+        try {
+            pfhExportResult({type: "item", periods: [pfhExportListPeriod(selection)]}, button.dataset.pfhListExport);
+        } catch (error) {
+            renderSelection(error.message || "Unable to export list.");
+        }
     });
     const changeType = () => {
         const type = field("reportType").value;
@@ -588,6 +619,9 @@ function pfhBoot() {
             option.setAttribute("aria-pressed", String(option.dataset.pfhType === type));
         }
         itemField.hidden = !useItem;
+        dateActions.hidden = useItem;
+        (useItem ? document.getElementById("pfhItemEntry") : dateActions).append(submit);
+        renderSelection();
         datePicker.close();
         datePicker.sync();
         clear();
@@ -607,8 +641,8 @@ function pfhBoot() {
         catch (error) { showToast(error.message, "warning"); return; }
         if (!AuthState.context?.pharmacy_id) return;
         form.reset();
-        terms = [];
-        renderTerms();
+        if (selectionEpoch !== AuthState.identityEpoch) selection = null;
+        selectionEpoch = AuthState.identityEpoch;
         field("reportType").value = "item";
         const today = PFH_DAY.format(new Date());
         field("from").value = today.slice(0, 8) + "01";
@@ -620,7 +654,11 @@ function pfhBoot() {
     });
     document.getElementById("pfhBack").addEventListener("click", () => close(true));
     window.addEventListener("auth:context-ready", event => {
-        if (event.detail?.changed || !event.detail?.currentScope) close(false);
+        if (event.detail?.changed || !event.detail?.currentScope) {
+            selection = null;
+            renderSelection();
+            close(false);
+        }
     });
     AppEvents.on("route:changed", ({routeName}) => { if (routeName !== "receiving") close(false); });
     for (const option of reportOptions) {
@@ -659,11 +697,33 @@ function pfhBoot() {
         announce(period.rows.length
             ? period.rows.length + " rows shown · Completed dates in Saudi Arabia time."
             : "Search complete.");
-        list.innerHTML = pfhRenderResult(result);
+        const totals = result.type === "item" ? pfhItemTotals(period.rows) : [];
+        list.innerHTML = pfhRenderResult(result, result.type === "item" ? index => {
+            const added = selection?.items.has(String(totals[index][0]).toLowerCase()) &&
+                pfhListMatches(selection.period, period);
+            return '<button class="pfhButton pfhRowAction" type="button" data-pfh-save="' + index + '"' +
+                (added ? " disabled>Added" : ">Add Item") + "</button>";
+        } : undefined);
         more.hidden = nextOffset == null;
         exports.hidden = !period.rows.length;
         retry.hidden = true;
     };
+    list.addEventListener("click", event => {
+        const add = event.target.closest("[data-pfh-save]");
+        if (!add || result?.type !== "item" || !result.current()) return;
+        const [period] = result.periods;
+        if (selection && !pfhListMatches(selection.period, period)) {
+            renderSelection("The list uses a different date range or order filter. Export or clear it before adding this item.");
+            listNotice.scrollIntoView({block: "nearest"});
+            return;
+        }
+        const item = pfhItemTotals(period.rows)[Number(add.dataset.pfhSave)];
+        if (!item) return;
+        selection = pfhAddToExportList(selection, period, item[0]);
+        renderSelection();
+        render();
+        field("item").focus({preventScroll: true});
+    });
     const failed = (error, action) => {
         Logger?.error?.("Receiving History request failed", error);
         announce(/timed? ?out|statement timeout/i.test(error?.message || "")
@@ -678,14 +738,14 @@ function pfhBoot() {
         event.preventDefault();
         if (busy) return;
         const type = field("reportType").value;
-        const matches = [...new Set([...terms, ...pfhSearchTerms(field("item").value)])];
+        const item = field("item").value.trim().toLowerCase();
         const order = pfhNormalizeOrder(field("order").value);
-        const period = {from: field("from").value, to: field("to").value};
+        const period = {from: field("from").value, to: field("to").value, order};
         datePicker.close();
         closeType();
         if (!period.from || !period.to) { clear("Select From and To dates."); return; }
         if (period.from > period.to) { clear("From must be on or before To."); return; }
-        if (type === "item" && !matches.length) { clear("Enter an item code or name."); return; }
+        if (type === "item" && !item) { clear("Enter an item code or name."); return; }
         const pharmacy = AuthState.context?.pharmacy_id;
         const epoch = AuthState.identityEpoch;
         if (!pharmacy) { clear("Sign in to search Receiving History."); return; }
@@ -699,7 +759,7 @@ function pfhBoot() {
             let data;
             let nextOffset = null;
             if (type === "item") {
-                data = {...await pfhReadItemHistory({p_pharmacy_id: pharmacy}, period, order, matches, current), terms: matches};
+                data = {...await pfhReadItemHistory({p_pharmacy_id: pharmacy}, period, order, item, current), item};
             } else {
                 const page = await readPage(0);
                 data = {...period, rows: page.rows};

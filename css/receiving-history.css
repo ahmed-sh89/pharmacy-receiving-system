@@ -17,14 +17,16 @@
 .pfhHeader h2 { margin: 0; color: #123e69; line-height: 1.2; }
 #pfhForm { padding: 16px; border: 1px solid #c7dced; border-radius: 12px; background: #f7fbff; }
 .pfhFilters { display: grid; align-items: end; gap: 12px; }
-.pfhPrimaryFilters { grid-template-columns: minmax(185px, 1fr) minmax(240px, 1.4fr) minmax(185px, 1fr); }
-.pfhDateFilters { grid-template-columns: minmax(145px, 1fr) minmax(145px, 1fr) auto; max-width: 700px; margin-top: 12px; }
+.pfhPrimaryFilters { grid-template-columns: minmax(180px, 230px) minmax(210px, 385px) minmax(150px, 220px); }
+.pfhDateFilters { grid-template-columns: repeat(2, minmax(130px, 180px)) auto; max-width: 540px; margin-top: 10px; }
 .pfhFilterActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 #pfhItemField { grid-template-columns: minmax(0, 1fr); }
-.pfhItemEntry, .pfhItems, .pfhStatusActions { display: flex; align-items: center; gap: 6px; }
-.pfhItemEntry textarea { min-width: 0; flex: 1; resize: vertical; padding-block: 9px; }
-.pfhItems { flex-wrap: wrap; }
-.pfhItems .pfhButton { min-height: 28px; max-width: 100%; padding-inline: 8px; white-space: normal; overflow-wrap: anywhere; }
+.pfhItemEntry, .pfhStatusActions { display: flex; align-items: center; gap: 6px; }
+.pfhItemEntry input { min-width: 0; flex: 1; }
+.pfhItemEntry .pfhSearch { min-width: 76px; flex: 0 0 auto; }
+.pfhListHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+#pfhListNotice:empty { display: none; }
+.pfhPage .pfhTable .pfhRowAction { min-height: 30px; padding: 0 10px; font-size: 12px; }
 .pfhItemSummary { margin: 8px 0 12px; }
 .pfhItemSummary .pfhTable { min-width: 420px; }
 #pfhMore { margin: 6px 0 12px; }

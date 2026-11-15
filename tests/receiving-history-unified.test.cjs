@@ -52,7 +52,7 @@ test('item search uses verified zero, uploaded-only unknown and de-duplicates or
         return [{item_code: '101', item_name: 'Panadol', ordered_qty: 3},
             {item_code: '101', item_name: 'Panadol', ordered_qty: 2}];
     }});
-    const result = await context.pfhReadItemHistory(params, period, '', ['panad', '101'], () => true);
+    const result = await context.pfhReadItemHistory(params, period, '', 'panad', () => true);
     assert.deepEqual(Array.from(result.rows, row => row.received_qty), [0, null]);
     assert.equal(result.rows[1].ordered_qty, 5);
     assert.deepEqual(JSON.parse(JSON.stringify(context.pfhItemTotals(result.rows))), [['101', 'Panadol', 12, 0]]);
@@ -123,22 +123,28 @@ test('RPC pagination reaches the network and scoped history reads require the ac
     assert.equal(requests.length, 3);
 });
 
-test('multiple pasted or added items keep ordered totals per code and export the same summary', () => {
+test('items selected from separate searches keep ordered totals per code and export the same summary', () => {
     let workbook;
     const context = runtime({XLSX: {utils: {book_new: () => ({}), aoa_to_sheet: rows => ({rows}),
         book_append_sheet: (book, sheet) => { book.sheet = sheet; }},
         writeFile: book => { workbook = book; }}});
-    assert.deepEqual(Array.from(context.pfhSearchTerms('101, 102\nKlavox; 101')), ['101', '102', 'klavox']);
     const rows = [
         {item_code: '101', item_name: 'Klavox 1G', ordered_qty: 318, received_qty: 0},
         {item_code: '101', item_name: 'Klavox 1G', ordered_qty: '4', received_qty: null},
         {item_code: '102', item_name: 'Klavox 375', ordered_qty: 4, received_qty: null}
     ];
-    const result = {type: 'item', periods: [{...period, rows, terms: ['101', '102', '103']}]};
+    const firstSearch = {...period, order: '', rows: rows.slice(0, 2)};
+    const secondSearch = {...period, order: '', rows: rows.slice(2)};
+    const selection = context.pfhAddToExportList(null, firstSearch, '101');
+    assert.equal(context.pfhAddToExportList(selection, firstSearch, '101').items.size, 1);
+    assert.equal(context.pfhAddToExportList(selection, secondSearch, 'unknown').items.size, 1);
+    assert.equal(context.pfhAddToExportList(selection, {...secondSearch, to: '2026-11-02'}, '102').items.size, 1);
+    assert.equal(context.pfhAddToExportList(selection, secondSearch, '102').items.size, 2);
+    const result = {type: 'item', periods: [context.pfhExportListPeriod(selection)]};
     assert.deepEqual(JSON.parse(JSON.stringify(context.pfhItemTotals(rows))),
         [['101', 'Klavox 1G', 322, 0], ['102', 'Klavox 375', 4, 'Not available']]);
     assert.match(context.pfhRenderResult(result), /Total Ordered/);
-    assert.match(context.pfhRenderResult(result), /No matching rows: 103/);
+    assert.doesNotMatch(context.pfhRenderResult(result), /No matching rows/);
     context.pfhExportResult(result, 'excel');
     assert.equal(workbook.sheet.rows[3][2], 322);
     assert.equal(workbook.sheet.rows[4][2], 4);
@@ -164,7 +170,8 @@ test('the report picker defaults to Item Receiving History and retains both exis
     assert.match(section, /name="reportType" value="item"/);
     assert.deepEqual([...section.matchAll(/data-pfh-date="([^"]+)"/g)].map(match => match[1]),
         ['from', 'to']);
-    assert.doesNotMatch(section, /type="date"/);
+    assert.doesNotMatch(section, /type="date"|<textarea/);
+    assert.match(section, /id="pfhItemEntry"[\s\S]*?name="item" type="search"[^>]*>[\s\S]*?<button[^>]*type="submit">Search<\/button>/);
 });
 
 test('the restored calendar handles month days, selected dates and the Today shortcut', () => {
