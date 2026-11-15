@@ -106,3 +106,26 @@ test('query pagination stops fetching as soon as the account or report changes',
     await context.pfhReadRows('report', params, [], () => active);
     assert.equal(calls, 1);
 });
+
+test('the report picker defaults to Item Receiving History and retains both existing report options', () => {
+    const html = readFileSync('index.html', 'utf8');
+    const section = html.slice(html.indexOf('id="receivingHistoryContent"'), html.indexOf('id="page-files"'));
+    assert.deepEqual([...section.matchAll(/data-pfh-type="([^"]+)"/g)].map(match => match[1]),
+        ['item', 'new', 'discrepancy']);
+    assert.match(section, /name="reportType" value="item"/);
+    assert.deepEqual([...section.matchAll(/data-pfh-date="([^"]+)"/g)].map(match => match[1]),
+        ['from', 'to', 'from2', 'to2']);
+    assert.doesNotMatch(section, /type="date"/);
+});
+
+test('the restored calendar handles month days, selected dates and the Today shortcut', () => {
+    const context = runtime();
+    const popover = {};
+    context.pfhRenderCalendar(popover, new Date('2028-02-01T00:00:00Z'), '2028-02-29', '2028-03-01');
+    assert.match(popover.innerHTML, /February 2028/);
+    assert.match(popover.innerHTML, /data-month="-1" aria-label="Previous month"/);
+    assert.match(popover.innerHTML, /data-month="1" aria-label="Next month"/);
+    assert.match(popover.innerHTML, /class="pfhCalDay selected" data-date="2028-02-29"/);
+    assert.equal((popover.innerHTML.match(/class="pfhCalDay/g) || []).length, 29);
+    assert.match(popover.innerHTML, /data-date="2028-03-01">Today/);
+});

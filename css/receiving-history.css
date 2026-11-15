@@ -1,30 +1,91 @@
-/* Receiving History uses the Receiving Report surface and control styles. */
-.pfhPage [hidden], #receivingReportContent[hidden], #receivingHistoryContent[hidden] { display: none !important; }
-.pfhPage { padding: 18px; }
-.pfhHeader, .pfhToolbar, .pfhFilters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.pfhHeader { margin-bottom: 18px; }
-.pfhHeader h2 { margin: 0; font-size: 20px; }
-.pfhFilters { align-items: end; margin-bottom: 10px; }
-.pfhFilters label { display: grid; gap: 5px; font-weight: 700; font-size: 12px; min-width: 150px; }
-.pfhFilters label small { display: inline; grid-row: 1; grid-column: 2; color: #526b83; font-weight: 500; }
-.pfhFilters input, .pfhFilters select {
-  grid-column: 1 / -1; min-width: 0; min-height: 38px; padding: 0 9px;
-  border: 1px solid #b5cadd; border-radius: 8px; color: #173b59; background: #fff; font: inherit;
+/* Shared Receiving Report colors and geometry. */
+#page-receiving .pfhHistoryButton, .pfhPage .pfhButton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  box-sizing: border-box; min-height: 38px; padding: 0 12px; white-space: nowrap;
+  border: 1px solid #a6bfd4; border-radius: 8px; background: #edf5fc; color: #21577f;
+  font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; line-height: 1.2;
 }
-.pfhPage button { min-height: 38px; }
-.pfhHistoryButton { min-height: 38px; white-space: nowrap; }
-.pfhToolbar { justify-content: space-between; margin: 12px 0; }
-.pfhToolbar p { margin: 0; }
-.pfhTableWrap { overflow: auto; border: 1px solid #dce8f1; border-radius: 9px; }
+#page-receiving .pfhHistoryButton:hover, .pfhPage .pfhButton:hover { background: #d8edff; }
+@media (min-width: 769px) {
+  #page-receiving #btnBackToReceivingDashboard { margin-right: 0 !important; }
+  #page-receiving .pfhHistoryButton { margin-right: auto; }
+}
+.pfhHistoryButton span { font-size: 17px; }
+.pfhPage [hidden], #receivingReportContent[hidden], #receivingHistoryContent[hidden] { display: none !important; }
+#page-receiving #receivingHistoryContent { overflow: visible; }
+.pfhHeader { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 2px 2px 14px; }
+.pfhHeader h2 { margin: 0; color: #123e69; line-height: 1.2; }
+#pfhForm { padding: 16px; border: 1px solid #c7dced; border-radius: 12px; background: #f7fbff; }
+.pfhFilters { display: grid; align-items: end; gap: 12px; }
+.pfhPrimaryFilters { grid-template-columns: minmax(185px, 1fr) minmax(240px, 1.4fr) minmax(185px, 1fr); }
+.pfhDateFilters { grid-template-columns: minmax(145px, 1fr) minmax(145px, 1fr) auto; max-width: 700px; margin-top: 12px; }
+.pfhFilterActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#pfhExtraPeriod { padding-top: 12px; border-top: 1px solid #dce8f3; }
+.pfhField { display: grid; gap: 5px; min-width: 0; color: #284e6d; font-size: 13px; font-weight: 750; }
+.pfhField small { margin-left: 4px; color: #59748d; font-size: 11px; font-weight: 600; }
+.pfhPage .pfhControl {
+  box-sizing: border-box; width: 100%; min-height: 40px; padding: 0 11px;
+  border: 1px solid #b5cadd; border-radius: 8px; color: #173b59; background: #fff;
+  font: inherit; font-size: 14px; font-weight: 650;
+}
+.pfhPage .pfhControl::placeholder { color: #61798d; font-weight: 500; }
+.pfhPage .pfhControl:hover { border-color: #77a2c7; }
+.pfhPage :is(button, summary, input):focus-visible { outline: 2px solid #337bb9; outline-offset: 2px; }
+.pfhPage .pfhSearch { min-height: 40px; min-width: 104px; background: #195d99; border-color: #195d99; color: #fff; }
+.pfhPage .pfhSearch:hover { background: #134d81; }
+.pfhPage :is(.pfhDateButton, .pfhTypePicker summary) { display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer; list-style: none; text-align: left; }
+.pfhTypePicker summary::-webkit-details-marker { display: none; }
+.pfhTypePicker summary::after { content: "⌄"; color: #21577f; font-size: 17px; }
+.pfhDateButton::after {
+  content: ""; flex: 0 0 15px; height: 13px; border: 1.5px solid #3975a6; border-radius: 3px;
+  background: linear-gradient(to bottom, transparent 3px, #3975a6 3px, #3975a6 4.5px, transparent 4.5px);
+}
+.pfhTypePicker, .pfhDateField { position: relative; }
+.pfhTypeOptions, .pfhCalendarPopover {
+  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; padding: 6px;
+  border: 1px solid #b5cadd; border-radius: 10px; background: #fff; box-shadow: 0 10px 28px #153c6026;
+}
+.pfhTypeOptions { min-width: 100%; display: grid; gap: 3px; }
+.pfhTypePicker:not([open]) .pfhTypeOptions { display: none; }
+.pfhTypeOptions button, .pfhCalendarPopover button {
+  border: 1px solid transparent; border-radius: 7px; background: #f1f7fc; color: #214f73;
+  font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
+}
+.pfhTypeOptions button { min-height: 36px; text-align: left; padding: 0 10px; }
+.pfhTypeOptions button[aria-pressed="true"], .pfhCalendarPopover .selected { color: #fff; background: #195d99; }
+.pfhTypeOptions button:not([aria-pressed="true"]):hover, .pfhCalendarPopover button:not(.selected):hover { background: #dceefc; }
+.pfhCalendarPopover { left: var(--pfh-calendar-shift, 0px); width: min(296px, calc(100vw - 24px)); padding: 10px; }
+.pfhCalHead { display: grid; grid-template-columns: 34px 1fr 34px; gap: 6px; align-items: center; text-align: center; margin-bottom: 8px; }
+.pfhCalHead button { height: 34px; font-size: 22px; line-height: 1; }
+.pfhCalWeek, .pfhCalGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+.pfhCalWeek { margin-bottom: 4px; color: #59748d; font-size: 11px; }
+.pfhCalDay { min-height: 32px; padding: 0; }
+.pfhCalendarPopover .today:not(.selected) { border-color: #77a2c7; }
+.pfhCalFoot { display: flex; justify-content: flex-end; margin-top: 8px; padding-top: 6px; border-top: 1px solid #e0ebf5; }
+.pfhCalFoot button { padding: 5px 9px; }
+.pfhToolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 2px 8px; }
+.pfhToolbar p { margin: 0; color: #425f78; font-size: 13px; }
+#pfhExports { display: flex; gap: 8px; }
+.pfhTableWrap { overflow: auto; border: 1px solid #dce8f1; border-radius: 9px; background: #fff; }
 .pfhTable { min-width: 680px; }
 .pfhTable th, .pfhTable td { text-align: left; }
 .pfhTable .pfhNum { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pfhTable .pfhShort { color: #a33838; font-weight: 700; }
 .pfhTable .pfhOver { color: #84601a; font-weight: 700; }
-.pfhPeriod { margin: 16px 0 22px; }
-.pfhPeriod h3 { margin: 0 0 6px; font-size: 15px; }
+.pfhPeriod { margin: 10px 0 16px; padding: 12px; border: 1px solid #c7dced; border-radius: 12px; background: #f7fbff; }
+.pfhPeriod h3 { margin: 0 0 6px; color: #123e69; font-size: 15px; }
 .pfhPeriod p { margin: 0 0 8px; color: #425f78; }
-.pfhTotal { color: #1b6746; }
+.pfhTotal { display: inline-block; padding: 3px 8px; border: 1px solid #acd4ba; border-radius: 6px; color: #1b6746; background: #eef8f2; }
+@media (max-width: 850px) {
+  .pfhPrimaryFilters { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .pfhDateFilters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pfhFilterActions { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  #pfhForm { padding: 10px; }
+  .pfhHeader { gap: 8px; }
+  .pfhPrimaryFilters { grid-template-columns: 1fr; }
+}
 
 @media(min-width:769px){
  body:not(.zebraDevice) #page-receiving #receivingClassificationFilters{position:relative!important;width:112px!important;min-width:112px!important;max-width:112px!important;overflow:visible!important}
