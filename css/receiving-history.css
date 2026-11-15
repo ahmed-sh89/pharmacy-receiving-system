@@ -33,20 +33,21 @@
 .pfhPage :is(button, summary, input):focus-visible { outline: 2px solid #337bb9; outline-offset: 2px; }
 .pfhPage .pfhSearch { min-height: 40px; min-width: 104px; background: #195d99; border-color: #195d99; color: #fff; }
 .pfhPage .pfhSearch:hover { background: #134d81; }
-.pfhPage :is(.pfhDateButton, .pfhTypePicker summary) { display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer; list-style: none; text-align: left; }
-.pfhTypePicker summary::-webkit-details-marker { display: none; }
-.pfhTypePicker summary::after { content: "⌄"; color: #21577f; font-size: 17px; }
+.pfhPage :is(.pfhDateButton, #pfhTypeTrigger) { display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer; list-style: none; text-align: left; }
+#pfhTypeTrigger::after { content: "⌄"; color: #21577f; font-size: 17px; }
 .pfhDateButton::after {
   content: ""; flex: 0 0 15px; height: 13px; border: 1.5px solid #3975a6; border-radius: 3px;
   background: linear-gradient(to bottom, transparent 3px, #3975a6 3px, #3975a6 4.5px, transparent 4.5px);
 }
 .pfhTypePicker, .pfhDateField { position: relative; }
 .pfhTypeOptions, .pfhCalendarPopover {
-  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; padding: 6px;
+  /* The shared Receiving page scrolls internally. Keep both pickers in the browser top layer. */
+  position: fixed; inset: auto; box-sizing: border-box; margin: 0; padding: 6px;
+  max-width: calc(100vw - 16px); overflow: auto; overscroll-behavior: contain;
+  font: inherit;
   border: 1px solid #b5cadd; border-radius: 10px; background: #fff; box-shadow: 0 10px 28px #153c6026;
 }
-.pfhTypeOptions { min-width: 100%; display: grid; gap: 3px; }
-.pfhTypePicker:not([open]) .pfhTypeOptions { display: none; }
+.pfhTypeOptions:popover-open { display: grid; gap: 3px; }
 .pfhTypeOptions button, .pfhCalendarPopover button {
   border: 1px solid transparent; border-radius: 7px; background: #f1f7fc; color: #214f73;
   font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
@@ -54,7 +55,7 @@
 .pfhTypeOptions button { min-height: 36px; text-align: left; padding: 0 10px; }
 .pfhTypeOptions button[aria-pressed="true"], .pfhCalendarPopover .selected { color: #fff; background: #195d99; }
 .pfhTypeOptions button:not([aria-pressed="true"]):hover, .pfhCalendarPopover button:not(.selected):hover { background: #dceefc; }
-.pfhCalendarPopover { left: var(--pfh-calendar-shift, 0px); width: min(296px, calc(100vw - 24px)); padding: 10px; }
+.pfhCalendarPopover { width: min(296px, calc(100vw - 24px)); padding: 10px; }
 .pfhCalHead { display: grid; grid-template-columns: 34px 1fr 34px; gap: 6px; align-items: center; text-align: center; margin-bottom: 8px; }
 .pfhCalHead button { height: 34px; font-size: 22px; line-height: 1; }
 .pfhCalWeek, .pfhCalGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }

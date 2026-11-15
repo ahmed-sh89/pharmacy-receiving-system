@@ -129,3 +129,20 @@ test('the restored calendar handles month days, selected dates and the Today sho
     assert.equal((popover.innerHTML.match(/class="pfhCalDay/g) || []).length, 29);
     assert.match(popover.innerHTML, /data-date="2028-03-01">Today/);
 });
+
+test('report and date pickers use the top layer and open where the viewport has room', () => {
+    const html = readFileSync('index.html', 'utf8');
+    assert.match(html, /id="pfhTypeOptions"[^>]*popover="manual"/);
+    const document = {readyState: 'loading', addEventListener() {},
+        documentElement: {clientHeight: 640, clientWidth: 820}};
+    const context = runtime({document});
+    const picker = {offsetWidth: 296, style: {}, getBoundingClientRect: () => ({width: 222, height: 208})};
+    const anchor = {getBoundingClientRect: () => ({left: 750, top: 520, bottom: 550, width: 70})};
+    context.pfhPositionPicker(picker, anchor);
+    assert.equal(picker.style.left, (820 - 222 - 8) / .75 + 'px');
+    assert.equal(picker.style.top, (520 - 6 - 208) / .75 + 'px');
+    anchor.getBoundingClientRect = () => ({left: 200, top: 180, bottom: 210, width: 180});
+    context.pfhPositionPicker(picker, anchor, true);
+    assert.equal(picker.style.top, (210 + 6) / .75 + 'px');
+    assert.equal(picker.style.width, 180 / .75 + 'px');
+});

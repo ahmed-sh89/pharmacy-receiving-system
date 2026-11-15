@@ -388,6 +388,25 @@ function pfhRenderCalendar(popover, month, selected, today) {
         '<div class="pfhCalFoot"><button type="button" data-date="' + today + '">Today</button></div>';
 }
 
+function pfhPositionPicker(picker, anchor, matchWidth = false) {
+    const edge = 8;
+    const gap = 6;
+    const trigger = anchor.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+    // Like the Duty report picker, translate viewport coordinates into CSS pixels at app zoom.
+    const scale = (picker.offsetWidth && picker.getBoundingClientRect().width / picker.offsetWidth) || 1;
+    if (matchWidth) picker.style.width = Math.min(viewportWidth - 2 * edge, trigger.width) / scale + "px";
+    const below = viewportHeight - trigger.bottom - gap - edge;
+    const above = trigger.top - gap - edge;
+    picker.style.maxHeight = Math.max(0, Math.max(below, above)) / scale + "px";
+    const box = picker.getBoundingClientRect();
+    const left = Math.max(edge, Math.min(trigger.left, viewportWidth - box.width - edge));
+    const top = box.height <= below || below >= above ? trigger.bottom + gap : trigger.top - gap - box.height;
+    picker.style.left = left / scale + "px";
+    picker.style.top = Math.max(edge, top) / scale + "px";
+}
+
 function pfhDatePicker(form, onChange, closeType) {
     const buttons = [...form.querySelectorAll("[data-pfh-date]")];
     const fieldFor = name => form.elements.namedItem(name);
@@ -416,13 +435,14 @@ function pfhDatePicker(form, onChange, closeType) {
             let month = new Date((field.value || today).slice(0, 7) + "-01T00:00:00Z");
             popover = document.createElement("div");
             popover.className = "pfhCalendarPopover";
+            popover.setAttribute("popover", "manual");
             popover.setAttribute("role", "dialog");
             popover.setAttribute("aria-label", "Choose a date");
             button.parentElement.append(popover);
             button.setAttribute("aria-expanded", "true");
             pfhRenderCalendar(popover, month, field.value, today);
-            const {right} = popover.getBoundingClientRect();
-            popover.style.setProperty("--pfh-calendar-shift", Math.min(0, document.documentElement.clientWidth - right - 12) + "px");
+            popover.showPopover();
+            pfhPositionPicker(popover, button);
             const initial = popover.querySelector(".selected") || popover.querySelector(".today") || popover.querySelector(".pfhCalDay");
             initial?.focus({preventScroll: true});
             popover.addEventListener("click", event => {
@@ -438,6 +458,7 @@ function pfhDatePicker(form, onChange, closeType) {
                 const direction = control.dataset.month;
                 month.setUTCMonth(month.getUTCMonth() + Number(direction));
                 pfhRenderCalendar(popover, month, field.value, today);
+                pfhPositionPicker(popover, button);
                 popover.querySelector('[data-month="' + direction + '"]').focus();
             });
         });
@@ -451,7 +472,7 @@ function pfhDatePicker(form, onChange, closeType) {
             close(true);
         }
     });
-    return {close, sync};
+    return {close, sync, reposition: () => { if (activeButton) pfhPositionPicker(popover, activeButton); }};
 }
 
 function pfhBoot() {
@@ -462,7 +483,8 @@ function pfhBoot() {
     const form = document.getElementById("pfhForm");
     const field = name => form.elements.namedItem(name);
     const typePicker = document.getElementById("pfhTypePicker");
-    const typeTrigger = typePicker.querySelector("summary");
+    const typeTrigger = document.getElementById("pfhTypeTrigger");
+    const typeOptions = document.getElementById("pfhTypeOptions");
     const typeLabel = document.getElementById("pfhTypeValue");
     const reportOptions = typePicker.querySelectorAll("[data-pfh-type]");
     const toolbar = document.getElementById("pfhToolbar");
@@ -482,7 +504,19 @@ function pfhBoot() {
         toolbar.hidden = !message;
         list.replaceChildren();
     };
-    const datePicker = pfhDatePicker(form, clear, () => { typePicker.open = false; });
+    const typeIsOpen = () => typeTrigger.getAttribute("aria-expanded") === "true";
+    const closeType = () => {
+        if (!typeIsOpen()) return;
+        typeOptions.hidePopover();
+        typeTrigger.setAttribute("aria-expanded", "false");
+    };
+    const datePicker = pfhDatePicker(form, clear, closeType);
+    const reposition = () => {
+        if (typeIsOpen()) pfhPositionPicker(typeOptions, typeTrigger, true);
+        datePicker.reposition();
+    };
+    window.addEventListener("resize", reposition);
+    window.addEventListener("scroll", reposition, true);
     const secondPeriod = enabled => {
         datePicker.close();
         extraPeriod.hidden = !enabled;
@@ -509,7 +543,7 @@ function pfhBoot() {
         if (page.hidden) return;
         clear();
         datePicker.close();
-        typePicker.open = false;
+        closeType();
         page.hidden = true;
         report.hidden = false;
         if (focus) openButton.focus();
@@ -537,21 +571,28 @@ function pfhBoot() {
     for (const option of reportOptions) {
         option.addEventListener("click", () => {
             field("reportType").value = option.dataset.pfhType;
-            typePicker.open = false;
+            closeType();
             changeType();
             typeTrigger.focus();
         });
     }
-    typeTrigger.addEventListener("click", () => datePicker.close());
+    typeTrigger.addEventListener("click", () => {
+        if (typeIsOpen()) { closeType(); return; }
+        datePicker.close();
+        typeOptions.showPopover();
+        typeTrigger.setAttribute("aria-expanded", "true");
+        pfhPositionPicker(typeOptions, typeTrigger, true);
+        typeOptions.querySelector('[aria-pressed="true"]')?.focus({preventScroll: true});
+    });
     typePicker.addEventListener("keydown", event => {
-        if (event.key === "Escape" && typePicker.open) {
+        if (event.key === "Escape" && typeIsOpen()) {
             event.preventDefault();
-            typePicker.open = false;
+            closeType();
             typeTrigger.focus();
         }
     });
     document.addEventListener("pointerdown", event => {
-        if (typePicker.open && !typePicker.contains(event.target)) typePicker.open = false;
+        if (typeIsOpen() && !typePicker.contains(event.target)) closeType();
     });
     form.addEventListener("input", () => clear());
     addPeriod.addEventListener("click", () => { secondPeriod(true); clear(); form.querySelector('[data-pfh-date="from2"]').focus(); });
@@ -565,7 +606,7 @@ function pfhBoot() {
         const periods = [{from: field("from").value, to: field("to").value}];
         if (!extraPeriod.hidden) periods.push({from: field("from2").value, to: field("to2").value});
         datePicker.close();
-        typePicker.open = false;
+        closeType();
         if (periods.some(period => !period.from || !period.to)) {
             clear("Select From and To dates for each period.");
             return;

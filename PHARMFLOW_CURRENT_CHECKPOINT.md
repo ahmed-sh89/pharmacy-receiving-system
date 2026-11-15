@@ -2,7 +2,7 @@
 
 ## Receiving History — Staging review
 
-Based on Production main `3f03b9705661d7cef01a35cbd320e7b54ba5f082`. Receiving Report opens one Receiving History page with Discrepancies, New Items, and Item Receiving History. Item search supports an optional order number and two date periods in Riyadh time. New completions retain per-item quantities in the existing per-order archive payload. Older uploads with no verified receiving row show Not available, and older orders with incomplete searchable records are flagged. No schema changes. The owner confirmed item lookup after staging receipt. Follow-up aligns Receiving History with the Receiving Report controls, restores its custom month calendar, and defaults to Item Receiving History. Next action: owner reviews the updated Staging layout and date selection.
+Based on Production main `3f03b9705661d7cef01a35cbd320e7b54ba5f082`. Receiving Report opens one Receiving History page with Discrepancies, New Items, and Item Receiving History. Item search supports an optional order number and two date periods in Riyadh time. New completions retain per-item quantities in the existing per-order archive payload. Older uploads with no verified receiving row show Not available, and older orders with incomplete searchable records are flagged. No schema changes. The owner confirmed item lookup after staging receipt. Follow-up aligns Receiving History with the Receiving Report controls, restores its custom month calendar, and defaults to Item Receiving History. Report and date pickers now open above the Receiving scroll container. Next action: owner reviews the updated Staging layout and date selection.
 
 ## Pharmacy activation and deletion — Production approved
 
