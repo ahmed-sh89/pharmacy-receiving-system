@@ -160,6 +160,10 @@ test('items selected from separate searches keep ordered totals per code and exp
     assert.match(part('/sheet2.xml'), /<pane ySplit="4"[^>]*state="frozen"/);
     assert.match(part('/styles.xml'), /FF174A79/);
     assert.match(part('/styles.xml'), /FFF0F6FC/);
+    assert.match(part('/styles.xml'), /horizontal="center"/);
+    assert.match(part('/sheet1.xml'), /<c r="C5" s="6"/);
+    assert.match(part('/sheet1.xml'), /<c r="C6" s="7"/);
+    assert.match(part('/sheet2.xml'), /<c r="F5" s="7"/);
 });
 
 test('list admits distinct items across order filters and the PDF plan contains totals only', () => {
@@ -187,6 +191,20 @@ test('list admits distinct items across order filters and the PDF plan contains 
     assert.match(summaryOnly[0].notes.join(' '), /101 is scoped to order TO-1/);
     assert.doesNotMatch(summaryOnly[0].notes.join(' '), /received/i);
     assert.equal(context.pfhExportTables('item', report)[1].rows.length, 3);
+});
+
+test('direct A4 print uses the three-column totals table and escapes item names', () => {
+    const context = runtime();
+    const [table] = context.pfhExportTables('item', {...period, rows: [
+        {item_code: '101', item_name: '<Test & Name>', ordered_qty: 32, received_qty: 0}
+    ]}, true);
+    const markup = context.pfhPrintMarkup(table, context.pfhExportDateLabel(period));
+    assert.match(markup, /@page\{size:A4 landscape/);
+    assert.match(markup, /thead\{display:table-header-group/);
+    assert.match(markup, /class="pfhQty">Total Quantity<\/th>/);
+    assert.match(markup, /class="pfhQty">32<\/td>/);
+    assert.match(markup, /&lt;Test &amp; Name&gt;/);
+    assert.doesNotMatch(markup, /Confirmed Received|Order Details/);
 });
 
 test('query pagination stops fetching as soon as the account or report changes', async () => {

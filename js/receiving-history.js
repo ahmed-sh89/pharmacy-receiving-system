@@ -354,6 +354,7 @@ function pfhSummaryTable(period) {
             ...row, period.itemOrders.get(String(row[0]).toLowerCase()) || "All orders"
         ]) : rows,
         widths: mixedOrderFilters ? [18, 52, 20, 24, 23] : [18, 52, 20, 24],
+        quantityColumns: [2, 3],
         notes: pfhItemNotes(period)
     };
 }
@@ -370,12 +371,14 @@ function pfhExportTables(type, period, summaryOnly = false) {
             columns: ["Item Code", "Item Name", "Total Quantity"],
             rows: pfhItemTotals(period.rows).map(([code, name, ordered]) => [code, name, ordered]),
             widths: [18, 65, 20],
+            quantityColumns: [2],
             notes
         }];
     }
     const details = {
         name: type === "item" ? "Order Details" : PFH_TITLE[type],
         columns: PFH_COLUMNS[type], rows: period.rows.map(row => pfhCells(type, row)),
+        quantityColumns: type === "item" ? [5, 6] : type === "new" ? [5] : [5, 6, 7],
         widths: type === "item" ? [20, 15, 24, 15, 47, 15, 16, 18]
             : type === "new" ? [20, 15, 24, 15, 47, 15, 13]
             : [20, 15, 24, 15, 47, 15, 15, 15, 22]
@@ -420,9 +423,10 @@ function pfhWorkbook(tableSet, title, dateLabel) {
     const font = (size, color, bold = false) => '<font>' + (bold ? '<b/>' : '') + '<sz val="' + size +
         '"/><color rgb="FF' + color + '"/><name val="Calibri"/></font>';
     const styles = [[0, 0, 0], [1, 2, 0], [0, 3, 0], [2, 2, 1], [0, 4, 1], [0, 5, 1]];
-    const cells = styles.map(([fontId, fillId, borderId]) => '<xf numFmtId="0" fontId="' + fontId +
+    const cells = [...styles, ...styles.slice(3)].map(([fontId, fillId, borderId], index) => '<xf numFmtId="0" fontId="' + fontId +
         '" fillId="' + fillId + '" borderId="' + borderId +
-        '" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>');
+        '" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"' +
+        (index >= styles.length ? ' horizontal="center"' : '') + ' wrapText="1"/></xf>');
     const line = edge => '<' + edge + ' style="thin"><color rgb="FFD6E3EF"/></' + edge + '>';
     patch("xl/styles.xml", () => '<?xml version="1.0" encoding="UTF-8"?>' +
         '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
@@ -439,9 +443,10 @@ function pfhWorkbook(tableSet, title, dateLabel) {
             '" topLeftCell="A' + (header + 2) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>';
         return xml.replace(/<sheetViews>[\s\S]*?<\/sheetViews>/, pane)
             .replace(/<c r="([A-Z]+[0-9]+)"(?: s="[0-9]+")?/g, (_, address) => {
-                const row = XLSX.utils.decode_cell(address).r;
+                const {r: row, c: column} = XLSX.utils.decode_cell(address);
                 const style = row === 0 ? 1 : row < header ? 2 : row === header ? 3 : 4 + ((row - header - 1) % 2);
-                return '<c r="' + address + '" s="' + style + '"';
+                const centered = row >= header && tableSet[index].quantityColumns?.includes(column);
+                return '<c r="' + address + '" s="' + (centered ? style + 3 : style) + '"';
             });
     }));
     for (const entry of archive.FileIndex) entry.mt = new Date(1980, 0, 1);
@@ -477,11 +482,12 @@ function pfhPdf(tableSet, title, dateLabel) {
             let x = margin;
             cells.forEach((value, index) => {
                 const span = widths[index];
-                const numeric = typeof value === "number";
+                const centered = table.quantityColumns?.includes(index);
                 doc.setFillColor(fillColor).setDrawColor(border).setLineWidth(0.4);
                 doc.rect(x, y, span, height, "FD");
                 doc.setTextColor(heading ? "#FFFFFF" : ink);
-                doc.text(lines[index], x + (numeric ? span - 6 : 6), y + 13, {align: numeric ? "right" : "left"});
+                doc.text(lines[index], x + (centered ? span / 2 : 6), y + 13,
+                    {align: centered ? "center" : "left"});
                 x += span;
             });
             y += height;
@@ -523,10 +529,46 @@ function pfhPdf(tableSet, title, dateLabel) {
     return doc;
 }
 
+function pfhPrintMarkup(table, dateLabel) {
+    return '<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>PharmFlow | Item Totals</title>' +
+        '<style>@page{size:A4 landscape;margin:10mm}' +
+        'body{margin:0;font:10pt Arial,sans-serif;color:#203b54;print-color-adjust:exact;-webkit-print-color-adjust:exact}' +
+        'h1{font-size:16pt;margin:0 0 8pt;padding:8pt 10pt;background:#174a79;color:#fff}' +
+        'p{margin:0 0 10pt}table{width:100%;border-collapse:collapse;table-layout:fixed}' +
+        'thead{display:table-header-group}th,td{padding:6pt 7pt;border:1px solid #d6e3ef;text-align:left;overflow-wrap:anywhere}' +
+        'th{background:#174a79;color:#fff}tr{break-inside:avoid}tbody tr:nth-child(even){background:#f0f6fc}' +
+        'th:first-child{width:17%}th:last-child{width:19%}.pfhQty{text-align:center}aside{margin-top:10pt}</style>' +
+        '</head><body><h1>PharmFlow | Item Totals</h1><p>' + pfhEsc(dateLabel) + '</p>' +
+        pfhTable(table.columns, table.rows, {quantityColumns: table.quantityColumns}) +
+        (table.notes.length ? '<aside>' + table.notes.map(note => '<p>' + pfhEsc(note) + '</p>').join("") + '</aside>' : '') +
+        '</body></html>';
+}
+
+function pfhPrint(table, dateLabel, current) {
+    document.getElementById("pfhPrintFrame")?.remove();
+    const frame = document.createElement("iframe");
+    frame.id = "pfhPrintFrame";
+    frame.title = "Receiving History print document";
+    frame.tabIndex = -1;
+    frame.setAttribute("aria-hidden", "true");
+    frame.addEventListener("load", () => {
+        if (!current()) { frame.remove(); return; }
+        const content = frame.contentWindow;
+        content.addEventListener("afterprint", () => frame.remove(), {once: true});
+        content.print();
+    }, {once: true});
+    frame.srcdoc = pfhPrintMarkup(table, dateLabel);
+    document.body.append(frame);
+}
+
+function pfhExportDateLabel(period) {
+    return pfhPeriodLabel(period) + " | Riyadh" + (period.order ? " | Order " + period.order : "");
+}
+
 function pfhExportResult({type, periods: [period], summaryOnly = false}, format) {
     const title = summaryOnly ? "Item Totals" : PFH_TITLE[type];
     const filename = "PharmFlow " + title + " " + period.from + " to " + period.to;
-    const dateLabel = pfhPeriodLabel(period) + " | Riyadh" + (period.order ? " | Order " + period.order : "");
+    const dateLabel = pfhExportDateLabel(period);
     const tables = pfhExportTables(type, period, summaryOnly);
     if (format !== "excel") { pfhPdf(tables, title, dateLabel).save(filename + ".pdf"); return; }
     const bytes = pfhWorkbook(tables, "PharmFlow | " + title, dateLabel);
@@ -785,7 +827,16 @@ function pfhBoot() {
         if (!button || !selection || selectionEpoch !== AuthState.identityEpoch) return;
         try {
             const format = button.dataset.pfhListExport;
-            pfhExportResult({type: "item", periods: [pfhExportListPeriod(selection)], summaryOnly: format === "pdf"}, format);
+            const period = pfhExportListPeriod(selection);
+            if (format === "print") {
+                const pharmacy = AuthState.context?.pharmacy_id;
+                const epoch = AuthState.identityEpoch;
+                const [table] = pfhExportTables("item", period, true);
+                pfhPrint(table, pfhExportDateLabel(period),
+                    () => epoch === AuthState.identityEpoch && pharmacy === AuthState.context?.pharmacy_id && !page.hidden);
+                return;
+            }
+            pfhExportResult({type: "item", periods: [period], summaryOnly: format === "pdf"}, format);
         } catch (error) {
             renderSelection(error.message || "Unable to export list.");
         }
@@ -834,6 +885,7 @@ function pfhBoot() {
     document.getElementById("pfhBack").addEventListener("click", () => close(true));
     window.addEventListener("auth:context-ready", event => {
         if (event.detail?.changed || !event.detail?.currentScope) {
+            document.getElementById("pfhPrintFrame")?.remove();
             selection = null;
             renderSelection();
             close(false);
