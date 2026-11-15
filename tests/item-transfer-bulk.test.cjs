@@ -19,10 +19,10 @@ function buffers() {
 }
 function parse(files) {
     return files.map((buffer, i) => parser.parseTransfer(buffer, {name: 'Synthetic-' + i + '.xlsx', size: buffer.byteLength},
-        xlsx, validation, '', 'BENCHMARK'));
+        xlsx, validation, 'BENCHMARK'));
 }
 
-test('real source layout, pharmacy identity, and explicit ambiguous date choice', () => {
+test('real source layout, pharmacy identity and day-first dates', () => {
     const rows = [
         ['Bulk-TO Receive'], ['User ID', 'benchmark'], ['TO Number', 'TO-001'], ['From Warehouse', 'TEST-A'],
         ['To Warehouse', 'TEST-B'], ['Receiveing Date', '9/3/2026'],
@@ -32,11 +32,9 @@ test('real source layout, pharmacy identity, and explicit ambiguous date choice'
     xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(rows.map(row => [null,...row])), 'Sheet1');
     const data = xlsx.write(wb, {type: 'array', bookType: 'xlsx'});
     const file = {name: 'fixture.xlsx', size: data.byteLength};
-    assert.throws(() => parser.parseTransfer(data, file, xlsx, validation, '', 'BENCHMARK'), /ambiguous/);
-    assert.throws(() => parser.parseTransfer(data, file, xlsx, validation, 'DMY', 'OTHER'), /User ID/);
-    assert.equal(parser.parseTransfer(data, file, xlsx, validation, 'DMY', 'BENCHMARK').date, '2026-03-09');
-    const result = parser.parseTransfer(data, file, xlsx, validation, 'MDY', 'BENCHMARK');
-    assert.equal(result.date, '2026-09-03');
+    assert.throws(() => parser.parseTransfer(data, file, xlsx, validation, 'OTHER'), /User ID/);
+    const result = parser.parseTransfer(data, file, xlsx, validation, 'BENCHMARK');
+    assert.equal(result.date, '2026-03-09');
     assert.equal(result.items[0].code, '0012');
     assert.equal(result.items[0].quantity, 100);
 });

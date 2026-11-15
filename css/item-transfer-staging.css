@@ -1,9 +1,0 @@
-#transferNavigation[hidden], .pftPage [hidden] { display: none !important; }
-.pftPage .contentCard { margin-bottom: 12px; }
-.pftControls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 10px 0; }
-.pftControls label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; }
-.pftControls input, .pftControls select {
-  min-height: 38px; padding: 0 8px; border: 1px solid #b5cadd; border-radius: 8px; background: #fff; color: #173b59;
-}
-.pftPage .pftQuantity { text-align: center; font-variant-numeric: tabular-nums; }
-#pftIssues { max-height: 160px; overflow: auto; padding-left: 20px; }

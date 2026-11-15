@@ -6,17 +6,22 @@
         userid: "user_id", tonumber: "number", fromwarehouse: "source",
         towarehouse: "destination", receiveingdate: "date", receivingdate: "date"
     };
-    function isoDate(value, order) {
+    function isoDate(value, xlsx, date1904) {
         if (Object.prototype.toString.call(value) === "[object Date]") {
             return String(value.getFullYear()).padStart(4, "0") + "-" +
                 String(value.getMonth() + 1).padStart(2, "0") + "-" + String(value.getDate()).padStart(2, "0");
         }
+        if (typeof value === "number") {
+            const date = xlsx.SSF.parse_date_code(value, {date1904});
+            if (!date || date.y < 1900) throw new Error("Invalid receiving date.");
+            return isoDate([date.y, date.m, date.d].map((part, index) => String(part).padStart(index ? 2 : 4, "0")).join("-"), xlsx, date1904);
+        }
         const text = clean(value);
         const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
         const local = text.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$/);
-        if (!iso && (!local || !["DMY", "MDY"].includes(order))) throw new Error("Unsupported or ambiguous receiving date.");
+        if (!iso && !local) throw new Error("Expected a receiving date in day/month/year format.");
         const [y, m, d] = iso ? iso.slice(1).map(Number) :
-            [Number(local[3]), Number(local[order === "DMY" ? 2 : 1]), Number(local[order === "DMY" ? 1 : 2])];
+            [Number(local[3]), Number(local[2]), Number(local[1])];
         const date = new Date(Date.UTC(y, m - 1, d));
         if (date.getUTCFullYear() !== y || date.getUTCMonth() + 1 !== m || date.getUTCDate() !== d) {
             throw new Error("Invalid receiving date.");
@@ -24,7 +29,7 @@
         return date.toISOString().slice(0, 10);
     }
 
-    function parseTransfer(buffer, file, xlsx, validation, dateOrder, expectedPharmacy) {
+    function parseTransfer(buffer, file, xlsx, validation, expectedPharmacy) {
         validation.validateFile(file);
         validation.validateBuffer(buffer, file.name);
         const book = validation.validateWorkbook(xlsx.read(buffer, {type: "array", cellDates: true}), xlsx);
@@ -62,7 +67,7 @@
             return {code, name, quantity};
         });
         if (!items.length || items.length > 5000) throw new Error("A transfer must have 1 to 5,000 item rows.");
-        return {number, user_id, source, destination, date: isoDate(metadata.date, dateOrder), items};
+        return {number, user_id, source, destination, date: isoDate(metadata.date, xlsx, book.Workbook?.WBProps?.date1904 === true), items};
     }
 
     function syntheticTransfer(xlsx, number, pharmacy) {

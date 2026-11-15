@@ -67,9 +67,10 @@ test('Receiving History release only changes its declared protected surfaces',()
 
 test('transfer pilot only changes its declared protected surfaces',()=>{
  assert.deepEqual(Object.keys(transfer.changes).sort(),[
-  'PHARMFLOW_CURRENT_CHECKPOINT.md','index.html','js/permissions.js','vite.config.js'
+  'PHARMFLOW_CURRENT_CHECKPOINT.md','css/receiving-history.css','index.html','js/config.js',
+  'js/permissions.js','js/receiving-history.js','vite.config.js'
  ]);
- for(const file of Object.keys(transfer.changes))assert.ok(Object.hasOwn(manifest.protected_files,file),file);
+ for(const [file, expected] of Object.entries(transfer.changes))assert.equal(blobHash(fs.readFileSync(file)),expected,file);
 });
 
 test('release isolation rejects mutations to Duty, deployment, and accepted Receiving files',()=>{

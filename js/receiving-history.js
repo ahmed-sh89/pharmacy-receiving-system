@@ -116,6 +116,9 @@ const PFH_COLUMNS = {
     item: ["Order Number", "Order Date", "Completed Date", "Item Code", "Item Name", "Ordered", "Received", "Verification"]
 };
 
+const PFH_MOVEMENT_COLUMNS = [...PFH_COLUMNS.item.slice(0, 2), "Movement Date", ...PFH_COLUMNS.item.slice(3), "Source"];
+const PFH_MOVEMENT_SUMMARY_COLUMNS = ["Item Code", "Item Name", "Total Ordered", "Total Received"];
+
 const PFH_PAGE_SIZE = 100;
 
 function pfhPeriodBounds(period) {
@@ -237,13 +240,75 @@ async function pfhReadItemHistory(params, period, order, item, current) {
         missingSource: results.filter(result => result.missingSource).length};
 }
 
+async function pfhReadTransfers(params, period, order, item, current) {
+    const rows = [];
+    for (let offset = 0; current(); offset += PFH_PAGE_SIZE) {
+        const page = await authRpc("search_pharmflow_transfer_history_v1", {
+            ...params, p_item: item, p_from: period.from, p_to: period.to, p_offset: offset
+        });
+        if (!Array.isArray(page)) throw new Error("Unexpected Transfer History response");
+        rows.push(...page.slice(0, PFH_PAGE_SIZE).filter(row => !order || pfhNormalizeOrder(row.number) === order));
+        if (page.length <= PFH_PAGE_SIZE) return rows;
+    }
+    return [];
+}
+
+function pfhMergeMovements(receiving, transfers) {
+    const identity = (order, code) => pfhNormalizeOrder(order) + "\u0000" + String(code ?? "").trim().toUpperCase();
+    const incoming = new Map();
+    for (const row of transfers) {
+        const key = identity(row.number, row.code);
+        const previous = incoming.get(key);
+        incoming.set(key, {...row, quantity: (previous?.quantity || 0) + pfhQuantity(row.quantity)});
+    }
+    const confirmed = new Map();
+    for (const row of receiving) {
+        if (row.received_qty == null) continue;
+        const key = identity(row.order_number, row.item_code);
+        confirmed.set(key, (confirmed.get(key) || 0) + row.received_qty);
+    }
+    const transferFields = row => ({
+        movement_source: row.source, movement_date: row.received_date,
+        transfer_receipt: true, received_qty: row.quantity
+    });
+    const rows = receiving.map(row => {
+        const key = identity(row.order_number, row.item_code);
+        const transfer = incoming.get(key);
+        if (!transfer) return {...row, movement_source: "Warehouse"};
+        if (confirmed.has(key)) return {
+            ...row, movement_source: transfer.source, movement_date: transfer.received_date,
+            movement_conflict: Math.abs(confirmed.get(key) - transfer.quantity) > 0.000001
+        };
+        incoming.delete(key);
+        return {...row, ...transferFields(transfer)};
+    });
+    for (const [key, row] of incoming) {
+        if (confirmed.has(key)) continue;
+        rows.push({order_number: row.number, item_code: row.code, item_name: row.name,
+            ordered_qty: null, ...transferFields(row)});
+    }
+    const day = row => row.movement_date || (row.completed_at ? PFH_DAY.format(new Date(row.completed_at)) : "");
+    return rows.sort((a, b) => day(b).localeCompare(day(a)) ||
+        String(a.order_number).localeCompare(String(b.order_number)));
+}
+
+async function pfhReadMovement(params, period, order, item, current) {
+    const [receiving, transfers] = await Promise.all([
+        pfhReadItemHistory(params, period, order, item, current),
+        pfhReadTransfers(params, period, order, item, current)
+    ]);
+    return {...receiving, movement: true, rows: pfhMergeMovements(receiving.rows, transfers)};
+}
+
 function pfhCells(type, row) {
     const base = [row.order_number, row.order_date || "—",
-        row.completed_at ? PFH_TIME.format(new Date(row.completed_at)) : "—",
+        row.movement_date || (row.completed_at ? PFH_TIME.format(new Date(row.completed_at)) : "—"),
         row.item_code, row.item_name, pfhQuantity(row.ordered_qty) ?? "Not available"];
     if (type === "new") return [...base, "NEW"];
     if (type === "item") return [...base, row.received_qty ?? "Not available",
-        row.received_qty == null ? "Not available" : "Confirmed"];
+        row.movement_conflict ? "Quantity differs" : row.received_qty == null ? "Not available" :
+            row.transfer_receipt ? "Transfer file" : "Confirmed",
+        ...(row.movement_source ? [row.movement_source] : [])];
     return [...base, pfhQuantity(row.received_qty) ?? "Not available",
         pfhQuantity(row.difference) ?? "Not available", row.issue_type];
 }
@@ -270,7 +335,7 @@ function pfhItemTotals(rows) {
 
 function pfhItemNotes(period, includeReceived = true) {
     const unverified = includeReceived ? period.rows.filter(row => row.received_qty == null).length : 0;
-    const missingOrdered = period.rows.filter(row => pfhQuantity(row.ordered_qty) == null).length;
+    const missingOrdered = period.rows.filter(row => !row.transfer_receipt && pfhQuantity(row.ordered_qty) == null).length;
     const unmatched = period.item && !period.rows.some(row => pfhItemMatches(row, period.item));
     return [
         ...(unverified ? [unverified + " matching rows lack a confirmed received quantity"] : []),
@@ -303,14 +368,14 @@ function pfhTable(headings, rows, {className = "", differenceColumn = -1,
 function pfhRenderResult({type, periods}, renderItemAction) {
     return periods.map(period => {
         const totals = type === "item" ? pfhItemTotals(period.rows) : [];
-        const summary = pfhTable(PFH_ITEM_SUMMARY_COLUMNS, totals, {
+        const summary = pfhTable(period.movement ? PFH_MOVEMENT_SUMMARY_COLUMNS : PFH_ITEM_SUMMARY_COLUMNS, totals, {
             className: "pfhItemSummary", quantityColumns: [2, 3],
-            emphasizeColumn: totals.length === 1 ? 2 : -1, renderAction: renderItemAction
+            emphasizeColumn: totals.length === 1 ? (period.movement ? 3 : 2) : -1, renderAction: renderItemAction
         });
         const notes = type === "item" ? pfhItemNotes(period).map(note => "<p>" + pfhEsc(note) + "</p>").join("") : "";
         const rows = period.rows.map(row => pfhCells(type, row));
         return '<section class="pfhPeriod"><h3>' + pfhEsc(pfhPeriodLabel(period)) + "</h3>" +
-            summary + notes + (pfhTable(PFH_COLUMNS[type], rows, {
+            summary + notes + (pfhTable(type === "item" && period.movement ? PFH_MOVEMENT_COLUMNS : PFH_COLUMNS[type], rows, {
                 quantityColumns: type === "item" ? [5, 6] : [],
                 differenceColumn: type === "discrepancy" ? 7 : -1
             }) ||
@@ -328,7 +393,7 @@ function pfhAddToExportList(list, period, code) {
     const rows = period.rows.filter(row => String(row.item_code).toLowerCase() === key);
     if (!rows.length || list?.items.has(key)) return list;
     const selection = list || {
-        period: {from: period.from, to: period.to},
+        period: {from: period.from, to: period.to, movement: period.movement},
         items: new Map()
     };
     selection.items.set(key, {rows, order: period.order || "", missingSource: period.missingSource});
@@ -347,9 +412,10 @@ function pfhExportListPeriod(selection) {
 function pfhSummaryTable(period) {
     const rows = pfhItemTotals(period.rows);
     const mixedOrderFilters = Boolean(period.itemOrders);
+    const columns = period.movement ? PFH_MOVEMENT_SUMMARY_COLUMNS : PFH_ITEM_SUMMARY_COLUMNS;
     return {
         name: "Summary",
-        columns: mixedOrderFilters ? [...PFH_ITEM_SUMMARY_COLUMNS, "Order Filter"] : PFH_ITEM_SUMMARY_COLUMNS,
+        columns: mixedOrderFilters ? [...columns, "Order Filter"] : columns,
         rows: mixedOrderFilters ? rows.map(row => [
             ...row, period.itemOrders.get(String(row[0]).toLowerCase()) || "All orders"
         ]) : rows,
@@ -361,15 +427,15 @@ function pfhSummaryTable(period) {
 
 function pfhExportTables(type, period, summaryOnly = false) {
     if (type === "item" && summaryOnly) {
-        const notes = pfhItemNotes(period, false);
+        const notes = pfhItemNotes(period, Boolean(period.movement));
         if (period.itemOrders) {
             const scoped = [...period.itemOrders].filter(([, order]) => order);
             for (const [code, order] of scoped) notes.push(code + " is scoped to order " + order + ".");
         }
         return [{
             name: "Summary",
-            columns: ["Item Code", "Item Name", "Total Quantity"],
-            rows: pfhItemTotals(period.rows).map(([code, name, ordered]) => [code, name, ordered]),
+            columns: ["Item Code", "Item Name", period.movement ? "Total Received" : "Total Quantity"],
+            rows: pfhItemTotals(period.rows).map(([code, name, ordered, received]) => [code, name, period.movement ? received : ordered]),
             widths: [18, 65, 20],
             quantityColumns: [2],
             notes
@@ -377,9 +443,10 @@ function pfhExportTables(type, period, summaryOnly = false) {
     }
     const details = {
         name: type === "item" ? "Order Details" : PFH_TITLE[type],
-        columns: PFH_COLUMNS[type], rows: period.rows.map(row => pfhCells(type, row)),
+        columns: type === "item" && period.movement ? PFH_MOVEMENT_COLUMNS : PFH_COLUMNS[type],
+        rows: period.rows.map(row => pfhCells(type, row)),
         quantityColumns: type === "item" ? [5, 6] : type === "new" ? [5] : [5, 6, 7],
-        widths: type === "item" ? [20, 15, 24, 15, 47, 15, 16, 18]
+        widths: type === "item" ? [20, 15, 24, 15, 47, 15, 16, 18, ...(period.movement ? [22] : [])]
             : type === "new" ? [20, 15, 24, 15, 47, 15, 13]
             : [20, 15, 24, 15, 47, 15, 15, 15, 22]
     };
@@ -566,7 +633,7 @@ function pfhExportDateLabel(period) {
 }
 
 function pfhExportResult({type, periods: [period], summaryOnly = false}, format) {
-    const title = summaryOnly ? "Item Totals" : PFH_TITLE[type];
+    const title = summaryOnly ? "Item Totals" : period.movement ? "Item Movement" : PFH_TITLE[type];
     const filename = "PharmFlow " + title + " " + period.from + " to " + period.to;
     const dateLabel = pfhExportDateLabel(period);
     const tables = pfhExportTables(type, period, summaryOnly);
@@ -718,6 +785,11 @@ function pfhBoot() {
     const listTab = document.getElementById("pfhListTab");
     const searchPanel = document.getElementById("pfhSearchPanel");
     const listActions = document.getElementById("pfhListActions");
+    const transferButton = document.getElementById("pftOpen");
+    const movementEnabled = typeof APP_CONFIG !== "undefined" && APP_CONFIG.environment === "staging";
+    if (movementEnabled) {
+        typeOptions.querySelector('[data-pfh-type="item"]').textContent = "Item Movement";
+    }
     const emptyList = document.getElementById("pfhEmptyList");
     const selectedItems = document.getElementById("pfhSelectedItems");
     const addFeedback = document.getElementById("pfhAddFeedback");
@@ -771,6 +843,8 @@ function pfhBoot() {
         const visible = listView && field("reportType").value === "item";
         listTab.textContent = "Export List (" + count + ")";
         searchPanel.hidden = visible;
+        if (transferButton) transferButton.hidden = !movementEnabled || visible || field("reportType").value !== "item" ||
+            window.PharmFlowPermissions?.allowed("RECEIVING", true) === false;
         exportListPanel.hidden = !visible;
         listActions.hidden = !count;
         emptyList.hidden = Boolean(count);
@@ -844,7 +918,7 @@ function pfhBoot() {
     const changeType = () => {
         const type = field("reportType").value;
         const useItem = type === "item";
-        typeLabel.textContent = PFH_TITLE[type];
+        typeLabel.textContent = useItem && movementEnabled ? "Item Movement" : PFH_TITLE[type];
         for (const option of reportOptions) {
             option.setAttribute("aria-pressed", String(option.dataset.pfhType === type));
         }
@@ -863,6 +937,7 @@ function pfhBoot() {
         closeType();
         page.hidden = true;
         report.hidden = false;
+        window.dispatchEvent(new CustomEvent("pharmflow:receiving-history-closed"));
         if (focus) openButton.focus();
     };
 
@@ -926,7 +1001,7 @@ function pfhBoot() {
     const render = () => {
         const {periods: [period], nextOffset} = result;
         announce(period.rows.length
-            ? period.rows.length + " rows shown · Completed dates in Saudi Arabia time."
+            ? period.rows.length + (period.movement ? " movements shown · Dates in Saudi Arabia time." : " rows shown · Completed dates in Saudi Arabia time.")
             : "Search complete.");
         const totals = result.type === "item" ? pfhItemTotals(period.rows) : [];
         list.innerHTML = pfhRenderResult(result, result.type === "item" ? index => {
@@ -1000,7 +1075,8 @@ function pfhBoot() {
             let data;
             let nextOffset = null;
             if (type === "item") {
-                data = {...await pfhReadItemHistory({p_pharmacy_id: pharmacy}, period, order, item, current), item};
+                const load = movementEnabled ? pfhReadMovement : pfhReadItemHistory;
+                data = {...await load({p_pharmacy_id: pharmacy}, period, order, item, current), item};
             } else {
                 const page = await readPage(0);
                 data = {...period, rows: page.rows};
@@ -1035,6 +1111,11 @@ function pfhBoot() {
         }
     }
 
+    window.addEventListener("pharmflow:transfers-imported", () => {
+        if (page.hidden || field("reportType").value !== "item" || !field("item").value.trim()) return;
+        clear();
+        form.requestSubmit();
+    });
     more.addEventListener("click", loadMore);
     for (const [id, format] of [["pfhExcel", "excel"], ["pfhPdf", "pdf"]]) {
         const button = document.getElementById(id);

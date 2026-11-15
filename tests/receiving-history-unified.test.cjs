@@ -278,3 +278,45 @@ test('item history centers quantity columns and emphasizes only a single item to
     ]}]});
     assert.doesNotMatch(mixed, /pfhTotalBadge/);
 });
+
+test('movement combines warehouse and pharmacy receipts, counts a shared TO once and prints received totals', () => {
+    const context = runtime();
+    const warehouse = [
+        {order_number: 'TO-1', item_code: '101', item_name: 'Panadol', ordered_qty: 12, received_qty: 10},
+        {order_number: 'TO-2', item_code: '101', item_name: 'Panadol', ordered_qty: 15, received_qty: null},
+        {order_number: 'TO-3', item_code: '101', item_name: 'Panadol', ordered_qty: 40, received_qty: null}
+    ];
+    const transfers = [
+        {number: 'TO-1', code: '101', name: 'Panadol', source: 'WAREHOUSE-1', received_date: '2026-11-01', quantity: 10},
+        {number: 'TO-2', code: '101', name: 'Panadol', source: 'PHARMACY-2', received_date: '2026-11-01', quantity: 12},
+        {number: 'TO-2', code: '101', name: 'Panadol', source: 'PHARMACY-2', received_date: '2026-11-01', quantity: 3}
+    ];
+    const rows = context.pfhMergeMovements(warehouse, transfers);
+    assert.equal(rows.length, 3);
+    assert.equal(rows.find(row => row.order_number === 'TO-2').movement_source, 'PHARMACY-2');
+    assert.equal(rows.find(row => row.order_number === 'TO-2').ordered_qty, 15);
+    assert.equal(rows.find(row => row.order_number === 'TO-3').received_qty, null);
+    assert.equal(context.pfhItemTotals(rows)[0][3], 25);
+    const [summary] = context.pfhExportTables('item', {...period, movement: true, rows}, true);
+    assert.equal(summary.columns[2], 'Total Received');
+    assert.equal(summary.rows[0][2], 25);
+    const result = context.pfhRenderResult({type:'item',periods:[{...period,movement:true,rows}]});
+    assert.match(result, /pfhTotalBadge">25/);
+    assert.match(result, /PHARMACY-2/);
+    assert.match(result, /Transfer file/);
+});
+
+test('movement can report a standalone transfer and respects the optional order filter across pages', async () => {
+    const offsets = [];
+    const context = runtime({authRpc: async (rpc, args) => {
+        assert.equal(rpc, 'search_pharmflow_transfer_history_v1');
+        offsets.push(args.p_offset);
+        if (!args.p_offset) return Array.from({length:101},()=>({number:'TO-OTHER'}));
+        return [{number:'TO-2',code:'101',name:'Panadol',source:'PHARMACY',received_date:'2026-11-01',quantity:15}];
+    }});
+    const transfers = await context.pfhReadTransfers({p_pharmacy_id:'fixture'}, period,'TO-2','101',()=>true);
+    assert.deepEqual(offsets,[0,100]);
+    const [row] = context.pfhMergeMovements([],transfers);
+    assert.equal(row.received_qty,15);
+    assert.equal(row.ordered_qty,null);
+});

@@ -96,7 +96,7 @@ window.PharmFlowPermissions = (() => {
   lastResumeAt=Date.now();retries=0;
   return load();
  }
- const routeModule=route=>route==='duty'?'DUTY':route==='expiry'?'EXPIRY':['dashboard','receiving','files','reports','sessions','archive','itemMovement'].includes(route)?'RECEIVING':null;
+ const routeModule=route=>route==='duty'?'DUTY':route==='expiry'?'EXPIRY':['dashboard','receiving','files','reports','sessions','archive'].includes(route)?'RECEIVING':null;
  const rule=(module,write=false,extra=null)=>({module,write,extra});
  const controls={
   RECEIVING:'#barcodeInput,#btnLoadOrders,#orderFileInput,#btnFinalizeReceiving,#btnCompleteAllReceiving,#btnResetWorkspace,#btnDeleteAllHistory,#btnSaveManualItem,#btnOpenManualAdd,[data-quick-receive],[data-link-receive],[data-review],#btnCreateSession,#btnJoinCloudSession,#btnMergeZebraSession,#btnPrepareZebraWork,#btnLastScanEdit,[data-action="plus"],[data-action="minus"],[data-action="edit"],[data-remove-order-file],[data-delete-archive-order],[data-remove-last],[data-delete-entry],[data-remove-extra],#btnConfirmQuantityCorrection,#btnSearchedAdjust,#btnSearchedRemoveManual,#btnApplySearchedCorrection,#btnLastScanMinus,#btnLastScanPlus,[data-order-delete],[data-order-finalize],[data-receiving-delete],[data-receiving-reset]',

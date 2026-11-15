@@ -203,3 +203,14 @@
 .pfhAddFeedback p { margin: 0; }
 
 #pfhPrintFrame { position: fixed; width: 1px; height: 1px; inset: 0 auto auto 0; border: 0; opacity: 0; pointer-events: none; }
+
+.pfhTransferAction { margin-inline-start: auto; }
+.pfhTransferDialog {
+  width: min(560px, calc(100vw - 32px)); box-sizing: border-box; padding: 18px;
+  border: 1px solid #a6bfd4; border-radius: 12px; background: #f7fbff; color: #203b54;
+  box-shadow: 0 18px 48px #153c6033;
+}
+.pfhTransferDialog::backdrop { background: #173b5955; }
+#pftImportStatus { margin: 10px 0 0; }
+#pftReview { margin-top: 8px; }
+#pftIssues { max-height: 150px; overflow: auto; padding-inline-start: 20px; }
