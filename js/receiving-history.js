@@ -445,9 +445,50 @@ function pfhTable(headings, rows, {className = "", differenceColumn = -1,
         head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
 }
 
-function pfhRenderResult({type, periods}, renderItemAction) {
+function pfhRenderMovementResults(period, totals, renderItemAction, openItems) {
+    if (!totals.length) return "";
+    const single = totals.length === 1;
+    const groups = new Map();
+    for (const row of period.rows) {
+        const key = String(row.item_code).toLowerCase();
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(row);
+    }
+    const dates = pfhCalendarDateText(period.from) + " – " + pfhCalendarDateText(period.to);
+    const filters = [dates, period.source && "Source: " + period.source, period.order && "TO: " + period.order]
+        .filter(Boolean).map(pfhEsc).join(" · ");
+    return '<div class="pfhMovementResults"><p class="pfhMovementContext">' + filters + "</p>" +
+        totals.map(([code, name, quantity], index) => {
+            const key = String(code).toLowerCase();
+            const members = groups.get(key);
+            const open = single || openItems.has(key);
+            const id = "pfhMovementDetails" + index;
+            const identity = '<span class="pfhMovementIdentity"><strong>' + pfhEsc(name || code) +
+                '</strong><span class="pfhMovementCode">' + pfhEsc(code) + "</span></span>";
+            const count = members.length + (members.length === 1 ? " movement" : " movements");
+            const metric = '<span class="pfhMovementMetric"><span>Total quantity</span><strong>' +
+                pfhEsc(quantity) + '</strong><span>' + count + "</span></span>";
+            const overview = single
+                ? '<div class="pfhMovementOverview">' + identity + metric + "</div>"
+                : '<button class="pfhMovementOverview pfhMovementToggle" type="button" data-pfh-movement-toggle aria-controls="' +
+                    id + '" aria-expanded="' + open + '">' + identity + metric + '<span class="pfhMovementChevron" aria-hidden="true"></span></button>';
+            const cells = members.map(row => [
+                row.order_number, row.movement_date ? pfhCalendarDateText(row.movement_date) : "—",
+                row.movement_quantity ?? "Not available", row.movement_source, row.movement_origin
+            ]);
+            return '<article class="pfhMovementItem' + (single ? " pfhMovementSingle" : "") + '">' +
+                '<div class="pfhMovementItemHeader">' + overview + (renderItemAction ? renderItemAction(index) : "") +
+                '</div><div id="' + id + '" class="pfhMovementDetails" data-pfh-movement-item="' + pfhEsc(key) + '"' +
+                (open ? "" : " hidden") + '><h4>Movement Details</h4>' +
+                pfhTable(["TO Number", "Date", "Quantity", "Source", "Recorded via"], cells,
+                    {className: "pfhMovementTable", quantityColumns: [2]}) + "</div></article>";
+        }).join("") + "</div>";
+}
+
+function pfhRenderResult({type, periods}, renderItemAction, openItems = new Set()) {
     return periods.map(period => {
         const totals = type === "item" ? pfhItemTotals(period.rows, period.movement) : [];
+        if (period.standalone && type === "item") return pfhRenderMovementResults(period, totals, renderItemAction, openItems);
         const summary = pfhTable(period.movement ? PFH_MOVEMENT_SUMMARY_COLUMNS : PFH_ITEM_SUMMARY_COLUMNS, totals, {
             className: "pfhItemSummary", quantityColumns: period.movement ? [2] : [2, 3],
             emphasizeColumn: totals.length === 1 ? 2 : -1, renderAction: renderItemAction
@@ -868,6 +909,7 @@ function pfhBoot() {
     const typeLabel = document.getElementById("pfhTypeValue");
     const reportOptions = typePicker.querySelectorAll("[data-pfh-type]");
     const toolbar = document.getElementById("pfhToolbar");
+    const resultsHeading = document.getElementById("pfhResultsHeading");
     const itemField = document.getElementById("pfhItemField");
     const itemLabel = document.getElementById("pfhItemLabel");
     const itemOptional = document.getElementById("pfhItemOptional");
@@ -931,6 +973,7 @@ function pfhBoot() {
         exports.hidden = true;
         status.textContent = message;
         toolbar.hidden = !message;
+        if (resultsHeading) resultsHeading.hidden = true;
         list.replaceChildren();
     };
     const typeIsOpen = () => typeTrigger.getAttribute("aria-expanded") === "true";
@@ -1155,17 +1198,33 @@ function pfhBoot() {
             ? period.rows.length + (period.standalone ? (period.rows.length === 1 ? " movement" : " movements") : period.movement ? " movements shown · Dates in Saudi Arabia time." : " rows shown · Completed dates in Saudi Arabia time.")
             : period.standalone ? "No movements match these filters. Check the date on the order file." : period.movement ? "No movements found. For imported transfers, select the Receiving Date shown in Excel." : "Search complete.");
         const totals = result.type === "item" ? pfhItemTotals(period.rows, period.movement) : [];
+        if (resultsHeading) resultsHeading.hidden = !period.standalone || !totals.length;
+        if (period.standalone && totals.length > 1) {
+            announce(totals.length + " items · " + period.rows.length + " movements");
+        } else if (period.standalone && totals.length === 1) {
+            status.textContent = "1 item";
+        }
+        const openItems = period.standalone
+            ? new Set([...list.querySelectorAll("[data-pfh-movement-item]:not([hidden])")].map(el => el.dataset.pfhMovementItem))
+            : undefined;
         list.innerHTML = pfhRenderResult(result, result.type === "item" ? index => {
             const added = selection?.items.has(String(totals[index][0]).toLowerCase()) &&
                 pfhListMatches(selection.period, period);
             return '<button class="pfhButton pfhRowAction" type="button" data-pfh-save="' + index + '"' +
-                (added ? " disabled>Added" : ">Add Item") + "</button>";
-        } : undefined);
+                (added ? (period.standalone ? " disabled>Added to list" : " disabled>Added") : period.standalone ? ">Add to Export List" : ">Add Item") + "</button>";
+        } : undefined, openItems);
         more.hidden = nextOffset == null;
         exports.hidden = !period.rows.length;
         retry.hidden = true;
     };
     list.addEventListener("click", event => {
+        const toggle = event.target.closest("[data-pfh-movement-toggle]");
+        if (toggle) {
+            const details = document.getElementById(toggle.getAttribute("aria-controls"));
+            details.hidden = !details.hidden;
+            toggle.setAttribute("aria-expanded", String(!details.hidden));
+            return;
+        }
         const itemCode = event.target.closest("[data-pfh-discrepancy-item]");
         if (itemCode && !busy && result?.type === "discrepancy" && result.current()) {
             selectedDiscrepancyCode = itemCode.dataset.pfhDiscrepancyItem;
@@ -1189,8 +1248,14 @@ function pfhBoot() {
         addFeedback.hidden = true;
         renderSelection();
         render();
-        field("item").focus({preventScroll: true});
-        field("item").select();
+        const toggleAfterRender = period.standalone
+            ? list.querySelectorAll("[data-pfh-movement-toggle]")[Number(add.dataset.pfhSave)]
+            : null;
+        if (toggleAfterRender) toggleAfterRender.focus({preventScroll: true});
+        else {
+            field("item").focus({preventScroll: true});
+            field("item").select();
+        }
     });
     document.getElementById("pfhSearchListDates").addEventListener("click", () => {
         if (!selection || busy) return;

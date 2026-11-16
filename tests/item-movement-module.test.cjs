@@ -39,3 +39,34 @@ test("standalone route and staged configuration are distinct from legacy Receivi
     assert.match(config, /standaloneMovement: false/);
     assert.match(source, /standaloneMovement \? "discrepancy" : "item"/);
 });
+
+test("one item has a total card and an open details table without redundant item columns", () => {
+    const context = vm.createContext({window:{}, document:{readyState:"loading", addEventListener(){}}});
+    vm.runInContext(source, context);
+    const item = {item_code:"1013239", item_name:"Klavox & Co.", movement_date:"2026-09-14",
+        order_number:"TO-000478674", movement_source:"WAH001", movement_origin:"Import", movement_quantity:17};
+    const other = {...item, order_number:"TO-000471830", movement_quantity:13};
+    const html = context.pfhRenderResult({type:"item",periods:[{...period,standalone:true,movement:true,rows:[item,other]}]});
+    assert.match(html, /Total quantity<\/span><strong>30<\/strong><span>2 movements/);
+    assert.equal((html.match(/Klavox &amp; Co\./g) || []).length, 1);
+    assert.match(html, /data-pfh-movement-item="1013239"><h4>Movement Details/);
+    assert.doesNotMatch(html, />Item Code<|>Item Name<|data-pfh-movement-toggle/);
+});
+
+test("multi-item details stay scoped to their item and remember the open group after a render", () => {
+    const context = vm.createContext({window:{}, document:{readyState:"loading", addEventListener(){}}});
+    vm.runInContext(source, context);
+    const item = {item_code:"101",item_name:"First",order_number:"TO-1",movement_date:"2026-11-04",
+        movement_quantity:12,movement_source:"WAH001",movement_origin:"Orders"};
+    const second = {...item,item_code:"102",item_name:"Second",order_number:"TO-2",movement_quantity:4};
+    const result = {type:"item",periods:[{...period,standalone:true,movement:true,rows:[item,second]}]};
+    const closed = context.pfhRenderResult(result, () => "");
+    assert.equal((closed.match(/aria-expanded="false"/g) || []).length, 2);
+    const html = context.pfhRenderResult(result, () => "", new Set(["102"]));
+    assert.match(html, /aria-controls="pfhMovementDetails0" aria-expanded="false"/);
+    assert.match(html, /aria-controls="pfhMovementDetails1" aria-expanded="true"/);
+    const [firstGroup, secondGroup] = html.split("</article>");
+    assert.match(firstGroup, /TO-1/);
+    assert.doesNotMatch(firstGroup, /TO-2/);
+    assert.match(secondGroup, /TO-2/);
+});
