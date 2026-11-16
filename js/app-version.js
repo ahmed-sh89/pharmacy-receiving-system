@@ -19,7 +19,7 @@
             notice.setAttribute("aria-label","PharmFlow update");
             notice.innerHTML=`
                 <img class="pharmflowVersionMark" src="assets/pharmflow-mark-blue.svg" alt="" width="30" height="30">
-                <strong class="pharmflowVersionCopy" role="status">Farm flow has been updated.</strong>
+                <strong class="pharmflowVersionCopy" role="status">PharmFlow has been updated.</strong>
                 <button type="button" data-refresh>Refresh</button>
                 <small data-message aria-live="polite"></small>`;
             document.body.appendChild(notice);
