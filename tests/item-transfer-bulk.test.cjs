@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const {test} = require('node:test');
 const {PGlite} = require('@electric-sql/pglite');
+const {parseHTML} = require('linkedom');
 
 const context = vm.createContext({TextDecoder, TextEncoder, Uint8Array, DataView, ArrayBuffer});
 for (const file of ['js/vendor/sheetjs-0.20.3/xlsx.full.min.js', 'js/excel-security.js', 'js/item-transfer-parser.js']) {
@@ -92,7 +93,8 @@ test('real source layout, pharmacy identity and flexible transfer dates', () => 
         ['To Warehouse', 'TEST-B'], ['Receiveing Date', '9/3/2026'],
         ['Item Number', 'Item Name', 'Category', 'Price', 'Size', 'Color', 'Quantity'], ['0012', 'Synthetic name', '', '', '', '', '100.0']
     ];
-    function receiveDate(receivingDate, pharmacy = 'BENCHMARK') {
+    function receiveDate(receivingDate, pharmacy = 'BENCHMARK', order = 'TO-001') {
+        rows[2][1] = order;
         rows[5][1] = receivingDate;
         const wb = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(rows.map(row => [null,...row])), 'Sheet1');
@@ -108,6 +110,13 @@ test('real source layout, pharmacy identity and flexible transfer dates', () => 
     assert.equal(receiveDate(vm.runInContext('new Date(2026, 8, 3)', context)).date, '2026-09-03');
     assert.throws(() => receiveDate('2/30/2026'), /Invalid receiving date/);
     assert.throws(() => receiveDate('27/13/2026'), /Invalid receiving date/);
+    const plain = receiveDate('8/2/2026', 'BENCHMARK', 'TO-000442245');
+    const suffixed = receiveDate('8/2/2026', 'BENCHMARK', 'To-000442245 - 10101-0108');
+    assert.equal(plain.number, 'TO-000442245');
+    assert.equal(plain.date, '2026-08-02');
+    assert.equal(plain.source, 'TEST-A');
+    assert.deepEqual(suffixed, plain);
+    assert.throws(() => receiveDate('8/2/2026', 'BENCHMARK', 'TO-000442245 unexpected text'), /Invalid TO number/);
     assert.equal(result.items[0].code, '0012');
     assert.equal(result.items[0].quantity, 100);
 });
@@ -272,4 +281,70 @@ test('roll-forward 50 to 60, source and date filter, atomic selected deletion an
     await assert.rejects(latest(),/permission denied/);
     await db.exec('reset role; set role anon');
     await assert.rejects(latest(),/permission denied/);
+});
+
+test('Manage Imports confirms today’s uploads across pages before deleting', async () => {
+    const {window, document} = parseHTML(readFileSync('index.html', 'utf8'));
+    Object.defineProperty(document, 'currentScript', {value: {src:'https://fixture.invalid/js/item-transfer-staging.js'}});
+    const el = id => document.getElementById(id);
+    const form = el('pftManageForm');
+    const controls = [...form.querySelectorAll('input,button')];
+    controls.namedItem = name => controls.find(control => control.name === name);
+    Object.defineProperty(form, 'elements', {value: controls});
+    form.reset = () => controls.filter(control => control.name).forEach(control => {control.value = '';});
+    const dialog = el('pftManageDialog');
+    dialog.showModal = () => {dialog.open = true;};
+    dialog.close = () => {dialog.open = false;};
+    const now = new Date();
+    const today = new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Riyadh', year:'numeric', month:'2-digit', day:'2-digit'}).format(now);
+    const records = Array.from({length:101}, (_, i) => ({
+        number:'TO-' + (1000 + i), imported_at:now.toISOString(), source:'SOURCE', received_date:'2026-08-02'
+    }));
+    const older = {...records[0], number:'TO-999', imported_at:'2020-01-01T00:00:00Z'};
+    const all = [...records, older];
+    const batches = [];
+    let loads = 0;
+    const authRpc = async (name, args) => {
+        assert.equal(args.p_pharmacy_id, scope);
+        if (name === 'get_pharmflow_latest_transfer_import_v1') return [];
+        if (name === 'list_pharmflow_transfer_imports_v2') {
+            assert.equal(args.p_from, today);
+            assert.equal(args.p_to, today);
+            loads++;
+            return all.filter(row => row !== older).slice(args.p_offset, args.p_offset + 101);
+        }
+        assert.equal(name, 'delete_pharmflow_transfer_imports_v1');
+        batches.push(args.p_imports.length);
+        for (const selection of args.p_imports) {
+            const index = all.findIndex(row => row.number === selection.number && row.imported_at === selection.imported_at);
+            assert.ok(index >= 0);
+            all.splice(index, 1);
+        }
+        return args.p_imports.length;
+    };
+    const click = id => el(id).dispatchEvent(new window.Event('click'));
+    const settle = () => new Promise(resolve => setImmediate(resolve));
+    vm.runInNewContext(readFileSync('js/item-transfer-staging.js','utf8'), {
+        window, document, authRpc, CustomEvent:window.CustomEvent,
+        AuthState:{context:{pharmacy_id:scope, pharmacy_code:'BENCHMARK'}},
+        APP_CONFIG:{receiving:{itemMovementEnabled:true}},
+        pfhDatePicker:() => ({close(){}, sync(){}, reposition(){}}),
+        showToast:message => assert.fail(message)
+    });
+    if (document.readyState === 'loading') document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    click('pftManage');
+    click('pftManageDeleteToday');
+    await settle();
+    assert.equal(loads, 2);
+    assert.match(el('pftManageConfirmText').textContent, /Delete 101 transfers uploaded on/);
+    assert.deepEqual(batches, []);
+    click('pftManageCancel');
+    assert.equal(el('pftManageConfirm').hidden, true);
+    click('pftManageDeleteToday');
+    await settle();
+    click('pftManageCommit');
+    await settle();
+    assert.deepEqual(batches, [100, 1]);
+    assert.deepEqual(all, [older]);
+    assert.match(el('pftManageStatus').textContent, /101 transfers deleted/);
 });

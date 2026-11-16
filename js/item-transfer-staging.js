@@ -76,7 +76,7 @@
                 busy = true;
                 refresh();
                 status.textContent = "Reading " + selected.length + " files…";
-                worker = new Worker(new URL("item-transfer-worker.js?v=3", scriptUrl));
+                worker = new Worker(new URL("item-transfer-worker.js?v=4", scriptUrl));
                 const byNumber = new Map(), conflicts = new Set();
                 let repeats = 0, invalid = 0;
                 for (let i = 0; i < selected.length && current(); i++) {
@@ -106,8 +106,9 @@
                     addIssue(number + " — Different versions in this selection. Review those files before saving.");
                 }
                 pending = [...byNumber.values()].map(entry => entry.transfer);
-                status.textContent = pending.length + " ready · " + repeats + " repeated in selection · " +
-                    (invalid + conflicts.size) + " need review.";
+                status.textContent = pending.length + " ready to save · " + repeats + " repeated in selection · " +
+                    (invalid + conflicts.size) + " need review. " +
+                    (pending.length ? "Select Save Transfers to finish importing." : "No transfers saved.");
             } catch (error) {
                 if (current()) status.textContent = error.message;
             } finally {
@@ -170,6 +171,7 @@
         const lastStatus = el("pftLastImportStatus"), lastSaved = el("pftLastImportSaved");
         const lastOrder = el("pftLastImportOrder"), lastFile = el("pftLastImportFile");
         const prev = el("pftManagePrev"), next = el("pftManageNext"), remove = el("pftManageDelete");
+        const removeToday = el("pftManageDeleteToday");
         const confirmation = el("pftManageConfirm"), commit = el("pftManageCommit"), cancel = el("pftManageCancel");
         const pageSize = 100;
         const prompt = "Enter a TO number or an upload date range.";
@@ -180,6 +182,7 @@
         const fileDate = new Intl.DateTimeFormat("en-GB", {timeZone: "UTC", dateStyle: "medium"});
         const selected = new Map();
         let lastRequest = 0;
+        let todaySelection = null;
         let query, page = 0, hasMore = false, busy = false, generation = 0;
 
         const refresh = () => {
@@ -191,11 +194,13 @@
             prev.disabled = busy || confirming || page === 0;
             next.disabled = busy || confirming || !hasMore;
             remove.disabled = busy || confirming || !selected.size;
+            removeToday.disabled = busy || confirming;
             remove.textContent = "Delete Selected" + (selected.size ? " (" + selected.size + ")" : "");
         };
 
         function clearResults() {
             selected.clear();
+            todaySelection = null;
             confirmation.hidden = results.hidden = actions.hidden = true;
             body.replaceChildren();
         }
@@ -255,6 +260,11 @@
             }
         }
 
+        function listImports(pharmacyId, filters, offset) {
+            return authRpc("list_pharmflow_transfer_imports_v2",
+                {...filters, p_pharmacy_id: pharmacyId, p_offset: offset});
+        }
+
         async function load(offset, notice = "") {
             if (busy || !query) return;
             const current = requestCurrent();
@@ -264,8 +274,7 @@
             status.textContent = notice + "Searching…";
             try {
                 const context = access();
-                const rows = await authRpc("list_pharmflow_transfer_imports_v2",
-                    {...query, p_pharmacy_id: context.pharmacy_id, p_offset: offset});
+                const rows = await listImports(context.pharmacy_id, query, offset);
                 if (!current()) return;
                 if (!Array.isArray(rows)) throw new Error("Unexpected import search response.");
                 page = offset;
@@ -333,44 +342,105 @@
         });
         prev.addEventListener("click", () => load(page - pageSize));
         next.addEventListener("click", () => load(page + pageSize));
-        remove.addEventListener("click", () => {
-            if (!selected.size) return;
-            el("pftManageConfirmText").textContent = "Delete " + selected.size +
-                (selected.size === 1 ? " selected transfer? " : " selected transfers? ") +
-                "You can import the Excel files again after deletion.";
+        function confirmDelete(text) {
+            el("pftManageConfirmText").textContent = text + " You can import the Excel files again after deletion.";
             confirmation.hidden = false;
             refresh();
             cancel.focus();
+        }
+
+        remove.addEventListener("click", () => {
+            if (!selected.size) return;
+            confirmDelete("Delete " + selected.size + (selected.size === 1 ? " selected transfer?" : " selected transfers?"));
         });
-        cancel.addEventListener("click", () => {
-            confirmation.hidden = true;
-            refresh();
-            remove.focus();
-        });
-        commit.addEventListener("click", async () => {
-            if (busy || confirmation.hidden || !selected.size) return;
+        removeToday.addEventListener("click", async () => {
+            if (busy) return;
+            datePicker.close();
             const current = requestCurrent();
-            const imports = [...selected.values()];
+            const day = uploadDate.format(new Date());
+            const filters = {p_order: "", p_from: day, p_to: day};
+            const imports = new Map();
             busy = true;
             refresh();
-            status.textContent = "Deleting selected transfers…";
+            status.textContent = "Checking today’s uploads…";
             try {
                 const context = access();
-                const deleted = await authRpc("delete_pharmflow_transfer_imports_v1",
-                    {p_pharmacy_id: context.pharmacy_id, p_imports: imports});
-                if (!current()) return;
-                if (deleted !== imports.length) throw new Error("Unexpected delete response. Search again.");
-                window.dispatchEvent(new CustomEvent("pharmflow:transfers-imported"));
-                busy = false;
-                await load(0, deleted + (deleted === 1 ? " transfer deleted. " : " transfers deleted. "));
-            } catch (error) {
-                if (current()) {
-                    clearResults();
-                    status.textContent = error.message || "Unable to delete selected transfers.";
+                let offset = 0;
+                let rows;
+                do {
+                    rows = await listImports(context.pharmacy_id, filters, offset);
+                    if (!current()) return;
+                    if (!Array.isArray(rows)) throw new Error("Unexpected import search response.");
+                    for (const {number, imported_at} of rows.slice(0, pageSize)) {
+                        imports.set(number, {number, imported_at});
+                    }
+                    offset += pageSize;
+                } while (rows.length > pageSize);
+                if (imports.size) {
+                    todaySelection = {day, filters, imports: [...imports.values()]};
+                    status.textContent = "Today’s imports · " + day;
+                    confirmDelete("Delete " + imports.size + (imports.size === 1 ? " transfer" : " transfers") +
+                        " uploaded on " + day + "?");
+                } else {
+                    status.textContent = "No transfers were saved today.";
                 }
+            } catch (error) {
+                if (current()) status.textContent = error.message || "Unable to load today’s uploads.";
             } finally {
-                if (current()) { busy = false; refresh(); }
+                if (current()) {
+                    busy = false;
+                    refresh();
+                    if (todaySelection) cancel.focus();
+                }
             }
+        });
+        cancel.addEventListener("click", () => {
+            const trigger = todaySelection ? removeToday : remove;
+            todaySelection = null;
+            confirmation.hidden = true;
+            refresh();
+            trigger.focus();
+        });
+        commit.addEventListener("click", async () => {
+            if (busy || confirmation.hidden) return;
+            const today = todaySelection;
+            const imports = today?.imports ?? [...selected.values()];
+            if (!imports.length) return;
+            const current = requestCurrent();
+            if (today && today.day !== uploadDate.format(new Date())) {
+                clearResults();
+                status.textContent = "The upload date changed. Check today’s imports again.";
+                refresh();
+                return;
+            }
+            busy = true;
+            refresh();
+            status.textContent = "Deleting " + imports.length + (imports.length === 1 ? " transfer…" : " transfers…");
+            let deleted = 0;
+            let failure = "";
+            try {
+                const context = access();
+                for (let offset = 0; offset < imports.length && current(); offset += pageSize) {
+                    const batch = imports.slice(offset, offset + pageSize);
+                    const count = await authRpc("delete_pharmflow_transfer_imports_v1",
+                        {p_pharmacy_id: context.pharmacy_id, p_imports: batch});
+                    if (count !== batch.length) throw new Error("Unexpected delete response. Search again.");
+                    deleted += count;
+                }
+            } catch (error) {
+                failure = (error.message || "Unable to finish deletion.") + " ";
+            }
+            if (!current()) return;
+            if (deleted || failure) window.dispatchEvent(new CustomEvent("pharmflow:transfers-imported"));
+            if (today) {
+                query = today.filters;
+                form.elements.namedItem("order").value = "";
+                for (const field of ["from", "to"]) form.elements.namedItem(field).value = today.day;
+                datePicker.sync();
+            }
+            const notice = (deleted ? deleted + (deleted === 1 ? " transfer deleted. " : " transfers deleted. ") : "") + failure;
+            busy = false;
+            await load(0, notice);
         });
     }
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, {once: true});
