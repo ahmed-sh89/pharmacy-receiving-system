@@ -137,7 +137,7 @@ test("an unchanged deployment stays quiet and a newer deployment shows the refre
     newer.api.initialize();
     await new Promise(setImmediate);
     assert.equal(newer.notice.hidden,false);
-    assert.match(newer.notice.innerHTML,/>Farm flow has been updated\.<\/strong>/);
+    assert.match(newer.notice.innerHTML,/>PharmFlow has been updated\.<\/strong>/);
     assert.match(newer.notice.innerHTML,/data-refresh>Refresh<\/button>/);
     assert.doesNotMatch(newer.notice.innerHTML,/Refresh to start/);
 });
