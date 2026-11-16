@@ -90,7 +90,7 @@ test("Pages stamps the same commit into the document and lightweight version end
     assert.match(workflow,/version\.json/);
 });
 
-function createVersionHarness({local="commit-a",server="commit-a",fields=[],pendingScans=0,idle=false}={}){
+function createVersionHarness({local="commit-a",server="commit-a",fields=[],dialogs=[],pendingScans=0,idle=false}={}){
     let now=100000;
     let reloads=0;
     let fetching=0;
@@ -103,7 +103,7 @@ function createVersionHarness({local="commit-a",server="commit-a",fields=[],pend
     const document={
         visibilityState:"visible",body,baseURI:"https://example.test/pharmacy/",
         querySelector(selector){return selector==='meta[name="pharmflow-build-sha"]'?{content:local}:null;},
-        querySelectorAll(selector){return selector.startsWith("input,")?fields:[];},
+        querySelectorAll(selector){return selector.startsWith("input,")?fields:dialogs;},
         createElement(){return notice;},getElementById(){return null;},
         addEventListener(type,handler){listeners["document:"+type]=handler;}
     };
@@ -143,16 +143,16 @@ test("an unchanged deployment stays quiet and a newer deployment shows the refre
 });
 
 test("version refresh is blocked during auth transitions, pending scans, and unsaved edits",async t=>{
-    const dirty={tagName:"INPUT",type:"text",value:"saved",disabled:false,closest:()=>null,isContentEditable:false};
-    const harness=createVersionHarness({server:"commit-b",fields:[dirty]});
+    const editor={closest:()=>null,getClientRects:()=>[{}]};
+    const dialogs=[editor];
+    const harness=createVersionHarness({server:"commit-b",dialogs});
     harness.api.initialize();
     await new Promise(setImmediate);
-    dirty.value="unsaved";
-    assert.equal(await harness.api.isSafeToRefresh(),false,"changed form values must prevent reload");
+    assert.equal(await harness.api.isSafeToRefresh(),false,"an open editor must prevent reload");
     assert.equal(await harness.api.refreshWhenSafe(),false);
     assert.equal(harness.reloads,0);
 
-    dirty.value="saved";
+    dialogs.length=0;
     harness.setTransition(true);
     assert.equal(await harness.api.isSafeToRefresh(),false,"authentication transition must prevent reload");
     harness.setTransition(false);
@@ -164,16 +164,18 @@ test("version refresh is blocked during auth transitions, pending scans, and uns
     assert.equal(pending.reloads,0);
 });
 
-test("Refresh reloads after changes to read-only report filters",async()=>{
+test("Refresh reloads after autosaved field and report changes",async()=>{
     const item={type:"search",value:"",closest:()=>null};
     const date={type:"hidden",value:"",closest:()=>null};
     const select={tagName:"SELECT",type:"select-one",value:"item",closest:selector=>selector.includes("[data-refresh-filter]")?{}:null};
-    const harness=createVersionHarness({server:"commit-b",fields:[item,date,select]});
+    const autosaved={type:"text",value:"initial",closest:()=>null};
+    const harness=createVersionHarness({server:"commit-b",fields:[item,date,select,autosaved]});
     harness.api.initialize();
     await new Promise(setImmediate);
     item.value="1017808";
     date.value="2026-10-01";
     select.value="discrepancy";
+    autosaved.value="saved by autosave";
     assert.equal(await harness.button.handler(),true);
     assert.equal(harness.reloads,1);
     assert.equal(harness.message.textContent,"");

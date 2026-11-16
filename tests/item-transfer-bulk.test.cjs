@@ -49,6 +49,43 @@ async function initializeDatabase(db) {
     await db.exec(readFileSync('proposals/staging/20261116050000_latest_transfer_import.sql', 'utf8'));
 }
 
+test('batched warehouse source normalizes codes and retains tenant and admin scope', async t => {
+    const db = new PGlite();
+    t.after(() => db.close());
+    await initializeDatabase(db);
+    await db.exec(`
+        create table public.pharmflow_order_source_items (
+            pharmacy_id uuid, order_number text, line_no int, id int,
+            item_code text,item_name text,ordered_qty numeric
+        );
+        create function pharmflow_auth_private.require_receiving_compat(uuid,text,boolean,text)
+        returns void language sql as $$ select pharmflow_auth_private.require_access($1,$2,$3,$4) $$;
+        create function public.is_pharmacy_admin(uuid) returns boolean language sql as $$
+            select coalesce(current_setting('test.admin',true),'yes')='yes'
+        $$;
+        insert into public.pharmflow_order_source_items values
+            ('${scope}','TO-1',1,1,'001017808.0','Fixture item',2),
+            ('${scope}',' to -1 ',2,2,'1017808','Alternate name',3),
+            ('${scope}','TO-2',1,3,'200','Something else',1),
+            ('${outside}','TO-1',1,4,'1017808','Outside pharmacy',5000);
+    `);
+    await db.exec(readFileSync('proposals/staging/20261116110000_batch_legacy_movement_items.sql','utf8'));
+    await db.exec('set role authenticated');
+    const search = (item,pharmacy = scope) => db.query(
+        "select * from public.get_pharmflow_movement_source_batch_v1($1,array['TO-1','TO-2','TO-3'],$2) order by order_number",
+        [pharmacy,item]);
+    const {rows} = await search('1017808');
+    assert.deepEqual(rows.map(row=>row.has_source),[true,true,false]);
+    assert.deepEqual(rows[0].items,[{item_code:'1017808',item_name:'Fixture item',ordered_qty:5}]);
+    assert.deepEqual(rows[1].items,[]);
+    assert.deepEqual((await search('fixture item')).rows[0].items,rows[0].items);
+    await assert.rejects(search('1017808',outside),/permission denied/);
+    await db.exec("set test.admin='no'");
+    assert.equal((await search('1017808')).rows.length,0);
+    await db.exec("reset role; set role anon");
+    await assert.rejects(search('1017808'),/permission denied/);
+});
+
 test('real source layout, pharmacy identity and flexible transfer dates', () => {
     const rows = [
         ['Bulk-TO Receive'], ['User ID', 'benchmark'], ['TO Number', 'TO-001'], ['From Warehouse', 'TEST-A'],
