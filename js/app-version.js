@@ -30,7 +30,8 @@
     function hasChangedFormState(){
         return [...document.querySelectorAll("input,textarea,select,[contenteditable='true']")]
             .some(field=>{
-                if(field.disabled || field.closest("#authGate")) return false;
+                if(field.disabled || field.readOnly || field.type==="hidden" || field.type==="search" ||
+                    field.closest("#authGate, [data-refresh-filter]")) return false;
                 const baseline=fieldBaselines.get(field);
                 return baseline!==undefined && JSON.stringify(currentFieldValue(field))!==JSON.stringify(baseline);
             });
@@ -44,11 +45,8 @@
             notice.setAttribute("aria-label","PharmFlow update");
             notice.innerHTML=`
                 <img class="pharmflowVersionMark" src="assets/pharmflow-mark-blue.svg" alt="" width="30" height="30">
-                <div class="pharmflowVersionCopy" role="status">
-                    <strong>PharmFlow update available</strong>
-                    <span>Refresh to start using the latest version.</span>
-                </div>
-                <button type="button" data-refresh>Refresh now</button>
+                <strong class="pharmflowVersionCopy" role="status">Farm flow has been updated.</strong>
+                <button type="button" data-refresh>Refresh</button>
                 <small data-message aria-live="polite"></small>`;
             document.body.appendChild(notice);
             notice.querySelector("[data-refresh]").addEventListener("click",refreshWhenSafe);
@@ -69,7 +67,8 @@
 
     function hasOpenEditor(){
         return [...document.querySelectorAll('[role="dialog"],dialog[open],.modalOverlay,.quickKpiOverlay')]
-            .some(el=>el.getClientRects().length>0 && getComputedStyle(el).visibility!=="hidden");
+            .some(el=>!el.closest('[hidden], [aria-hidden="true"]') &&
+                el.getClientRects().length>0 && getComputedStyle(el).visibility!=="hidden");
     }
 
     async function hasPendingWork(){
@@ -96,21 +95,26 @@
         return false;
     }
 
-    async function isSafeToRefresh(){
+    function hasClearRefreshSurface(){
         if(document.visibilityState==="hidden" || window.PharmFlowIdleSleep?.active || isAuthTransition()) return false;
         if(hasOpenEditor() || hasChangedFormState()) return false;
         const scan=document.getElementById("barcodeInput");
         if(scan && String(scan.value||"").trim()) return false;
-        return !(await hasPendingWork());
+        return true;
+    }
+
+    async function isSafeToRefresh(){
+        return hasClearRefreshSurface() && !(await hasPendingWork()) && hasClearRefreshSurface();
     }
 
     async function refreshWhenSafe(){
         const button=notice?.querySelector("[data-refresh]");
         const message=notice?.querySelector("[data-message]");
         if(button) button.disabled=true;
+        if(message) message.textContent="";
         try{
             if(!(await isSafeToRefresh())){
-                if(message) message.textContent="Save or finish current work before refreshing.";
+                if(message) message.textContent="Finish or save your work to refresh.";
                 return false;
             }
             window.location.reload();

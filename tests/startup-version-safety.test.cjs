@@ -137,8 +137,9 @@ test("an unchanged deployment stays quiet and a newer deployment shows the refre
     newer.api.initialize();
     await new Promise(setImmediate);
     assert.equal(newer.notice.hidden,false);
-    assert.match(newer.notice.innerHTML,/<strong>PharmFlow update available<\/strong>/);
-    assert.match(newer.notice.innerHTML,/data-refresh>Refresh now<\/button>/);
+    assert.match(newer.notice.innerHTML,/>Farm flow has been updated\.<\/strong>/);
+    assert.match(newer.notice.innerHTML,/data-refresh>Refresh<\/button>/);
+    assert.doesNotMatch(newer.notice.innerHTML,/Refresh to start/);
 });
 
 test("version refresh is blocked during auth transitions, pending scans, and unsaved edits",async t=>{
@@ -161,6 +162,21 @@ test("version refresh is blocked during auth transitions, pending scans, and uns
     await new Promise(setImmediate);
     assert.equal(await pending.api.refreshWhenSafe(),false);
     assert.equal(pending.reloads,0);
+});
+
+test("Refresh reloads after changes to read-only report filters",async()=>{
+    const item={type:"search",value:"",closest:()=>null};
+    const date={type:"hidden",value:"",closest:()=>null};
+    const select={tagName:"SELECT",type:"select-one",value:"item",closest:selector=>selector.includes("[data-refresh-filter]")?{}:null};
+    const harness=createVersionHarness({server:"commit-b",fields:[item,date,select]});
+    harness.api.initialize();
+    await new Promise(setImmediate);
+    item.value="1017808";
+    date.value="2026-10-01";
+    select.value="discrepancy";
+    assert.equal(await harness.button.handler(),true);
+    assert.equal(harness.reloads,1);
+    assert.equal(harness.message.textContent,"");
 });
 
 test("durable receiving scan queue exposes pending rows for the refresh safety gate",()=>{
