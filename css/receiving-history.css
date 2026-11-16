@@ -257,3 +257,23 @@
 #pftManageActions { margin-top: 8px; }
 #pftManageConfirm p { margin-bottom: 8px; }
 .pfhManageDialog .pfhButton.pfhDelete { color: #9c3535; border-color: #b86565; }
+
+/* Item Movement */
+#page-item-movement .pfhStandalone {
+  padding: clamp(14px, 2vw, 24px); overflow: visible;
+}
+.pfhStandalone .pfhHeader { margin: 0 0 18px; align-items: center; justify-content: space-between; }
+.pfhStandalone .pfhPageHeading h2 { font-size: clamp(20px, 2vw, 27px); letter-spacing: -.02em; }
+.pfhStandalone .pfhPageHeading p { margin: 6px 0 0; color: #4c647b; line-height: 1.45; }
+.pfhStandalone .pfhTransferActions { margin-inline-start: 0; }
+.pfhStandalone .pfhPrimaryFilters { grid-template-columns: minmax(240px, 2fr) minmax(160px, 1fr); max-width: 920px; }
+.pfhStandalone #pfhForm { background: #f5f9fd; padding: clamp(12px, 2vw, 20px); }
+.pfhStandalone .pfhDateFilters { margin-top: 14px; }
+.pfhStandalone .pfhTabs { margin-bottom: 12px; }
+.pfhStandalone .pfhPeriod { margin-top: 14px; }
+.pfhStandalone .pfhTable td:last-child { color: #315b7f; font-weight: 650; white-space: nowrap; }
+@media (max-width: 650px) {
+  .pfhStandalone .pfhPrimaryFilters, .pfhStandalone .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

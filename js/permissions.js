@@ -15,9 +15,15 @@ window.PharmFlowPermissions = (() => {
   [AuthState.identityEpoch||0,AuthState.user?.id||context()?.user_id||'',context()?.pharmacy_id||''].join('/');
  const active=()=>phase==='ready' && !!saved && savedScope===scope() && saved.pharmacy_id===context()?.pharmacy_id && !AuthState.mustChangePassword;
  const owner=()=>active() && saved.system_administrator===true;
+ const standaloneMovement = typeof APP_CONFIG!=='undefined'&&APP_CONFIG.receiving?.standaloneMovement===true;
+ if(standaloneMovement){
+  for(const name of ['import_pharmflow_transfer_history_v1','list_pharmflow_transfer_imports_v1','list_pharmflow_transfer_imports_v2','delete_pharmflow_transfer_imports_v1','get_pharmflow_latest_transfer_import_v1'])rpcRules[name]=['ITEM_MOVEMENT',true];
+  for(const name of ['search_pharmflow_transfer_history_v1','search_pharmflow_transfer_history_v2','search_pharmflow_item_movement_v1'])rpcRules[name]=['ITEM_MOVEMENT',false];
+ }
  function allowed(module,write=false){
   if(!active())return false;
   if(module==='DUTY')return saved.duty==='FULL' && (!write || owner() || context()?.member_role==='admin');
+  if(module==='ITEM_MOVEMENT')return standaloneMovement && saved.item_movement==='FULL' && (owner() || context()?.member_role==='admin');
   if(owner())return true;
   if(module==='GLOBAL')return context()?.member_role==='admin' && saved.data_access==='PHARMACY_GLOBAL';
   if(module==='DATA')return !write || context()?.member_role==='admin' && saved.data_access!=='READ_ONLY';
@@ -96,7 +102,7 @@ window.PharmFlowPermissions = (() => {
   lastResumeAt=Date.now();retries=0;
   return load();
  }
- const routeModule=route=>route==='duty'?'DUTY':route==='expiry'?'EXPIRY':['dashboard','receiving','files','reports','sessions','archive'].includes(route)?'RECEIVING':null;
+ const routeModule=route=>route==='item-movement'?'ITEM_MOVEMENT':route==='duty'?'DUTY':route==='expiry'?'EXPIRY':['dashboard','receiving','files','reports','sessions','archive'].includes(route)?'RECEIVING':null;
  const rule=(module,write=false,extra=null)=>({module,write,extra});
  const controls={
   RECEIVING:'#barcodeInput,#btnLoadOrders,#orderFileInput,#btnFinalizeReceiving,#btnCompleteAllReceiving,#btnResetWorkspace,#btnDeleteAllHistory,#btnSaveManualItem,#btnOpenManualAdd,[data-quick-receive],[data-link-receive],[data-review],#btnCreateSession,#btnJoinCloudSession,#btnMergeZebraSession,#btnPrepareZebraWork,#btnLastScanEdit,[data-action="plus"],[data-action="minus"],[data-action="edit"],[data-remove-order-file],[data-delete-archive-order],[data-remove-last],[data-delete-entry],[data-remove-extra],#btnConfirmQuantityCorrection,#btnSearchedAdjust,#btnSearchedRemoveManual,#btnApplySearchedCorrection,#btnLastScanMinus,#btnLastScanPlus,[data-order-delete],[data-order-finalize],[data-receiving-delete],[data-receiving-reset]',
@@ -141,7 +147,7 @@ window.PharmFlowPermissions = (() => {
    else if(el.dataset.permissionBlocked){el.disabled=el.dataset.permissionWasDisabled==='true';el.removeAttribute('aria-disabled');delete el.dataset.permissionBlocked;delete el.dataset.permissionWasDisabled;}
   });
   if(active() && !document.body.classList.contains('authLocked') && !document.body.classList.contains('workspaceBooting') && typeof AppRouter!=='undefined' && routeModule(AppRouter.currentRoute) && !allowed(routeModule(AppRouter.currentRoute))){
-   navigateTo(allowed('EXPIRY')?'expiry':'settings',{focusScanner:false});
+   navigateTo(allowed('EXPIRY')?'expiry':allowed('ITEM_MOVEMENT')?'item-movement':'settings',{focusScanner:false});
   }
   if(active() && (document.body.classList.contains('zebraReceivingActive')&&!allowed('RECEIVING') || document.body.classList.contains('zebraExpiryActive')&&!allowed('EXPIRY')))window.setZebraHomeMode?.();
   let note=document.getElementById('pharmflowPermissionNotice');

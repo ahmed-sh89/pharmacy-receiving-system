@@ -24,10 +24,10 @@
     <!-- Fetch classic scripts in parallel; their execution stays parser-ordered. -->
     <link rel="preload" as="script" href="js/vendor/sheetjs-0.20.3/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT">
     <link rel="preload" as="script" href="js/excel-security.js?v=RECEIVING_RELEASE_20261101">
-    <link rel="preload" as="script" href="js/config.js?v=ITEM_MOVEMENT_RELEASE_1">
+    <link rel="preload" as="script" href="js/config.js?v=ITEM_MOVEMENT_MODULE_1">
     <link rel="preload" as="script" href="js/utils.js?v=RECEIVING_U0030_RECOVERY2">
     <link rel="preload" as="script" href="js/state.js?v=RECEIVING_RELEASE_20261101">
-    <link rel="preload" as="script" href="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1">
+    <link rel="preload" as="script" href="js/router.js?v=MOVEMENT_MODULE_1">
     <link rel="preload" as="script" href="ui.js?v=RECEIVING_ORDER_KPI_DETAILS">
     <link rel="preload" as="script" href="js/excel.js?v=ORDER_IMPORT_PERMISSION_20261027">
     <link rel="preload" as="script" href="js/master-gtin.js?v=SEC001_20261027">
@@ -39,7 +39,7 @@
     <link rel="preload" as="script" href="js/supabase.js?v=B10CLEAN15_15">
     <link rel="preload" as="script" href="js/orders.js?v=RH1_RECEIVING_EMAIL_ITEM_WO_WRAP">
     <link rel="preload" as="script" href="js/auth-viewport.js?v=HANDHELD_VIEWPORT3">
-    <link rel="preload" as="script" href="js/permissions.js?v=TRANSFER_STAGING_1">
+    <link rel="preload" as="script" href="js/permissions.js?v=MOVEMENT_MODULE_1">
     <link rel="preload" as="script" href="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028">
     <link rel="preload" as="script" href="js/auth.js?v=RH2_PHARMACY_HISTORY_20261115">
     <link rel="preload" as="script" href="js/dev-isolation.js?v=B10CLEAN15_15">
@@ -62,12 +62,12 @@
     <link rel="preload" as="script" href="js/app.js?v=STARTUP_HANDHELD_20261108">
     <link rel="preload" as="script" href="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102">
     <link rel="preload" as="script" href="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028">
-    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY26">
+    <link rel="preload" as="script" href="js/receiving-history.js?v=MOVEMENT_MODULE_1">
     <link rel="preload" as="script" href="js/header-account-responsive.js">
     <link rel="preload" as="script" href="js/header-account-menu.js">
     <link rel="preload" as="script" href="js/header-account-popover.js">
     <link rel="preload" as="script" href="js/header-account-ui.js?v=RECEIVING_EXTRA_FINAL_20261110">
-    <link rel="preload" as="script" href="js/settings-workspace.js?v=PHARMACY_ADMIN_RELEASE_20261115">
+    <link rel="preload" as="script" href="js/settings-workspace.js?v=MOVEMENT_MODULE_1">
     <link rel="preload" as="script" href="js/duty-model.js?v=DUTY_REFINE_20261106">
     <link rel="preload" as="script" href="js/duty-controls.js?v=DUTY_UI_20261109">
     <link rel="preload" as="script" href="js/duty-schedule.js?v=DUTY_POLISH_20261109">
@@ -121,7 +121,7 @@
             visibility: hidden !important;
         }
     </style>
-<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI19">
+<link rel="stylesheet" href="css/receiving-history.css?v=MOVEMENT_MODULE_1">
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
@@ -402,6 +402,7 @@ window.PharmFlowDeviceMode = (() => {
         <nav class="sidebarNavigation">
             <button class="sidebarItem active" type="button" data-page="dashboard" aria-label="Receiving" title="Receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></span><span>Receiving</span></button>
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="receiving"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 9v6M11 8v8M14 9v6M17 8v8"/></svg></span><span>Receiving</span></button>
+            <button class="sidebarItem permissionHidden" type="button" data-page="item-movement"><span class="sidebarIcon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4"/></svg></span><span>Item Movement</span></button>
             <button class="sidebarItem pfnLegacyNav" type="button" data-page="files"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M4 9h16"/></svg></span><span>Orders</span></button>
 
             <button class="sidebarItem" type="button" data-page="expiry" aria-label="Expiry" title="Expiry"><span class="sidebarIcon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></span><span>Expiry</span></button>
@@ -1016,6 +1017,7 @@ window.PharmFlowDeviceMode = (() => {
                  RECEIVING PAGE
             =================================================== -->
 
+            <section id="page-item-movement" class="appPage" aria-label="Item Movement"></section>
             <section
                 id="page-receiving"
                 class="appPage"
@@ -1130,7 +1132,10 @@ window.PharmFlowDeviceMode = (() => {
                 <section id="receivingHistoryContent" class="contentCard pfhPage" hidden aria-labelledby="pfhTitle">
                     <header class="pfhHeader">
                         <button id="pfhBack" class="pfhButton pfhBack" type="button"><span aria-hidden="true">←</span> Back to Receiving Report</button>
-                        <h2 id="pfhTitle">Receiving History</h2>
+                        <div class="pfhPageHeading">
+                            <h2 id="pfhTitle">Receiving History</h2>
+                            <p id="pfhMovementIntro" hidden>Track quantities from uploaded orders and imported files.</p>
+                        </div>
                         <div id="pftActions" class="pfhTransferActions pfhTransferAction" hidden>
                             <button id="pftManage" class="pfhButton" type="button">
                                 <svg aria-hidden="true" viewBox="0 0 20 20"><path d="M2.5 15.5v-11h5l2 2h8v9z"/></svg>
@@ -1138,7 +1143,7 @@ window.PharmFlowDeviceMode = (() => {
                             </button>
                             <button id="pftOpen" class="pfhButton pfhSearch" type="button">
                                 <svg aria-hidden="true" viewBox="0 0 20 20"><path d="M10 13V3m-4 4 4-4 4 4M3 12v5h14v-5"/></svg>
-                                Import Transfers
+                                <span id="pftOpenLabel">Import Transfers</span>
                             </button>
                         </div>
                     </header>
@@ -1149,7 +1154,7 @@ window.PharmFlowDeviceMode = (() => {
                     <div id="pfhSearchPanel" role="tabpanel" aria-labelledby="pfhSearchTab">
                         <form id="pfhForm">
                             <div class="pfhFilters pfhPrimaryFilters">
-                                <div class="pfhField">
+                                <div class="pfhField" id="pfhReportTypeField">
                                     <span id="pfhTypeLabel">Report Type</span>
                                     <div class="pfhTypePicker" id="pfhTypePicker">
                                         <button class="pfhControl" type="button" id="pfhTypeTrigger" aria-labelledby="pfhTypeLabel pfhTypeValue" aria-controls="pfhTypeOptions" aria-expanded="false"><span id="pfhTypeValue">Item Receiving History</span></button>
@@ -1184,7 +1189,7 @@ window.PharmFlowDeviceMode = (() => {
                                     <button class="pfhControl pfhDateButton" type="button" data-pfh-date="to" aria-labelledby="pfhLabelTo pfhDateTo" aria-haspopup="dialog" aria-expanded="false"><span id="pfhDateTo">Select date</span></button>
                                     <input type="hidden" name="to">
                                 </div>
-                                <label class="pfhField" id="pfhSourceField" hidden><span>From Pharmacy <small>Optional</small></span>
+                                <label class="pfhField" id="pfhSourceField" hidden><span><span id="pfhSourceLabel">From Pharmacy</span> <small>Optional</small></span>
                                     <input class="pfhControl" name="source" type="search" maxlength="160" placeholder="Pharmacy code or name" autocomplete="off">
                                 </label>
                                 <div class="pfhFilterActions" id="pfhDateActions" hidden></div>
@@ -2777,13 +2782,13 @@ window.PharmFlowDeviceMode = (() => {
      APPLICATION FILES
 =================================================== -->
 
-<script src="js/config.js?v=ITEM_MOVEMENT_RELEASE_1"></script>
+<script src="js/config.js?v=ITEM_MOVEMENT_MODULE_1"></script>
 
 <script src="js/utils.js?v=RECEIVING_U0030_RECOVERY2"></script>
 
 <script src="js/state.js?v=RECEIVING_RELEASE_20261101"></script>
 
-<script src="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1"></script>
+<script src="js/router.js?v=MOVEMENT_MODULE_1"></script>
 
 <script src="ui.js?v=RECEIVING_ORDER_KPI_DETAILS"></script>
 
@@ -2805,7 +2810,7 @@ window.PharmFlowDeviceMode = (() => {
 <script src="js/orders.js?v=RH1_RECEIVING_EMAIL_ITEM_WO_WRAP"></script>
 
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
-<script src="js/permissions.js?v=TRANSFER_STAGING_1"></script>
+<script src="js/permissions.js?v=MOVEMENT_MODULE_1"></script>
 <script src="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028"></script>
 <script src="js/auth.js?v=RH2_PHARMACY_HISTORY_20261115"></script>
 
@@ -2837,15 +2842,15 @@ window.PharmFlowDeviceMode = (() => {
 
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>
-<script src="js/receiving-history.js?v=HISTORY26"></script>
-<script src="js/item-transfer-staging.js?v=9"></script>
+<script src="js/receiving-history.js?v=MOVEMENT_MODULE_1"></script>
+<script src="js/item-transfer-staging.js?v=10"></script>
 <script src="js/header-account-responsive.js"></script>
 <script src="js/header-account-menu.js"></script>
 <script src="js/header-account-popover.js"></script>
 <script src="js/header-account-ui.js?v=RECEIVING_EXTRA_FINAL_20261110"></script>
 
 
-<script src="js/settings-workspace.js?v=PHARMACY_ADMIN_RELEASE_20261115"></script>
+<script src="js/settings-workspace.js?v=MOVEMENT_MODULE_1"></script>
 <script src="js/duty-model.js?v=DUTY_REFINE_20261106"></script><script src="js/duty-controls.js?v=DUTY_UI_20261109"></script><script src="js/duty-schedule.js?v=DUTY_POLISH_20261109"></script><script src="js/duty-reports.js?v=DUTY_UI_20261109"></script><script src="js/duty.js?v=DUTY_EXCHANGE_20261109"></script>
 </body>
 

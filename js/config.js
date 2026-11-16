@@ -94,6 +94,7 @@ const APP_CONFIG = Object.freeze({
     receiving:{
 
         itemMovementEnabled: true,
+        standaloneMovement: false,
 
         allowOverReceiving:
             true,
@@ -327,6 +328,7 @@ const APP_CONFIG = Object.freeze({
     ================================================= */
 
     routes:{
+        "item-movement":{id:"item-movement",elementId:"page-item-movement",title:"Item Movement",subtitle:"Order quantities by item and source"},
  duty:{id:"duty",elementId:"page-duty",title:"Duty",subtitle:"Monthly employee planning"},
 
         dashboard:{

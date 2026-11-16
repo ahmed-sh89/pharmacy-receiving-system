@@ -83,7 +83,9 @@ const receivingHistoryStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'feature/receiving-history-unified';
 const transferStagingPreview = process.env.VERCEL_ENV === 'preview'
   && ['feature/item-transfer-bulk-staging','fix/staging-movement-speed-refresh-20261116','fix/staging-movement-source-20261116'].includes(process.env.VERCEL_GIT_COMMIT_REF);
-const stagingPreview = transferStagingPreview || receivingHistoryStagingPreview || pharmacyActivationStagingPreview || pharmacyAdminStagingPreview || startupStagingPreview || dutyStagingPreview || receivingAdminStagingPreview || receivingEmailStagingPreview || receivingArchiveStagingPreview || receivingKpiStagingPreview;
+const standaloneMovementStaging = process.env.VERCEL_ENV === 'preview'
+  && process.env.VERCEL_GIT_COMMIT_REF === 'feature/item-movement-module-staging';
+const stagingPreview = standaloneMovementStaging || transferStagingPreview || receivingHistoryStagingPreview || pharmacyActivationStagingPreview || pharmacyAdminStagingPreview || startupStagingPreview || dutyStagingPreview || receivingAdminStagingPreview || receivingEmailStagingPreview || receivingArchiveStagingPreview || receivingKpiStagingPreview;
 const stagingRef = 'tovkcakucyagvbzvlnks';
 function startupStagingConfiguration(){
   return {
@@ -103,7 +105,9 @@ function startupStagingConfiguration(){
       if(source.includes('zznoshzcyxmtwfbznjyr')) throw new Error('Production backend in Staging artifact');
       writeFileSync(file,source);
       const config=resolve('dist/js/config.js');
-      writeFileSync(config,readFileSync(config,'utf8').replace('"production"','"staging"'));
+      let stagingConfig = readFileSync(config,'utf8').replace('"production"','"staging"');
+      if(standaloneMovementStaging)stagingConfig = stagingConfig.replace('standaloneMovement: false','standaloneMovement: true');
+      writeFileSync(config,stagingConfig);
       writeFileSync(resolve('dist/version.json'),JSON.stringify({
         sha:process.env.VERCEL_GIT_COMMIT_SHA||'local-startup-staging',
         environment:'staging',supabaseRef:stagingRef

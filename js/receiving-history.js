@@ -347,9 +347,32 @@ async function pfhReadMovement(params, period, order, item, current) {
     return {...period, missingSource: receiving.missingSource, movement: true, rows: pfhMergeMovements(receiving.rows, transfers)};
 }
 
-function pfhMovementCells(row) {
+async function pfhReadStandaloneMovement(params, period, order, item, current) {
+    const rows = [];
+    const pageSize = 500;
+    for (let offset = 0; current(); offset += pageSize) {
+        const page = await authRpc("search_pharmflow_item_movement_v1", {
+            ...params, p_item: item, p_source: period.source, p_order: order,
+            p_from: period.from, p_to: period.to, p_offset: offset
+        });
+        if (!Array.isArray(page)) throw new Error("Unexpected Item Movement response");
+        rows.push(...page.slice(0, pageSize).map(row => ({
+            order_number: row.number, item_code: row.code, item_name: row.name,
+            movement_source: row.source, movement_date: row.received_date,
+            movement_quantity: row.quantity, movement_origin: row.origin
+        })));
+        if (page.length <= pageSize) break;
+    }
+    return {...period, movement: true, standalone: true, rows};
+}
+
+function pfhMovementColumns(period) {
+    return period.standalone ? [...PFH_MOVEMENT_COLUMNS, "Recorded via"] : PFH_MOVEMENT_COLUMNS;
+}
+
+function pfhMovementCells(row, standalone = false) {
     return [row.order_number, row.movement_date, row.item_code, row.item_name,
-        row.movement_quantity ?? "Not available", row.movement_source];
+        row.movement_quantity ?? "Not available", row.movement_source, ...(standalone ? [row.movement_origin] : [])];
 }
 
 function pfhCells(type, row) {
@@ -388,7 +411,7 @@ function pfhItemNotes(period, includeReceived = true) {
     const missingOrdered = period.rows.filter(row => pfhQuantity(period.movement ? row.movement_quantity : row.ordered_qty) == null).length;
     const unmatched = period.item && !period.rows.some(row => pfhItemMatches(row, period.item));
     return [
-        ...(period.source ? ["From pharmacy: " + period.source] : []),
+        ...(period.source ? [(period.standalone ? "Source: " : "From pharmacy: ") + period.source] : []),
         ...[...(period.itemSources || [])].filter(([, source]) => source)
             .map(([code, source]) => code + " is scoped to pharmacy " + source + "."),
         ...(!period.movement && unverified ? [unverified + " matching rows lack a confirmed received quantity"] : []),
@@ -430,13 +453,13 @@ function pfhRenderResult({type, periods}, renderItemAction) {
             emphasizeColumn: totals.length === 1 ? 2 : -1, renderAction: renderItemAction
         });
         const notes = type === "item" ? pfhItemNotes(period).map(note => "<p>" + pfhEsc(note) + "</p>").join("") : "";
-        const rows = period.rows.map(row => period.movement ? pfhMovementCells(row) : pfhCells(type, row));
+        const rows = period.rows.map(row => period.movement ? pfhMovementCells(row, period.standalone) : pfhCells(type, row));
         const sourceTotal = period.source && totals.length > 1
             ? '<p>Total Quantity <strong class="pfhTotalBadge">' +
                 pfhEsc(totals.reduce((sum, row) => sum + (pfhQuantity(row[2]) ?? 0), 0)) + "</strong></p>"
             : "";
         return '<section class="pfhPeriod"><h3>' + pfhEsc(pfhPeriodLabel(period)) + "</h3>" +
-            sourceTotal + summary + notes + (pfhTable(type === "item" && period.movement ? PFH_MOVEMENT_COLUMNS : PFH_COLUMNS[type], rows, {
+            sourceTotal + summary + notes + (pfhTable(type === "item" && period.movement ? pfhMovementColumns(period) : PFH_COLUMNS[type], rows, {
                 quantityColumns: period.movement ? [4] : type === "item" ? [5, 6] : [],
                 differenceColumn: type === "discrepancy" ? 7 : -1,
                 itemFilterColumn: type === "discrepancy" && !period.discrepancyFilter?.exact ? 3 : -1
@@ -508,10 +531,10 @@ function pfhExportTables(type, period, summaryOnly = false) {
     }
     const details = {
         name: type === "item" ? "Order Details" : PFH_TITLE[type],
-        columns: type === "item" && period.movement ? PFH_MOVEMENT_COLUMNS : PFH_COLUMNS[type],
-        rows: period.rows.map(row => period.movement ? pfhMovementCells(row) : pfhCells(type, row)),
+        columns: type === "item" && period.movement ? pfhMovementColumns(period) : PFH_COLUMNS[type],
+        rows: period.rows.map(row => period.movement ? pfhMovementCells(row, period.standalone) : pfhCells(type, row)),
         quantityColumns: period.movement ? [4] : type === "item" ? [5, 6] : type === "new" ? [5] : [5, 6, 7],
-        widths: period.movement ? [20, 18, 16, 55, 16, 22] : type === "item" ? [20, 15, 24, 15, 47, 15, 16, 18]
+        widths: period.movement ? [20, 18, 16, 55, 16, 22, ...(period.standalone ? [18] : [])] : type === "item" ? [20, 15, 24, 15, 47, 15, 16, 18]
             : type === "new" ? [20, 15, 24, 15, 47, 15, 13]
             : [20, 15, 24, 15, 47, 15, 15, 15, 22]
     };
@@ -858,8 +881,21 @@ function pfhBoot() {
     const listActions = document.getElementById("pfhListActions");
     const transferActions = document.getElementById("pftActions");
     const sourceField = document.getElementById("pfhSourceField");
-    const movementEnabled = typeof APP_CONFIG !== "undefined" && APP_CONFIG.receiving?.itemMovementEnabled === true;
-    if (movementEnabled) {
+    const hasMovement = typeof APP_CONFIG !== "undefined" && APP_CONFIG.receiving?.itemMovementEnabled === true;
+    const standaloneMovement = hasMovement && APP_CONFIG.receiving.standaloneMovement === true;
+    const movementHost = document.getElementById("page-item-movement");
+    const anchor = standaloneMovement ? document.createComment("receiving-history") : null;
+    if (anchor) page.before(anchor);
+    const back = document.getElementById("pfhBack");
+    const title = document.getElementById("pfhTitle");
+    const intro = document.getElementById("pfhMovementIntro");
+    const sourceLabel = document.getElementById("pfhSourceLabel");
+    const typeField = document.getElementById("pfhReportTypeField");
+    const itemType = typeOptions.querySelector('[data-pfh-type="item"]');
+    let movementMode = false, movementSelection = null;
+    const movementEnabled = () => standaloneMovement ? movementMode : hasMovement;
+    if (standaloneMovement) itemType.hidden = true;
+    if (hasMovement && !standaloneMovement) {
         typeOptions.querySelector('[data-pfh-type="item"]').textContent = "Item Movement";
     }
     const emptyList = document.getElementById("pfhEmptyList");
@@ -915,8 +951,8 @@ function pfhBoot() {
         const visible = listView && field("reportType").value === "item";
         listTab.textContent = "Export List (" + count + ")";
         searchPanel.hidden = visible;
-        if (transferActions) transferActions.hidden = !movementEnabled || visible || field("reportType").value !== "item" ||
-            window.PharmFlowPermissions?.allowed("RECEIVING", true) === false;
+        if (transferActions) transferActions.hidden = !movementEnabled() || visible || field("reportType").value !== "item" ||
+            window.PharmFlowPermissions?.allowed(movementMode ? "ITEM_MOVEMENT" : "RECEIVING", true) === false;
         exportListPanel.hidden = !visible;
         listActions.hidden = !count;
         emptyList.hidden = Boolean(count);
@@ -990,7 +1026,7 @@ function pfhBoot() {
     const changeType = () => {
         const type = field("reportType").value;
         const useItem = type === "item";
-        typeLabel.textContent = useItem && movementEnabled ? "Item Movement" : PFH_TITLE[type];
+        typeLabel.textContent = useItem && movementEnabled() ? "Item Movement" : PFH_TITLE[type];
         for (const option of reportOptions) {
             option.setAttribute("aria-pressed", String(option.dataset.pfhType === type));
         }
@@ -999,7 +1035,7 @@ function pfhBoot() {
         field("item").hidden = !useItem;
         discrepancyInput.hidden = itemOptional.hidden = !useDiscrepancy;
         itemLabel.htmlFor = useDiscrepancy ? discrepancyInput.id : field("item").id;
-        sourceField.hidden = !useItem || !movementEnabled;
+        sourceField.hidden = !useItem || !movementEnabled();
         dateActions.hidden = useItem || useDiscrepancy;
         (useItem || useDiscrepancy ? document.getElementById("pfhItemEntry") : dateActions).append(submit);
         tabs.hidden = !useItem;
@@ -1013,6 +1049,17 @@ function pfhBoot() {
         datePicker.close();
         closeType();
         page.hidden = true;
+        if (movementMode) {
+            movementSelection = selection;
+            selection = null;
+            movementMode = false;
+            anchor.after(page);
+            page.classList.remove("pfhStandalone");
+            back.hidden = false;
+            intro.hidden = true;
+            title.textContent = "Receiving History";
+            typeField.hidden = false;
+        }
         report.hidden = false;
         window.dispatchEvent(new CustomEvent("pharmflow:receiving-history-closed"));
         if (focus) openButton.focus();
@@ -1026,25 +1073,50 @@ function pfhBoot() {
         selectedDiscrepancyCode = "";
         if (selectionEpoch !== AuthState.identityEpoch) selection = null;
         selectionEpoch = AuthState.identityEpoch;
-        field("reportType").value = "item";
+        field("reportType").value = standaloneMovement ? "discrepancy" : "item";
         const today = PFH_DAY.format(new Date());
         field("from").value = today.slice(0, 8) + "01";
         field("to").value = today;
         changeType();
         report.hidden = true;
         page.hidden = false;
-        field("item").focus({preventScroll: true});
+        (standaloneMovement ? discrepancyInput : field("item")).focus({preventScroll: true});
     });
-    document.getElementById("pfhBack").addEventListener("click", () => close(true));
+    back.addEventListener("click", () => close(true));
     window.addEventListener("auth:context-ready", event => {
         if (event.detail?.changed || !event.detail?.currentScope) {
             document.getElementById("pfhPrintFrame")?.remove();
             selection = null;
             renderSelection();
             close(false);
+            movementSelection = null;
         }
     });
-    AppEvents.on("route:changed", ({routeName}) => { if (routeName !== "receiving") close(false); });
+    AppEvents.on("route:changed", ({routeName}) => {
+        if (standaloneMovement && routeName === "item-movement") {
+            if (movementMode && !page.hidden) return;
+            if (!window.PharmFlowPermissions?.allowed("ITEM_MOVEMENT")) return;
+            close(false);
+            movementMode = true;
+            selection = movementSelection;
+            selectionEpoch = AuthState.identityEpoch;
+            movementHost.append(page);
+            page.classList.add("pfhStandalone");
+            back.hidden = typeField.hidden = true;
+            title.textContent = "Item Movement";
+            intro.hidden = false;
+            sourceLabel.textContent = "Source";
+            field("source").placeholder = "Warehouse or pharmacy code";
+            form.reset();
+            field("reportType").value = "item";
+            const today = PFH_DAY.format(new Date());
+            field("from").value = today.slice(0, 8) + "01";
+            field("to").value = today;
+            page.hidden = false;
+            changeType();
+            field("item").focus({preventScroll:true});
+        } else if (movementMode || routeName !== "receiving") close(false);
+    });
     for (const option of reportOptions) {
         option.addEventListener("click", () => {
             field("reportType").value = option.dataset.pfhType;
@@ -1080,8 +1152,8 @@ function pfhBoot() {
     const render = () => {
         const {periods: [period], nextOffset} = result;
         announce(period.rows.length
-            ? period.rows.length + (period.movement ? " movements shown · Dates in Saudi Arabia time." : " rows shown · Completed dates in Saudi Arabia time.")
-            : period.movement ? "No movements found. For imported transfers, select the Receiving Date shown in Excel." : "Search complete.");
+            ? period.rows.length + (period.standalone ? (period.rows.length === 1 ? " movement" : " movements") : period.movement ? " movements shown · Dates in Saudi Arabia time." : " rows shown · Completed dates in Saudi Arabia time.")
+            : period.standalone ? "No movements match these filters. Check the date on the order file." : period.movement ? "No movements found. For imported transfers, select the Receiving Date shown in Excel." : "Search complete.");
         const totals = result.type === "item" ? pfhItemTotals(period.rows, period.movement) : [];
         list.innerHTML = pfhRenderResult(result, result.type === "item" ? index => {
             const added = selection?.items.has(String(totals[index][0]).toLowerCase()) &&
@@ -1143,7 +1215,7 @@ function pfhBoot() {
         const type = field("reportType").value;
         const item = field("item").value.trim().toLowerCase();
         const order = pfhNormalizeOrder(field("order").value);
-        const source = movementEnabled && type === "item" ? field("source").value.trim() : "";
+        const source = movementEnabled() && type === "item" ? field("source").value.trim() : "";
         const period = {from: field("from").value, to: field("to").value, order, source};
         const discrepancyItem = type === "discrepancy" ? discrepancyInput.value.trim() : "";
         if (discrepancyItem) {
@@ -1153,8 +1225,8 @@ function pfhBoot() {
         closeType();
         if (!period.from || !period.to) { clear("Select From and To dates."); return; }
         if (period.from > period.to) { clear("From must be on or before To."); return; }
-        if (type === "item" && !item && !source) {
-            clear(movementEnabled ? "Enter an item or a source pharmacy." : "Enter an item code or name.");
+        if (type === "item" && !item && !source && !(movementMode && order)) {
+            clear(movementMode ? "Enter an item, order number, or source." : movementEnabled() ? "Enter an item or a source pharmacy." : "Enter an item code or name.");
             return;
         }
         const pharmacy = AuthState.context?.pharmacy_id;
@@ -1170,7 +1242,7 @@ function pfhBoot() {
             let data;
             let nextOffset = null;
             if (type === "item") {
-                const load = movementEnabled ? pfhReadMovement : pfhReadItemHistory;
+                const load = movementMode ? pfhReadStandaloneMovement : movementEnabled() ? pfhReadMovement : pfhReadItemHistory;
                 data = {...await load({p_pharmacy_id: pharmacy}, period, order, item, current), item};
             } else {
                 const page = await readPage(0);
@@ -1207,7 +1279,7 @@ function pfhBoot() {
     }
 
     window.addEventListener("pharmflow:transfers-imported", () => {
-        if (page.hidden || !movementEnabled) return;
+        if (page.hidden || !movementEnabled()) return;
         if (selection) {
             selection = null;
             renderSelection("Imports changed. Search again to rebuild the export list.");
