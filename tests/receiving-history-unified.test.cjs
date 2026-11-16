@@ -49,6 +49,11 @@ test('item search uses verified zero, uploaded-only unknown and de-duplicates or
             archive('TO-2')
         ];
         assert.equal(args.p_order_number, 'TO-2');
+        const projection = new URLSearchParams(query);
+        const selected = projection.get('select').split(',');
+        for (const column of projection.get('order').split(',')) {
+            assert.ok(selected.includes(column), 'PostgREST RPC must select each ordering column');
+        }
         return [{item_code: '101', item_name: 'Panadol', ordered_qty: 3},
             {item_code: '101', item_name: 'Panadol', ordered_qty: 2}];
     }});

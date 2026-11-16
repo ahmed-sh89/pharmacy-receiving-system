@@ -245,7 +245,7 @@ async function pfhReadItemHistory(params, period, order, item, current, movement
         const {archive, completed_at} = record;
         const saved = Array.isArray(archive.itemReceivingHistory) && pfhNormalizeOrder(archive.orderNumber) === number;
         const uploaded = saved ? [] : await pfhReadRows("get_pharmflow_order_source_items",
-            {...params, p_order_number: number}, [["select", "item_code,item_name,ordered_qty"], ["order", "line_no,id"]], current);
+            {...params, p_order_number: number}, [["select", "item_code,item_name,ordered_qty,line_no,id"], ["order", "line_no,id"]], current);
         const items = saved ? archive.itemReceivingHistory : pfhLegacyItemRows(movement ? {} : archive, number, uploaded);
         const file = (archive.orderFiles || []).find(row => pfhNormalizeOrder(row.documentId || row.orderNumber) === number &&
             (!movement || (row.orderDate >= period.from && row.orderDate <= period.to)));
