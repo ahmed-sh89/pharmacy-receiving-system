@@ -100,6 +100,7 @@ test('history and update notice hotfix only changes its declared protected files
 
 test('movement speed preview only changes its declared runtime surfaces',()=>{
  assert.deepEqual(Object.keys(movementSpeed.changes).sort(),[
+   ".github/workflows/deploy.yml",
    "PHARMFLOW_CURRENT_CHECKPOINT.md",
    "css/receiving-history.css",
    "index.html",

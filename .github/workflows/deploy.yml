@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -21,6 +22,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     runs-on: ubuntu-latest
+    env:
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_attempt }}
 
     steps:
       - name: Checkout
@@ -52,6 +55,25 @@ jobs:
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # actions/upload-pages-artifact@v3
         with:
           path: pages-artifact
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
+
+      - name: Wait for uploaded Pages artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in {1..12}; do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=$PAGES_ARTIFACT_NAME" \
+              --jq '.artifacts[] | select(.expired == false) | .id' | grep -Eq '^[0-9]+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
+; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Uploaded Pages artifact did not become visible."
+          exit 1
 
       - name: Deploy to GitHub Pages
         id: deployment
