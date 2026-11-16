@@ -167,13 +167,19 @@
         const dialog = el("pftManageDialog"), form = el("pftManageForm");
         const close = el("pftManageClose"), body = el("pftManageRows"), results = el("pftManageResults");
         const status = el("pftManageStatus"), actions = el("pftManageActions");
+        const lastStatus = el("pftLastImportStatus"), lastSaved = el("pftLastImportSaved");
+        const lastOrder = el("pftLastImportOrder"), lastFile = el("pftLastImportFile");
         const prev = el("pftManagePrev"), next = el("pftManageNext"), remove = el("pftManageDelete");
         const confirmation = el("pftManageConfirm"), commit = el("pftManageCommit"), cancel = el("pftManageCancel");
         const pageSize = 100;
         const prompt = "Enter a TO number or an upload date range.";
         const uploadDate = new Intl.DateTimeFormat("sv-SE",
             {timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit"});
+        const savedAt = new Intl.DateTimeFormat("en-GB", {timeZone: "Asia/Riyadh",
+            day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"});
+        const fileDate = new Intl.DateTimeFormat("en-GB", {timeZone: "UTC", dateStyle: "medium"});
         const selected = new Map();
+        let lastRequest = 0;
         let query, page = 0, hasMore = false, busy = false, generation = 0;
 
         const refresh = () => {
@@ -222,6 +228,33 @@
             return () => stamp === generation && activeScope === scope() && dialog.open;
         }
 
+        async function loadLastImport() {
+            const request = ++lastRequest;
+            const current = requestCurrent();
+            lastSaved.hidden = lastOrder.hidden = lastFile.hidden = true;
+            lastStatus.hidden = false;
+            lastStatus.textContent = "Loading…";
+            try {
+                const context = access();
+                const rows = await authRpc("get_pharmflow_latest_transfer_import_v1", {p_pharmacy_id: context.pharmacy_id});
+                if (request !== lastRequest || !current()) return;
+                if (!Array.isArray(rows)) throw new Error("Unexpected latest import response.");
+                const latest = rows[0];
+                if (!latest) {
+                    lastStatus.textContent = "No transfers imported yet.";
+                    return;
+                }
+                lastSaved.dateTime = latest.imported_at;
+                lastSaved.textContent = savedAt.format(new Date(latest.imported_at));
+                lastOrder.textContent = latest.number + (latest.batch_size > 1 ? " +" + (latest.batch_size - 1) + " more" : "");
+                lastFile.textContent = "File date " + fileDate.format(new Date(latest.received_date + "T00:00:00Z"));
+                lastStatus.hidden = true;
+                lastSaved.hidden = lastOrder.hidden = lastFile.hidden = false;
+            } catch {
+                if (request === lastRequest && current()) lastStatus.textContent = "Unable to load the latest import.";
+            }
+        }
+
         async function load(offset, notice = "") {
             if (busy || !query) return;
             const current = requestCurrent();
@@ -268,6 +301,7 @@
                 access();
                 reset();
                 dialog.showModal();
+                loadLastImport();
             } catch (error) {
                 showToast(error.message, "warning");
             }
@@ -280,6 +314,9 @@
             if (event.detail?.changed || !event.detail?.currentScope) closeForScope();
         });
         window.addEventListener("pharmflow:receiving-history-closed", closeForScope);
+        window.addEventListener("pharmflow:transfers-imported", () => {
+            if (dialog.open) loadLastImport();
+        });
         form.addEventListener("input", filtersChanged);
         form.addEventListener("submit", event => {
             event.preventDefault();

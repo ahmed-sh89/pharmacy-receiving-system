@@ -241,6 +241,13 @@
 #pftIssues { max-height: 150px; overflow: auto; padding-inline-start: 20px; }
 
 .pfhManageDialog { width: min(760px, calc(100vw - 32px)); }
+.pfhLastImport {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  margin: 0 0 12px; padding: 8px 12px; border: 1px solid #c7dced;
+  border-radius: 8px; background: #edf5fc; color: #3c5974;
+}
+.pfhLastImport strong, #pftLastImportOrder { color: #123e69; font-weight: 750; }
+.pfhLastImport :is(time, #pftLastImportOrder, #pftLastImportFile) { white-space: nowrap; }
 #pftManageForm { align-items: end; flex-wrap: wrap; margin-top: 10px; }
 #pftManageForm .pfhField { flex: 1 1 130px; }
 #pftManageStatus { margin: 10px 0; }

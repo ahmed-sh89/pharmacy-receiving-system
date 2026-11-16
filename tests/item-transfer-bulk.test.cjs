@@ -46,6 +46,7 @@ async function initializeDatabase(db) {
     await db.exec(readFileSync(sqlFile, 'utf8'));
     await db.exec(readFileSync('proposals/staging/20261116030000_item_movement_source_and_manage_imports.sql', 'utf8'));
     await db.exec(readFileSync('proposals/staging/20261116040000_transfer_import_upload_date.sql', 'utf8'));
+    await db.exec(readFileSync('proposals/staging/20261116050000_latest_transfer_import.sql', 'utf8'));
 }
 
 test('real source layout, pharmacy identity and flexible transfer dates', () => {
@@ -165,8 +166,19 @@ test('roll-forward 50 to 60, source and date filter, atomic selected deletion an
         }
         return outcomes;
     };
+    const latest = async (pharmacy = scope) => (await db.query(
+        'select * from public.get_pharmflow_latest_transfer_import_v1($1)',[pharmacy])).rows[0];
+    assert.equal(await latest(),undefined);
     assert.deepEqual(await save(imports.slice(0,50)),Array(50).fill('imported'));
     assert.deepEqual(await save(imports),[...Array(50).fill('duplicate'),...Array(10).fill('imported')]);
+    const latestBatch = await latest();
+    assert.equal(latestBatch.number,'TO-150');
+    assert.equal(latestBatch.batch_size,10);
+    assert.equal(latestBatch.received_date.toISOString().slice(0,10),'2026-11-16');
+    assert.deepEqual(await save(imports),Array(60).fill('duplicate'));
+    assert.deepEqual(await latest(),latestBatch);
+    await assert.rejects(latest(outside),/permission denied/);
+
     assert.deepEqual(await save([{...imports[1],date:'2026-11-15'}]),['conflict']);
     const search = (item,source,order = '',pharmacy = scope) => db.query(
         "select * from public.search_pharmflow_transfer_history_v2($1,$2,$3,$4,'2026-11-01','2026-11-30')",
@@ -220,4 +232,7 @@ test('roll-forward 50 to 60, source and date filter, atomic selected deletion an
     await assert.rejects(byUpload('TO-100',null,null,outside),/permission denied/);
     await db.exec("set test.read_only='yes'");
     await assert.rejects(byUpload('TO-100'),/permission denied/);
+    await assert.rejects(latest(),/permission denied/);
+    await db.exec('reset role; set role anon');
+    await assert.rejects(latest(),/permission denied/);
 });

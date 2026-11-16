@@ -121,7 +121,7 @@
             visibility: hidden !important;
         }
     </style>
-<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI18">
+<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI19">
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
@@ -1242,6 +1242,13 @@ window.PharmFlowDeviceMode = (() => {
                             <h2 id="pftManageTitle">Manage Imports</h2>
                             <button id="pftManageClose" class="pfhButton pfhTransferAction" type="button">Close</button>
                         </header>
+                        <p class="pfhLastImport" role="status">
+                            <strong>Last import</strong>
+                            <span id="pftLastImportStatus"></span>
+                            <time id="pftLastImportSaved" hidden></time>
+                            <span id="pftLastImportOrder" hidden></span>
+                            <span id="pftLastImportFile" hidden></span>
+                        </p>
                         <form id="pftManageForm" class="pfhFilterActions">
                             <label class="pfhField"><span>TO Number</span>
                                 <input class="pfhControl" name="order" type="search" placeholder="Enter TO number" maxlength="100" autocomplete="off">
@@ -2830,7 +2837,7 @@ window.PharmFlowDeviceMode = (() => {
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>
 <script src="js/receiving-history.js?v=HISTORY21"></script>
-<script src="js/item-transfer-staging.js?v=6"></script>
+<script src="js/item-transfer-staging.js?v=7"></script>
 <script src="js/header-account-responsive.js"></script>
 <script src="js/header-account-menu.js"></script>
 <script src="js/header-account-popover.js"></script>
