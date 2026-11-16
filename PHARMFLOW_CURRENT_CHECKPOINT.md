@@ -1,4 +1,8 @@
-# PharmFlow current checkpoint — 14 November 2026
+# PharmFlow current checkpoint — 16 November 2026
+
+## Production transfer import hotfix — 16 November 2026
+
+Production read-only verification found zero saved transfer records for HHP084. The XLSX parser rejected TO fields containing a trailing pharmacy code. The hotfix canonicalizes both workbook formats to the same TO and reads source from From Warehouse. The import dialog now distinguishes files read from transfers saved. Item Movement empty results explain that transfers are searched by the workbook Receiving Date. Manage Imports previews the count of today's uploads before confirmation, uses the existing scoped and version-checked deletion endpoint, and refreshes the day after processing. Deletions across more than 100 records run in batches and report completed progress if a later batch fails. Owner verification remains pending.
 
 ## Receiving History — Staging review
 

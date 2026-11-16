@@ -59,9 +59,9 @@
         }
         const user_id = clean(metadata.user_id).toUpperCase();
         if (!user_id || user_id !== clean(expectedPharmacy).toUpperCase()) throw new Error("File User ID does not match this pharmacy.");
-        const number = clean(metadata.number).toUpperCase();
+        const number = clean(metadata.number).toUpperCase().match(/^(TO-[0-9]{1,30})(?:\s*-\s*[0-9]+-[0-9]+)?$/)?.[1];
         const source = clean(metadata.source).toUpperCase(), destination = clean(metadata.destination).toUpperCase();
-        if (!/^TO-[0-9]{1,30}$/.test(number) || !source || !destination || source.length > 64 || destination.length > 64) {
+        if (!number || !source || !destination || source.length > 64 || destination.length > 64) {
             throw new Error("Invalid TO number, source or destination.");
         }
         const items = rows.slice(headerIndex + 1).map((row, index) => {

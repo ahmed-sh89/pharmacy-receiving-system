@@ -1058,7 +1058,7 @@ function pfhBoot() {
         const {periods: [period], nextOffset} = result;
         announce(period.rows.length
             ? period.rows.length + (period.movement ? " movements shown · Dates in Saudi Arabia time." : " rows shown · Completed dates in Saudi Arabia time.")
-            : "Search complete.");
+            : period.movement ? "No movements found. For imported transfers, select the Receiving Date shown in Excel." : "Search complete.");
         const totals = result.type === "item" ? pfhItemTotals(period.rows, period.movement) : [];
         list.innerHTML = pfhRenderResult(result, result.type === "item" ? index => {
             const added = selection?.items.has(String(totals[index][0]).toLowerCase()) &&
