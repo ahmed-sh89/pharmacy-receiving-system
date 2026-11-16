@@ -11,32 +11,6 @@
     let lastCheckAt=0;
     let localBuild="";
     let notice=null;
-    const fieldBaselines=new WeakMap();
-
-    function currentFieldValue(field){
-        if(field.isContentEditable) return field.innerHTML;
-        if(field.type==="checkbox" || field.type==="radio") return field.checked;
-        if(field.tagName==="SELECT" && field.multiple){
-            return [...field.options].map(option=>option.selected);
-        }
-        return field.value;
-    }
-
-    function rememberFormState(root=document){
-        root.querySelectorAll?.("input,textarea,select,[contenteditable='true']")
-            .forEach(field=>fieldBaselines.set(field,currentFieldValue(field)));
-    }
-
-    function hasChangedFormState(){
-        return [...document.querySelectorAll("input,textarea,select,[contenteditable='true']")]
-            .some(field=>{
-                if(field.disabled || field.readOnly || field.type==="hidden" || field.type==="search" ||
-                    field.closest("#authGate, [data-refresh-filter]")) return false;
-                const baseline=fieldBaselines.get(field);
-                return baseline!==undefined && JSON.stringify(currentFieldValue(field))!==JSON.stringify(baseline);
-            });
-    }
-
     function showNotice(){
         if(!notice){
             notice=document.createElement("aside");
@@ -85,19 +59,13 @@
         // Integration boundary: disabled Expiry fields may still own a durable write.
         if(typeof ExpiryCaptureEngine!=="undefined" && (ExpiryCaptureEngine.busy || ExpiryCaptureEngine.resolving || ExpiryCaptureEngine.saveUncertain || ExpiryCaptureEngine.operation || ExpiryCaptureEngine.currentItem || ExpiryCaptureEngine.pendingDraft))return true;
         if(typeof expiryHasClearIntent==="function" && expiryHasClearIntent())return true;
-        if(typeof ExpiryDraftStore!=="undefined" && typeof expiryDraftScope==="function"){
-            try{
-                const scope=expiryDraftScope();
-                const drafts=[await ExpiryDraftStore.get(scope),...(await ExpiryDraftStore.list(scope)).map(row=>row.draft)];
-                if(scope!==expiryDraftScope() || drafts.some(d=>d && (d.item || d.operation || d.status==="UNCERTAIN")))return true;
-            }catch(_){return true;}
-        }
+        // Stored drafts survive reload; only live capture state blocks it.
         return false;
     }
 
     function hasClearRefreshSurface(){
         if(document.visibilityState==="hidden" || window.PharmFlowIdleSleep?.active || isAuthTransition()) return false;
-        if(hasOpenEditor() || hasChangedFormState()) return false;
+        if(hasOpenEditor()) return false;
         const scan=document.getElementById("barcodeInput");
         if(scan && String(scan.value||"").trim()) return false;
         return true;
@@ -114,7 +82,7 @@
         if(message) message.textContent="";
         try{
             if(!(await isSafeToRefresh())){
-                if(message) message.textContent="Finish or save your work to refresh.";
+                if(message) message.textContent="Wait for the current action to finish, then refresh.";
                 return false;
             }
             window.location.reload();
@@ -149,7 +117,6 @@
         localBuild=String(document.querySelector('meta[name="pharmflow-build-sha"]')?.content||"");
         if(!localBuild || localBuild.includes("__PHARMFLOW_BUILD_SHA__")) return;
         initialized=true;
-        rememberFormState();
         const idleRefresh=document.getElementById("pf-idle-refresh");
         if(idleRefresh) idleRefresh.addEventListener("click",()=>void check());
         void check();

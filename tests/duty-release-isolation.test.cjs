@@ -11,12 +11,13 @@ const itemHistory=JSON.parse(fs.readFileSync('docs/receiving/item-history-releas
 const transfer=JSON.parse(fs.readFileSync('docs/receiving/item-transfer-staging-release.json','utf8'));
 const productionTransfer=JSON.parse(fs.readFileSync('docs/receiving/item-transfer-production-release.json','utf8'));
 const productionHistoryHotfix=JSON.parse(fs.readFileSync('docs/receiving/item-history-production-hotfix.json','utf8'));
+const movementSpeed=JSON.parse(fs.readFileSync('docs/receiving/item-movement-speed-staging.json','utf8'));
 const historical=JSON.parse(fs.readFileSync('docs/duty/RELEASE_MANIFEST.json','utf8'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const blobHash=bytes=>crypto.createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
 function verifyRelease(read=path=>fs.readFileSync(path)){
  for(const [path,productionBlob] of Object.entries(manifest.protected_files)){
-  const expected=productionHistoryHotfix.changes[path] ?? productionTransfer.changes[path] ?? transfer.changes[path] ?? itemHistory.changes[path] ?? activation.changes[path] ?? login.changes[path] ?? manifest.approved_changes[path] ?? productionBlob;
+  const expected=movementSpeed.changes[path] ?? productionHistoryHotfix.changes[path] ?? productionTransfer.changes[path] ?? transfer.changes[path] ?? itemHistory.changes[path] ?? activation.changes[path] ?? login.changes[path] ?? manifest.approved_changes[path] ?? productionBlob;
   assert.equal(blobHash(read(path)),expected,path);
  }
 }
@@ -72,7 +73,7 @@ test('transfer pilot only changes its declared protected surfaces',()=>{
   'PHARMFLOW_CURRENT_CHECKPOINT.md','css/receiving-history.css','index.html','js/config.js',
   'js/permissions.js','js/receiving-history.js','vite.config.js'
  ]);
- for(const [file, expected] of Object.entries(transfer.changes))assert.equal(blobHash(fs.readFileSync(file)),productionHistoryHotfix.changes[file] ?? productionTransfer.changes[file] ?? expected,file);
+ for(const [file, expected] of Object.entries(transfer.changes))assert.equal(blobHash(fs.readFileSync(file)),movementSpeed.changes[file] ?? productionHistoryHotfix.changes[file] ?? productionTransfer.changes[file] ?? expected,file);
 });
 
 test('production handoff preserves accepted Staging runtime except for declared activation files',()=>{
@@ -80,7 +81,7 @@ test('production handoff preserves accepted Staging runtime except for declared 
   'PHARMFLOW_CURRENT_CHECKPOINT.md','index.html','js/config.js','js/item-transfer-staging.js','js/receiving-history.js'
  ]);
  for(const [file, expected] of Object.entries(productionTransfer.changes)){
-  assert.equal(blobHash(fs.readFileSync(file)),productionHistoryHotfix.changes[file] ?? expected,file);
+  assert.equal(blobHash(fs.readFileSync(file)),movementSpeed.changes[file] ?? productionHistoryHotfix.changes[file] ?? expected,file);
  }
  for(const [file, expected] of Object.entries(productionTransfer.sql)){
   assert.equal(blobHash(fs.readFileSync(file)),expected,file);
@@ -93,6 +94,15 @@ test('history and update notice hotfix only changes its declared protected files
  ]);
  for(const [file, expected] of Object.entries(productionHistoryHotfix.changes)){
   assert.ok(Object.hasOwn(manifest.protected_files,file),file);
+  assert.equal(blobHash(fs.readFileSync(file)),movementSpeed.changes[file] ?? expected,file);
+ }
+});
+
+test('movement speed preview only changes its declared runtime surfaces',()=>{
+ assert.deepEqual(Object.keys(movementSpeed.changes).sort(),[
+  'PHARMFLOW_CURRENT_CHECKPOINT.md','index.html','js/app-version.js','js/receiving-history.js','vite.config.js'
+ ]);
+ for(const [file, expected] of Object.entries(movementSpeed.changes)){
   assert.equal(blobHash(fs.readFileSync(file)),expected,file);
  }
 });

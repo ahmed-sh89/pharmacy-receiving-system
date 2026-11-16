@@ -381,6 +381,26 @@ test('movement uses warehouse file dates and pharmacy-only searches skip warehou
     assert.equal(calls[0][1].p_order,'TO-2');
 });
 
+test('warehouse movement batches legacy order searches and reports actual missing sources', async () => {
+    const calls = [];
+    const numbers = Array.from({length:40},(_,i)=>'TO-' + i);
+    const context = runtime({authRpc: async (name,args) => {
+        calls.push(name);
+        if (name === 'list_pharmflow_movement_archives_v1') return [{order_numbers:numbers,
+            archive_payload:{orderFiles:numbers.map(documentId=>({documentId,orderDate:'2026-11-01'}))}}];
+        assert.equal(name,'get_pharmflow_movement_source_batch_v1');
+        assert.equal(args.p_orders.length, numbers.length);
+        assert.equal(args.p_item,'1017808');
+        return args.p_orders.map((order_number,i)=>({order_number,has_source:i!==1,items:i===0
+            ? [{item_code:'1017808',item_name:'Fixture',ordered_qty:7}] : []}));
+    }});
+    const data = await context.pfhReadItemHistory(params,period,'','1017808',()=>true,true);
+    assert.equal(calls.length,2);
+    assert.equal(data.rows.length,1);
+    assert.equal(data.rows[0].ordered_qty,7);
+    assert.equal(data.missingSource,1);
+});
+
 test('movement carries all transfer pages into the displayed quantity totals without counting the lookahead', async () => {
     const offsets = [];
     const line = {number:'TO-2',code:'101',name:'Panadol',source:'PHARMACY',received_date:'2026-11-01',quantity:1};
