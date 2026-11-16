@@ -47,7 +47,9 @@ test("one item shows the original item name in details and a copyable code in th
         order_number:"TO-000478674", movement_source:"WAH001", movement_origin:"Import", movement_quantity:17};
     const other = {...item, order_number:"TO-000471830", movement_quantity:13};
     const html = context.pfhRenderResult({type:"item",periods:[{...period,standalone:true,movement:true,rows:[item,other]}]});
-    assert.match(html, /Total quantity<\/span><strong>30<\/strong><span>2 movements/);
+    assert.match(html, /Total qty<\/span><strong title="30">30<\/strong><\/span>/);
+    assert.match(html, /Movement Details <span class="pfhMovementCount">· 2 movements<\/span>/);
+    assert.doesNotMatch(html.slice(0, html.indexOf('class="pfhMovementDetails"')), /2 movements/);
     assert.equal((html.match(/Klavox &amp; Co\./g) || []).length, 3);
     assert.match(html, /data-pfh-copy-code="1013239"[^>]*aria-label="Copy item code 1013239"/);
     assert.match(html, />Item Name<\/th>/);
@@ -70,6 +72,7 @@ test("multi-item details stay scoped to their item and remember the open group a
     assert.match(html, /aria-controls="pfhMovementDetails1" aria-expanded="true"/);
     const [firstGroup, secondGroup] = html.split("</article>");
     assert.match(firstGroup, /TO-1/);
+    assert.match(firstGroup, /Movement Details <span class="pfhMovementCount">· 1 movement<\/span>/);
     assert.doesNotMatch(firstGroup, /TO-2/);
     assert.match(secondGroup, /TO-2/);
 });

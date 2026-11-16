@@ -481,11 +481,12 @@ function pfhRenderMovementResults(period, totals, renderItemAction, openItem) {
                 '<rect x="5" y="5" width="8" height="8" rx="1.25"/><path d="M10 3H4a1 1 0 0 0-1 1v6"/></svg>' +
                 '</button></span></span>';
             const count = members.length + (members.length === 1 ? " movement" : " movements");
-            const metric = '<span class="pfhMovementMetric"><span>Total quantity</span><strong>' +
-                pfhEsc(quantity) + '</strong><span>' + count + "</span></span>";
+            const total = pfhEsc(quantity);
+            const metric = '<span class="pfhMovementMetric"><span>Total qty</span><strong title="' + total + '">' +
+                total + "</strong></span>";
             const detailControl = single ? metric
                 : '<button class="pfhMovementToggle" type="button" data-pfh-movement-toggle aria-controls="' +
-                    id + '" aria-expanded="' + open + '" aria-label="Movement details for ' + itemName + '">' + metric +
+                    id + '" aria-expanded="' + open + '" aria-label="Movement details for ' + itemName + ' · Total quantity ' + total + '">' + metric +
                     '<span class="pfhMovementChevron" aria-hidden="true"></span></button>';
             const overview = '<div class="pfhMovementOverview">' + identity + detailControl + "</div>";
             const cells = members.map(row => [
@@ -495,7 +496,7 @@ function pfhRenderMovementResults(period, totals, renderItemAction, openItem) {
             return '<article class="pfhMovementItem' + (single ? " pfhMovementSingle" : "") + '">' +
                 '<div class="pfhMovementItemHeader">' + overview + (renderItemAction ? renderItemAction(index) : "") +
                 '</div><div id="' + id + '" class="pfhMovementDetails" data-pfh-movement-item="' + pfhEsc(key) + '"' +
-                (open ? "" : " hidden") + '><h4>Movement Details</h4>' +
+                (open ? "" : " hidden") + '><h4>Movement Details <span class="pfhMovementCount">· ' + count + '</span></h4>' +
                 pfhTable(["TO Number", "Date", "Item Name", "Quantity", "Source", "Recorded via"], cells,
                     {className: "pfhMovementTable", quantityColumns: [3]}) + "</div></article>";
         }).join("") + "</div>";

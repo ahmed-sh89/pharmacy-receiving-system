@@ -365,11 +365,16 @@ button.pfhMovementToggle {
 .pfhCopyItemCode:hover { background: #eaf3fe; border-color: #739fc3; }
 .pfhCopyItemCode:focus-visible { outline: 2px solid #21659c; outline-offset: 2px; }
 .pfhMovementMetric {
-  display: grid; justify-items: end; gap: 1px; min-width: 75px; padding: 4px 8px;
-  border-radius: 8px; background: #eaf3fe; color: #164d7c; line-height: 1.2;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline;
+  gap: 8px; inline-size: 8.5rem; box-sizing: border-box; padding: 4px 8px;
+  border-radius: 7px; background: #eaf3fe; color: #164d7c; line-height: 1.25; white-space: nowrap;
 }
-.pfhMovementMetric strong { font-size: clamp(16px, 1.5vw, 19px); font-variant-numeric: tabular-nums; }
+.pfhMovementMetric strong {
+  overflow: hidden; text-align: end; text-overflow: ellipsis;
+  font-size: clamp(15px, 1.4vw, 18px); font-variant-numeric: tabular-nums;
+}
 .pfhMovementMetric span { font-size: 11px; }
+.pfhMovementCount { margin-inline-start: 3px; color: #4c647b; font-size: 12px; font-weight: 500; }
 .pfhMovementChevron {
   inline-size: 8px; block-size: 8px; border: solid #315b7f; border-width: 0 2px 2px 0;
   transform: rotate(45deg); margin: 0 auto 4px;
