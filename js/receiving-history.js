@@ -454,10 +454,7 @@ function pfhRenderMovementResults(period, totals, renderItemAction, openItems) {
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(row);
     }
-    const dates = pfhCalendarDateText(period.from) + " – " + pfhCalendarDateText(period.to);
-    const filters = [dates, period.source && "Source: " + period.source, period.order && "TO: " + period.order]
-        .filter(Boolean).map(pfhEsc).join(" · ");
-    return '<div class="pfhMovementResults"><p class="pfhMovementContext">' + filters + "</p>" +
+    return '<div class="pfhMovementResults">' +
         totals.map(([code, name, quantity], index) => {
             const key = String(code).toLowerCase();
             const members = groups.get(key);
@@ -910,6 +907,13 @@ function pfhBoot() {
     const reportOptions = typePicker.querySelectorAll("[data-pfh-type]");
     const toolbar = document.getElementById("pfhToolbar");
     const resultsHeading = document.getElementById("pfhResultsHeading");
+    const resultsPeriod = document.getElementById("pfhResultsPeriod");
+    const movementList = document.getElementById("pfhMovementList");
+    const movementBack = document.getElementById("pfhMovementBackToSearch");
+    const movementClear = document.getElementById("pfhMovementClear");
+    const movementAdd = document.getElementById("pfhMovementAdd");
+    const orderField = document.getElementById("pfhOrderField");
+    const periodsField = document.getElementById("pfhPeriods");
     const itemField = document.getElementById("pfhItemField");
     const itemLabel = document.getElementById("pfhItemLabel");
     const itemOptional = document.getElementById("pfhItemOptional");
@@ -930,7 +934,6 @@ function pfhBoot() {
     if (anchor) page.before(anchor);
     const back = document.getElementById("pfhBack");
     const title = document.getElementById("pfhTitle");
-    const intro = document.getElementById("pfhMovementIntro");
     const sourceLabel = document.getElementById("pfhSourceLabel");
     const typeField = document.getElementById("pfhReportTypeField");
     const itemType = typeOptions.querySelector('[data-pfh-type="item"]');
@@ -973,7 +976,8 @@ function pfhBoot() {
         exports.hidden = true;
         status.textContent = message;
         toolbar.hidden = !message;
-        if (resultsHeading) resultsHeading.hidden = true;
+        resultsHeading.hidden = resultsPeriod.hidden = movementAdd.hidden = true;
+        resultsPeriod.textContent = "";
         list.replaceChildren();
     };
     const typeIsOpen = () => typeTrigger.getAttribute("aria-expanded") === "true";
@@ -992,9 +996,10 @@ function pfhBoot() {
     function renderSelection(message = "") {
         const count = selection?.items.size || 0;
         const visible = listView && field("reportType").value === "item";
-        listTab.textContent = "Export List (" + count + ")";
+        listTab.textContent = movementList.textContent = "Export List (" + count + ")";
+        movementList.setAttribute("aria-expanded", String(movementMode && visible));
         searchPanel.hidden = visible;
-        if (transferActions) transferActions.hidden = !movementEnabled() || visible || field("reportType").value !== "item" ||
+        if (transferActions) transferActions.hidden = !movementEnabled() || (!movementMode && visible) || field("reportType").value !== "item" ||
             window.PharmFlowPermissions?.allowed(movementMode ? "ITEM_MOVEMENT" : "RECEIVING", true) === false;
         exportListPanel.hidden = !visible;
         listActions.hidden = !count;
@@ -1023,10 +1028,20 @@ function pfhBoot() {
         searchTab.tabIndex = show ? -1 : 0;
         listTab.tabIndex = show ? 0 : -1;
         renderSelection();
-        if (moveFocus) (show ? listTab : searchTab).focus();
+        if (moveFocus) (movementMode ? (show ? movementBack : field("item")) : (show ? listTab : searchTab)).focus();
     }
     searchTab.addEventListener("click", () => showListView(false));
     listTab.addEventListener("click", () => showListView(true));
+    movementList.addEventListener("click", () => showListView(!listView, true));
+    movementBack.addEventListener("click", () => showListView(false, true));
+    movementClear.addEventListener("click", () => {
+        if (!movementMode) return;
+        for (const name of ["item", "order", "source"]) field(name).value = "";
+        datePicker.close();
+        clear();
+        field("item").focus({preventScroll: true});
+    });
+    movementAdd.addEventListener("click", () => addResultItem(0));
     tabs.addEventListener("keydown", event => {
         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
@@ -1081,7 +1096,7 @@ function pfhBoot() {
         sourceField.hidden = !useItem || !movementEnabled();
         dateActions.hidden = useItem || useDiscrepancy;
         (useItem || useDiscrepancy ? document.getElementById("pfhItemEntry") : dateActions).append(submit);
-        tabs.hidden = !useItem;
+        tabs.hidden = !useItem || movementMode;
         showListView(false);
         datePicker.sync();
         clear();
@@ -1099,7 +1114,12 @@ function pfhBoot() {
             anchor.after(page);
             page.classList.remove("pfhStandalone");
             back.hidden = false;
-            intro.hidden = true;
+            movementList.hidden = movementBack.hidden = movementClear.hidden = true;
+            itemField.after(orderField);
+            searchPanel.setAttribute("role", "tabpanel");
+            searchPanel.setAttribute("aria-labelledby", "pfhSearchTab");
+            exportListPanel.setAttribute("role", "tabpanel");
+            exportListPanel.setAttribute("aria-labelledby", "pfhListTab");
             title.textContent = "Receiving History";
             typeField.hidden = false;
         }
@@ -1147,7 +1167,12 @@ function pfhBoot() {
             page.classList.add("pfhStandalone");
             back.hidden = typeField.hidden = true;
             title.textContent = "Item Movement";
-            intro.hidden = false;
+            movementList.hidden = movementBack.hidden = movementClear.hidden = false;
+            periodsField.insertBefore(orderField, sourceField);
+            searchPanel.setAttribute("role", "region");
+            searchPanel.setAttribute("aria-labelledby", "pfhTitle");
+            exportListPanel.setAttribute("role", "region");
+            exportListPanel.setAttribute("aria-labelledby", "pfhExportListTitle");
             sourceLabel.textContent = "Source";
             field("source").placeholder = "Warehouse or pharmacy code";
             form.reset();
@@ -1198,18 +1223,23 @@ function pfhBoot() {
             ? period.rows.length + (period.standalone ? (period.rows.length === 1 ? " movement" : " movements") : period.movement ? " movements shown · Dates in Saudi Arabia time." : " rows shown · Completed dates in Saudi Arabia time.")
             : period.standalone ? "No movements match these filters. Check the date on the order file." : period.movement ? "No movements found. For imported transfers, select the Receiving Date shown in Excel." : "Search complete.");
         const totals = result.type === "item" ? pfhItemTotals(period.rows, period.movement) : [];
-        if (resultsHeading) resultsHeading.hidden = !period.standalone || !totals.length;
-        if (period.standalone && totals.length > 1) {
-            announce(totals.length + " items · " + period.rows.length + " movements");
-        } else if (period.standalone && totals.length === 1) {
-            status.textContent = "1 item";
+        const showMovementHeader = period.standalone && totals.length > 0;
+        resultsHeading.hidden = resultsPeriod.hidden = !showMovementHeader;
+        if (showMovementHeader) {
+            resultsPeriod.textContent = pfhCalendarDateText(period.from) + " – " + pfhCalendarDateText(period.to);
+            status.textContent = totals.length + (totals.length === 1 ? " item" : " items");
         }
+        const alreadyAdded = index => selection?.items.has(String(totals[index][0]).toLowerCase()) &&
+            pfhListMatches(selection.period, period);
+        const singleMovementItem = period.standalone && totals.length === 1;
+        movementAdd.hidden = !singleMovementItem;
+        movementAdd.disabled = singleMovementItem && Boolean(alreadyAdded(0));
+        movementAdd.textContent = movementAdd.disabled ? "Added to list" : "Add to Export List";
         const openItems = period.standalone
             ? new Set([...list.querySelectorAll("[data-pfh-movement-item]:not([hidden])")].map(el => el.dataset.pfhMovementItem))
             : undefined;
-        list.innerHTML = pfhRenderResult(result, result.type === "item" ? index => {
-            const added = selection?.items.has(String(totals[index][0]).toLowerCase()) &&
-                pfhListMatches(selection.period, period);
+        list.innerHTML = pfhRenderResult(result, result.type === "item" && !singleMovementItem ? index => {
+            const added = alreadyAdded(index);
             return '<button class="pfhButton pfhRowAction" type="button" data-pfh-save="' + index + '"' +
                 (added ? (period.standalone ? " disabled>Added to list" : " disabled>Added") : period.standalone ? ">Add to Export List" : ">Add Item") + "</button>";
         } : undefined, openItems);
@@ -1234,7 +1264,11 @@ function pfhBoot() {
             return;
         }
         const add = event.target.closest("[data-pfh-save]");
-        if (!add || result?.type !== "item" || !result.current()) return;
+        if (add) addResultItem(Number(add.dataset.pfhSave));
+    });
+
+    function addResultItem(index) {
+        if (busy || result?.type !== "item" || !result.current()) return;
         const [period] = result.periods;
         if (selection && !pfhListMatches(selection.period, period)) {
             addStatus.textContent = "The export list covers " + pfhPeriodLabel(selection.period) + ". Search those dates to add this item.";
@@ -1242,21 +1276,21 @@ function pfhBoot() {
             addFeedback.scrollIntoView({block: "nearest"});
             return;
         }
-        const item = pfhItemTotals(period.rows, period.movement)[Number(add.dataset.pfhSave)];
+        const item = pfhItemTotals(period.rows, period.movement)[index];
         if (!item) return;
         selection = pfhAddToExportList(selection, period, item[0]);
         addFeedback.hidden = true;
         renderSelection();
         render();
         const toggleAfterRender = period.standalone
-            ? list.querySelectorAll("[data-pfh-movement-toggle]")[Number(add.dataset.pfhSave)]
+            ? list.querySelectorAll("[data-pfh-movement-toggle]")[index]
             : null;
         if (toggleAfterRender) toggleAfterRender.focus({preventScroll: true});
         else {
             field("item").focus({preventScroll: true});
             field("item").select();
         }
-    });
+    }
     document.getElementById("pfhSearchListDates").addEventListener("click", () => {
         if (!selection || busy) return;
         field("from").value = selection.period.from;

@@ -70,3 +70,16 @@ test("multi-item details stay scoped to their item and remember the open group a
     assert.doesNotMatch(firstGroup, /TO-2/);
     assert.match(secondGroup, /TO-2/);
 });
+
+test("compact movement actions preserve dates and export selections when clearing a search", () => {
+    const html = fs.readFileSync("index.html", "utf8");
+    const section = html.slice(html.indexOf('id="receivingHistoryContent"'), html.indexOf('id="pftDialog"'));
+    assert.match(section, /id="pfhMovementList"[^>]+aria-controls="pfhExportList"/);
+    assert.match(section, /id="pfhMovementClear"[^>]+type="button"/);
+    assert.match(section, /id="pfhMovementAdd"[^>]+type="button"/);
+    assert.match(section, /id="pfhResultsPeriod"/);
+    const clear = source.slice(source.indexOf('movementClear.addEventListener'), source.indexOf('movementAdd.addEventListener'));
+    assert.match(clear, /\["item", "order", "source"\]/);
+    assert.doesNotMatch(clear, /"from"|"to"|selection =|form\.reset/);
+    assert.match(source, /result\.type === "item" && !singleMovementItem \? index/);
+});

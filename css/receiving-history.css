@@ -259,33 +259,60 @@
 .pfhManageDialog .pfhButton.pfhDelete { color: #9c3535; border-color: #b86565; }
 
 /* Item Movement */
+.pfhHeaderActions { display: flex; align-items: center; gap: 8px; }
+.pfhHeaderActions:not(:has(> :not([hidden]))) { display: none; }
 #page-item-movement .pfhStandalone {
   max-width: none; width: 100%; box-sizing: border-box; margin-inline: 0;
-  padding: clamp(14px, 2vw, 24px); overflow: visible;
+  padding: clamp(10px, 1.3vw, 16px); overflow: visible;
 }
-.pfhStandalone .pfhHeader { margin: 0 0 18px; align-items: center; justify-content: space-between; }
-.pfhStandalone .pfhPageHeading h2 { font-size: clamp(20px, 2vw, 27px); letter-spacing: -.02em; }
-.pfhStandalone .pfhPageHeading p { margin: 6px 0 0; color: #4c647b; line-height: 1.45; }
+.pfhStandalone > .pfhHeader {
+  margin: 0 0 8px; padding: 7px 10px; align-items: center; justify-content: space-between;
+  border: 1px solid #c2d9ed; border-inline-start: 4px solid #1b5b90; border-radius: 9px;
+  background: linear-gradient(100deg, #e7f1fc, #f7fafe);
+}
+.pfhStandalone .pfhPageHeading h2 {
+  font-size: clamp(17px, 1.65vw, 22px); letter-spacing: -.02em; line-height: 1.15;
+}
+.pfhStandalone .pfhHeaderActions, .pfhStandalone .pfhTransferActions { flex-wrap: wrap; gap: 6px; }
 .pfhStandalone .pfhTransferActions { margin-inline-start: 0; }
-.pfhStandalone .pfhPrimaryFilters { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
-.pfhStandalone #pfhForm { background: #f5f9fd; padding: clamp(10px, 1.4vw, 16px); }
-.pfhStandalone .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 1.5fr);
-  max-width: none; margin-top: 10px;
+.pfhStandalone :is(.pfhHeaderActions, .pfhListHeaderActions, .pfhToolbar, .pfhItemEntry) .pfhButton {
+  min-height: 31px; padding-inline: 9px;
 }
-.pfhStandalone .pfhTabs { margin-bottom: 12px; }
-.pfhStandalone .pfhToolbar { margin: 18px 0 6px; gap: 12px; }
-.pfhStandalone .pfhStatusActions { flex-wrap: wrap; gap: 10px; }
-.pfhStandalone #pfhResultsHeading { margin: 0; color: #123e69; font-size: 17px; line-height: 1.3; }
-.pfhStandalone #pfhStatus { color: #4c647b; }
-.pfhMovementResults { display: grid; gap: 10px; }
-.pfhMovementContext { margin: 0 0 3px; color: #4c647b; font-size: 13px; }
+.pfhStandalone .pfhMovementList {
+  border-color: #739fc3; background: #fff; color: #174e7b;
+}
+.pfhStandalone .pfhMovementList[aria-expanded="true"] {
+  background: #dbeaf8; border-color: #5d8ab0;
+}
+.pfhStandalone #pfhForm { background: #f5f9fd; padding: 8px 10px; }
+.pfhStandalone .pfhPrimaryFilters { grid-template-columns: minmax(0, 1fr); }
+.pfhStandalone #pfhItemField label { font-size: 13px; }
+.pfhStandalone #pfhItemEntry .pfhControl { min-height: 33px; }
+.pfhStandalone .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
+  grid-template-columns: repeat(2, minmax(110px, 8.25rem)) minmax(140px, 12rem) minmax(150px, 14rem);
+  gap: 8px; max-width: none; margin-top: 7px;
+}
+.pfhStandalone .pfhDateFilters .pfhControl { min-height: 31px; }
+.pfhStandalone .pfhToolbar { margin: 8px 0 6px; gap: 8px; }
+.pfhStandalone .pfhToolbar:has(#pfhResultsHeading:not([hidden])) {
+  padding: 4px 7px 4px 10px;
+  border: 1px solid #cbddec; border-radius: 8px; background: #eaf3fc;
+}
+.pfhStandalone .pfhStatusActions { flex-wrap: wrap; gap: 7px 10px; }
+.pfhStandalone #pfhResultsHeading { margin: 0; color: #123e69; font-size: 14px; line-height: 1.3; }
+.pfhStandalone #pfhResultsPeriod {
+  padding-inline-start: 10px; border-inline-start: 1px solid #adc5dc;
+  color: #2b567b; font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.pfhStandalone #pfhStatus { color: #4c647b; font-size: 12px; }
+.pfhStandalone #pfhExports .pfhButton { min-height: 27px; font-size: 12px; }
+.pfhMovementResults { display: grid; gap: 6px; }
 .pfhMovementItem {
   border: 1px solid #c7dced; border-radius: 12px; background: #fff;
   box-shadow: 0 1px 2px rgb(22 63 104 / 5%);
 }
 .pfhMovementItemHeader {
-  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  display: flex; align-items: center; gap: 9px; padding: 5px 9px;
 }
 .pfhMovementOverview {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
@@ -302,10 +329,10 @@ button.pfhMovementToggle {
 .pfhMovementSingle .pfhMovementIdentity strong { font-size: clamp(16px, 1.8vw, 21px); }
 .pfhMovementCode { color: #4c647b; font-size: 13px; font-variant-numeric: tabular-nums; }
 .pfhMovementMetric {
-  display: grid; justify-items: end; gap: 2px; min-width: 84px; padding: 6px 10px;
+  display: grid; justify-items: end; gap: 1px; min-width: 75px; padding: 4px 8px;
   border-radius: 8px; background: #eaf3fe; color: #164d7c; line-height: 1.2;
 }
-.pfhMovementMetric strong { font-size: clamp(19px, 2vw, 26px); font-variant-numeric: tabular-nums; }
+.pfhMovementMetric strong { font-size: clamp(16px, 1.5vw, 19px); font-variant-numeric: tabular-nums; }
 .pfhMovementMetric span { font-size: 11px; }
 .pfhMovementChevron {
   inline-size: 8px; block-size: 8px; border: solid #315b7f; border-width: 0 2px 2px 0;
@@ -313,7 +340,7 @@ button.pfhMovementToggle {
 }
 .pfhMovementToggle[aria-expanded="true"] .pfhMovementChevron { transform: rotate(225deg); margin: 4px auto 0; }
 .pfhMovementDetails {
-  padding: 12px; border-top: 1px solid #dbe8f3; border-radius: 0 0 12px 12px; background: #f5f9fd;
+  padding: 7px 9px; border-top: 1px solid #dbe8f3; border-radius: 0 0 12px 12px; background: #f5f9fd;
 }
 .pfhMovementDetails h4 { margin: 0 0 8px; color: #234f76; font-size: 13px; line-height: 1.3; }
 .pfhMovementTable .pfhTable { min-width: 510px; }
@@ -322,9 +349,12 @@ button.pfhMovementToggle {
 }
 .pfhMovementTable .pfhTable td:last-child { color: #315b7f; white-space: nowrap; }
 @media (max-width: 650px) {
-  .pfhStandalone .pfhPrimaryFilters, .pfhStandalone .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
-    grid-template-columns: minmax(0, 1fr);
+  .pfhStandalone .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .pfhStandalone .pfhHeaderActions { width: 100%; }
+  .pfhStandalone .pfhItemEntry { flex-wrap: wrap; }
+  .pfhStandalone #pfhItemEntry .pfhControl { flex: 1 0 100%; }
   .pfhMovementItemHeader { flex-wrap: wrap; gap: 7px; }
   .pfhMovementOverview { flex-basis: 100%; }
   .pfhMovementItemHeader > .pfhRowAction { margin-inline-start: auto; }
