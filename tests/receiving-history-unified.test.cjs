@@ -227,7 +227,7 @@ test('the report picker defaults to Item Receiving History and retains both exis
     assert.match(section, /name="reportType" value="item"/);
     assert.deepEqual([...section.matchAll(/data-pfh-date="([^"]+)"/g)].map(match => match[1]),
         ['from', 'to']);
-    assert.doesNotMatch(section, /type="date"|<textarea/);
+    assert.doesNotMatch(section.slice(0, section.indexOf('id="pftManageDialog"')), /type="date"|<textarea/);
     assert.match(section, /id="pfhItemEntry"[\s\S]*?name="item" type="search"[^>]*>[\s\S]*?<button[^>]*type="submit">Search<\/button>/);
 });
 
@@ -279,44 +279,77 @@ test('item history centers quantity columns and emphasizes only a single item to
     assert.doesNotMatch(mixed, /pfhTotalBadge/);
 });
 
-test('movement combines warehouse and pharmacy receipts, counts a shared TO once and prints received totals', () => {
+test('movement combines source quantities, counts shared TO once and exports centered totals', () => {
     const context = runtime();
     const warehouse = [
-        {order_number: 'TO-1', item_code: '101', item_name: 'Panadol', ordered_qty: 12, received_qty: 10},
-        {order_number: 'TO-2', item_code: '101', item_name: 'Panadol', ordered_qty: 15, received_qty: null},
-        {order_number: 'TO-3', item_code: '101', item_name: 'Panadol', ordered_qty: 40, received_qty: null}
+        {order_number: 'TO-1', item_code: '101', item_name: 'Panadol', order_date: '2026-11-01', ordered_qty: 12, received_qty: 9},
+        {order_number: 'TO-2', item_code: '101', item_name: 'Panadol', order_date: '2026-11-01', ordered_qty: 18, received_qty: null},
+        {order_number: 'TO-3', item_code: '101', item_name: 'Panadol', order_date: '2026-11-01', ordered_qty: 40, received_qty: 2}
     ];
     const transfers = [
-        {number: 'TO-1', code: '101', name: 'Panadol', source: 'WAREHOUSE-1', received_date: '2026-11-01', quantity: 10},
+        {number: 'TO-1', code: '101', name: 'Panadol', source: 'PHARMACY-1', received_date: '2026-11-01', quantity: 10},
         {number: 'TO-2', code: '101', name: 'Panadol', source: 'PHARMACY-2', received_date: '2026-11-01', quantity: 12},
         {number: 'TO-2', code: '101', name: 'Panadol', source: 'PHARMACY-2', received_date: '2026-11-01', quantity: 3}
     ];
     const rows = context.pfhMergeMovements(warehouse, transfers);
     assert.equal(rows.length, 3);
-    assert.equal(rows.find(row => row.order_number === 'TO-2').movement_source, 'PHARMACY-2');
-    assert.equal(rows.find(row => row.order_number === 'TO-2').ordered_qty, 15);
-    assert.equal(rows.find(row => row.order_number === 'TO-3').received_qty, null);
-    assert.equal(context.pfhItemTotals(rows)[0][3], 25);
-    const [summary] = context.pfhExportTables('item', {...period, movement: true, rows}, true);
-    assert.equal(summary.columns[2], 'Total Received');
-    assert.equal(summary.rows[0][2], 25);
-    const result = context.pfhRenderResult({type:'item',periods:[{...period,movement:true,rows}]});
-    assert.match(result, /pfhTotalBadge">25/);
+    assert.equal(rows[1].movement_source, 'PHARMACY-2');
+    assert.equal(rows[1].movement_quantity, 15);
+    assert.equal(rows[2].movement_quantity, 40);
+    const data = {...period, movement: true, source: 'PHARMACY', rows};
+    const [summary] = context.pfhExportTables('item', data, true);
+    assert.deepEqual(Array.from(summary.columns), ['Item Code', 'Item Name', 'Total Quantity']);
+    assert.deepEqual(Array.from(summary.quantityColumns), [2]);
+    assert.equal(summary.rows[0][2], 65);
+    assert.match(summary.notes.join(' '), /From pharmacy: PHARMACY/);
+    const selection = context.pfhAddToExportList(null, data, '101');
+    const selected = context.pfhExportListPeriod(selection);
+    assert.equal(selected.source, 'PHARMACY');
+    assert.equal(context.pfhSummaryTable(selected).rows[0][2], 65);
+    const result = context.pfhRenderResult({type:'item',periods:[data]});
+    assert.match(result, /pfhTotalBadge">65/);
     assert.match(result, /PHARMACY-2/);
-    assert.match(result, /Transfer file/);
+    assert.match(result, />Date<.*class="pfhQty">Quantity</);
+    assert.doesNotMatch(result, /Received|Movement Date|Verification/);
 });
 
-test('movement can report a standalone transfer and respects the optional order filter across pages', async () => {
-    const offsets = [];
-    const context = runtime({authRpc: async (rpc, args) => {
-        assert.equal(rpc, 'search_pharmflow_transfer_history_v1');
-        offsets.push(args.p_offset);
-        if (!args.p_offset) return Array.from({length:101},()=>({number:'TO-OTHER'}));
-        return [{number:'TO-2',code:'101',name:'Panadol',source:'PHARMACY',received_date:'2026-11-01',quantity:15}];
+test('movement uses warehouse file dates and pharmacy-only searches skip warehouse requests', async () => {
+    const calls = [];
+    const context = runtime({authRpc: async (rpc, args, query) => {
+        calls.push([rpc,args,query]);
+        if (rpc === 'list_pharmflow_movement_archives_v1') {
+            if (args.p_from > '2025-02-03') return [];
+            return [{order_numbers: ['TO-1'], closed_at: '2026-11-01T00:00:00Z', archive_payload: {
+                orderNumber: 'TO-1', orderFiles: [{documentId:'TO-1',orderDate:'2025-02-03'}],
+                itemReceivingHistory: [{item_code:'101',item_name:'Panadol',ordered_qty:4,received_qty:0}]
+            }}];
+        }
+        assert.equal(rpc, 'search_pharmflow_transfer_history_v2');
+        return [{number:'TO-2',code:'101',name:'Panadol',source:'PHARMACY',received_date:'2026-11-01',quantity:20}];
     }});
-    const transfers = await context.pfhReadTransfers({p_pharmacy_id:'fixture'}, period,'TO-2','101',()=>true);
-    assert.deepEqual(offsets,[0,100]);
-    const [row] = context.pfhMergeMovements([],transfers);
-    assert.equal(row.received_qty,15);
-    assert.equal(row.ordered_qty,null);
+    const range = await context.pfhReadMovement(params,period,'','101',()=>true);
+    assert.equal(context.pfhItemTotals(range.rows,true)[0][2],20);
+    assert.equal(calls[0][1].p_from, '2026-11-01');
+    assert.doesNotMatch(JSON.stringify(calls[0][2]), /gte/);
+    const broad = await context.pfhReadMovement(params,{...period,from:'2025-02-01'},'','101',()=>true);
+    assert.equal(context.pfhItemTotals(broad.rows,true)[0][2],24);
+    assert.equal(broad.rows[1].movement_date,'2025-02-03');
+    calls.length = 0;
+    await context.pfhReadMovement(params,{...period,source:'Test Pharmacy'},'TO-2','',()=>true);
+    assert.equal(calls.length,1);
+    assert.equal(calls[0][1].p_source,'Test Pharmacy');
+    assert.equal(calls[0][1].p_item,'');
+    assert.equal(calls[0][1].p_order,'TO-2');
+});
+
+test('movement carries all transfer pages into the displayed quantity totals without counting the lookahead', async () => {
+    const offsets = [];
+    const line = {number:'TO-2',code:'101',name:'Panadol',source:'PHARMACY',received_date:'2026-11-01',quantity:1};
+    const context = runtime({authRpc: async (_, args) => {
+        offsets.push(args.p_offset);
+        return Array.from({length: args.p_offset ? 1 : 501}, () => line);
+    }});
+    const transfers = await context.pfhReadTransfers(params, period, '', '101', () => true);
+    assert.deepEqual(offsets, [0,500]);
+    assert.equal(context.pfhMergeMovements([],transfers)[0].movement_quantity,501);
 });

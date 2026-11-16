@@ -20,6 +20,8 @@
             if (!context?.pharmacy_id || !context.pharmacy_code) throw new Error("Select an active pharmacy.");
             return context;
         };
+        startManageImports(el, access, scope);
+
         function refresh() {
             choose.disabled = close.disabled = busy;
             save.disabled = busy || !pending.length;
@@ -158,6 +160,162 @@
                         window.dispatchEvent(new CustomEvent("pharmflow:transfers-imported"));
                     }
                 }
+            }
+        });
+    }
+    function startManageImports(el, access, scope) {
+        const dialog = el("pftManageDialog"), form = el("pftManageForm");
+        const close = el("pftManageClose"), body = el("pftManageRows"), results = el("pftManageResults");
+        const status = el("pftManageStatus"), actions = el("pftManageActions");
+        const prev = el("pftManagePrev"), next = el("pftManageNext"), remove = el("pftManageDelete");
+        const confirmation = el("pftManageConfirm"), commit = el("pftManageCommit"), cancel = el("pftManageCancel");
+        const pageSize = 100;
+        const prompt = "Enter a TO number or a file date range.";
+        const selected = new Map();
+        let query, page = 0, hasMore = false, busy = false, generation = 0;
+
+        const refresh = () => {
+            const confirming = !confirmation.hidden;
+            for (const control of [...form.elements, ...body.querySelectorAll("input")]) {
+                control.disabled = busy || confirming;
+            }
+            close.disabled = cancel.disabled = commit.disabled = busy;
+            prev.disabled = busy || confirming || page === 0;
+            next.disabled = busy || confirming || !hasMore;
+            remove.disabled = busy || confirming || !selected.size;
+            remove.textContent = "Delete Selected" + (selected.size ? " (" + selected.size + ")" : "");
+        };
+
+        function clearResults() {
+            selected.clear();
+            confirmation.hidden = results.hidden = actions.hidden = true;
+            body.replaceChildren();
+        }
+
+        function reset() {
+            generation++;
+            busy = false;
+            query = undefined;
+            page = 0;
+            hasMore = false;
+            form.reset();
+            clearResults();
+            status.textContent = prompt;
+            refresh();
+        }
+
+        function requestCurrent() {
+            const stamp = generation, activeScope = scope();
+            return () => stamp === generation && activeScope === scope() && dialog.open;
+        }
+
+        async function load(offset, notice = "") {
+            if (busy || !query) return;
+            const current = requestCurrent();
+            clearResults();
+            busy = true;
+            refresh();
+            status.textContent = notice + "Searching…";
+            try {
+                const context = access();
+                const rows = await authRpc("list_pharmflow_transfer_imports_v1",
+                    {...query, p_pharmacy_id: context.pharmacy_id, p_offset: offset});
+                if (!current()) return;
+                if (!Array.isArray(rows)) throw new Error("Unexpected import search response.");
+                page = offset;
+                hasMore = rows.length > pageSize;
+                for (const row of rows.slice(0, pageSize)) {
+                    const tr = document.createElement("tr");
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.setAttribute("aria-label", "Select " + row.number);
+                    checkbox.addEventListener("change", () => {
+                        if (checkbox.checked) selected.set(row.number, {number: row.number, imported_at: row.imported_at});
+                        else selected.delete(row.number);
+                        refresh();
+                    });
+                    tr.insertCell().append(checkbox);
+                    for (const value of [row.number, row.source, row.received_date]) tr.insertCell().textContent = value;
+                    body.append(tr);
+                }
+                status.textContent = notice + (rows.length ? "Select transfers to delete from this page." : "No imported transfers found.");
+                results.hidden = !rows.length;
+                actions.hidden = !rows.length && !page;
+            } catch (error) {
+                if (current()) status.textContent = notice + (error.message || "Unable to load imports.");
+            } finally {
+                if (current()) { busy = false; refresh(); }
+            }
+        }
+
+        el("pftManage").addEventListener("click", () => {
+            try {
+                access();
+                reset();
+                dialog.showModal();
+            } catch (error) {
+                showToast(error.message, "warning");
+            }
+        });
+        close.addEventListener("click", () => { if (!busy) dialog.close(); });
+        dialog.addEventListener("cancel", event => { if (busy) event.preventDefault(); });
+        const closeForScope = () => { if (dialog.open) { dialog.close(); reset(); } };
+        window.addEventListener("auth:context-ready", event => {
+            if (event.detail?.changed || !event.detail?.currentScope) closeForScope();
+        });
+        window.addEventListener("pharmflow:receiving-history-closed", closeForScope);
+        form.addEventListener("input", () => { clearResults(); refresh(); });
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+            const field = name => form.elements.namedItem(name).value;
+            const order = field("order").trim().toUpperCase().replace(/\s+/g, "");
+            const from = field("from"), to = field("to");
+            if ((!order && (!from || !to)) || (from && to && from > to)) {
+                status.textContent = from && to && from > to ? "From must be on or before To." : prompt;
+                return;
+            }
+            query = {p_order: order, p_from: from || null, p_to: to || null};
+            load(0);
+        });
+        prev.addEventListener("click", () => load(page - pageSize));
+        next.addEventListener("click", () => load(page + pageSize));
+        remove.addEventListener("click", () => {
+            if (!selected.size) return;
+            el("pftManageConfirmText").textContent = "Delete " + selected.size +
+                (selected.size === 1 ? " selected transfer? " : " selected transfers? ") +
+                "You can import the Excel files again after deletion.";
+            confirmation.hidden = false;
+            refresh();
+            cancel.focus();
+        });
+        cancel.addEventListener("click", () => {
+            confirmation.hidden = true;
+            refresh();
+            remove.focus();
+        });
+        commit.addEventListener("click", async () => {
+            if (busy || confirmation.hidden || !selected.size) return;
+            const current = requestCurrent();
+            const imports = [...selected.values()];
+            busy = true;
+            refresh();
+            status.textContent = "Deleting selected transfers…";
+            try {
+                const context = access();
+                const deleted = await authRpc("delete_pharmflow_transfer_imports_v1",
+                    {p_pharmacy_id: context.pharmacy_id, p_imports: imports});
+                if (!current()) return;
+                if (deleted !== imports.length) throw new Error("Unexpected delete response. Search again.");
+                window.dispatchEvent(new CustomEvent("pharmflow:transfers-imported"));
+                busy = false;
+                await load(0, deleted + (deleted === 1 ? " transfer deleted. " : " transfers deleted. "));
+            } catch (error) {
+                if (current()) {
+                    clearResults();
+                    status.textContent = error.message || "Unable to delete selected transfers.";
+                }
+            } finally {
+                if (current()) { busy = false; refresh(); }
             }
         });
     }

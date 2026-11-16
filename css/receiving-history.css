@@ -214,3 +214,14 @@
 #pftImportStatus { margin: 10px 0 0; }
 #pftReview { margin-top: 8px; }
 #pftIssues { max-height: 150px; overflow: auto; padding-inline-start: 20px; }
+
+.pfhManageDialog { width: min(760px, calc(100vw - 32px)); }
+#pftManageForm { align-items: end; flex-wrap: wrap; margin-top: 10px; }
+#pftManageForm .pfhField { flex: 1 1 130px; }
+#pftManageStatus { margin: 10px 0; }
+#pftManageResults { max-height: min(340px, 42vh); overflow: auto; }
+#pftManageResults th { position: sticky; top: 0; }
+#pftManageResults input { accent-color: #185b96; }
+#pftManageActions { margin-top: 8px; }
+#pftManageConfirm p { margin-bottom: 8px; }
+.pfhManageDialog .pfhButton.pfhDelete { color: #9c3535; border-color: #b86565; }

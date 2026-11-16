@@ -22,6 +22,31 @@ function parse(files) {
         xlsx, validation, 'BENCHMARK'));
 }
 
+async function initializeDatabase(db) {
+    await db.exec(`
+        create role authenticated; create role anon;
+        create schema auth; create schema pharmflow_auth_private;
+        create table public.pharmacies(id uuid primary key, code text not null, name text not null);
+        insert into public.pharmacies values ('${scope}','BENCHMARK','Benchmark'),('${outside}','SOURCE-2','Example Pharmacy');
+        create table public.archive_fixture (pharmacy_id uuid, archive_id text, order_numbers text[], closed_at timestamptz, archive_payload jsonb);
+        create function public.list_pharmflow_finalized_archives(p_pharmacy_id uuid)
+        returns table(archive_id text, order_numbers text[], closed_at timestamptz, archive_payload jsonb)
+        language plpgsql as $$ begin
+          perform pharmflow_auth_private.require_access(p_pharmacy_id, 'RECEIVING', false, 'archives');
+          return query select a.archive_id,a.order_numbers,a.closed_at,a.archive_payload from public.archive_fixture a where pharmacy_id=p_pharmacy_id;
+        end $$;
+        create function auth.uid() returns uuid language sql stable as $$ select '${actor}'::uuid $$;
+        create function pharmflow_auth_private.require_access(pid uuid, module text, writing boolean, action text)
+        returns void language plpgsql as $$ begin
+          if pid <> '${scope}' or (writing and current_setting('test.read_only', true) = 'yes') then
+            raise exception 'permission denied' using errcode='42501';
+          end if;
+        end $$;
+    `);
+    await db.exec(readFileSync(sqlFile, 'utf8'));
+    await db.exec(readFileSync('proposals/staging/20261116030000_item_movement_source_and_manage_imports.sql', 'utf8'));
+}
+
 test('real source layout, pharmacy identity and flexible transfer dates', () => {
     const rows = [
         ['Bulk-TO Receive'], ['User ID', 'benchmark'], ['TO Number', 'TO-001'], ['From Warehouse', 'TEST-A'],
@@ -65,20 +90,7 @@ test('100 XLSX reads, receipt and replay, conflict and tenant isolation using th
     const db = new PGlite();
     t.after(() => db.close());
     // Minimal test doubles for existing application authorization; the import/query functions are the actual SQL.
-    await db.exec(`
-        create role authenticated; create role anon;
-        create schema auth; create schema pharmflow_auth_private;
-        create table public.pharmacies(id uuid primary key, code text not null);
-        insert into public.pharmacies values ('${scope}','BENCHMARK'),('${outside}','OTHER');
-        create function auth.uid() returns uuid language sql stable as $$ select '${actor}'::uuid $$;
-        create function pharmflow_auth_private.require_access(pid uuid, module text, writing boolean, action text)
-        returns void language plpgsql as $$ begin
-          if pid <> '${scope}' or (writing and current_setting('test.read_only', true) = 'yes') then
-            raise exception 'permission denied' using errcode='42501';
-          end if;
-        end $$;
-    `);
-    await db.exec(readFileSync(sqlFile, 'utf8'));
+    await initializeDatabase(db);
     await db.exec('set role authenticated');
     let payloadBytes = 0;
     const batches = Array.from({length: 4}, (_, i) => transfers.slice(i * 25, i * 25 + 25));
@@ -123,4 +135,67 @@ test('100 XLSX reads, receipt and replay, conflict and tenant isolation using th
     await db.exec('reset role');
     assert.equal((await db.query('select count(*)::int as n from pharmflow_transfer_private.items')).rows[0].n,600);
     t.diagnostic(JSON.stringify({files:100,items:600,excelBytes,firstPayloadBytes,requests:4,firstReadMs,repeatReadMs:repeat,firstSaveMs,replayMs,searchMs}));
+});
+
+test('roll-forward 50 to 60, source and date filter, atomic selected deletion and reimport', async t => {
+    const db = new PGlite();
+    t.after(() => db.close());
+    await initializeDatabase(db);
+    const archive = {orderFiles: [
+        {documentId:'TO-WAREHOUSE',orderDate:'2025-02-03'},
+        {documentId:'TO-BAD',orderDate:'2026-02-31'}
+    ]};
+    await db.query("insert into archive_fixture values ($1,'test',array['TO-WAREHOUSE','TO-BAD'],'2026-11-16',$2)",
+        [scope,JSON.stringify(archive)]);
+    await db.exec('set role authenticated');
+    const listArchives = (from,to,order = '') => db.query(
+        'select order_numbers from public.list_pharmflow_movement_archives_v1($1,$2,$3,$4)',[scope,from,to,order]);
+    assert.equal((await listArchives('2026-01-01','2026-12-31')).rows.length,0);
+    assert.deepEqual((await listArchives('2025-01-01','2026-12-31','TO-WAREHOUSE')).rows[0].order_numbers,['TO-WAREHOUSE']);
+    const imports = Array.from({length:60}, (_,i) => ({number:'TO-' + (100+i),
+        source:i % 2 ? 'SOURCE-2' : 'SOURCE-1',destination:'BENCHMARK',user_id:'BENCHMARK',date:'2026-11-16',
+        items:[{code:'101',name:'Example Item',quantity:20}]}));
+    const save = async records => {
+        const outcomes = [];
+        for (let i=0; i<records.length; i+=25) {
+            const result = await db.query('select * from public.import_pharmflow_transfer_history_v1($1,$2::jsonb)',
+                [scope,JSON.stringify(records.slice(i,i+25))]);
+            outcomes.push(...result.rows.map(r=>r.outcome));
+        }
+        return outcomes;
+    };
+    assert.deepEqual(await save(imports.slice(0,50)),Array(50).fill('imported'));
+    assert.deepEqual(await save(imports),[...Array(50).fill('duplicate'),...Array(10).fill('imported')]);
+    assert.deepEqual(await save([{...imports[1],date:'2026-11-15'}]),['conflict']);
+    const search = (item,source,order = '',pharmacy = scope) => db.query(
+        "select * from public.search_pharmflow_transfer_history_v2($1,$2,$3,$4,'2026-11-01','2026-11-30')",
+        [pharmacy,item,source,order]);
+    const found = await search('','Example Pharmacy');
+    assert.equal(found.rows.length,30);
+    assert.equal(found.rows.reduce((n,row) => n+Number(row.quantity),0),600);
+    assert.equal((await search('101','source-2','TO-101')).rows.length,1);
+    assert.equal((await search('999','source-2')).rows.length,0);
+    assert.equal((await search('','Benchmark')).rows.length,0);
+    await assert.rejects(search('','SOURCE-2','',outside),/permission denied/);
+    const list = (order = '',from = null,to = null,pharmacy = scope) => db.query(
+        'select * from public.list_pharmflow_transfer_imports_v1($1,$2,$3,$4)',[pharmacy,order,from,to]);
+    const selection = (await list('TO-101')).rows;
+    assert.equal(selection.length,1);
+    const deleteImports = (rows,pharmacy = scope) => db.query(
+        'select public.delete_pharmflow_transfer_imports_v1($1,$2) as deleted',[pharmacy,JSON.stringify(rows)]);
+    await assert.rejects(list('TO-101',null,null,outside),/permission denied/);
+    await assert.rejects(deleteImports(selection,outside),/permission denied/);
+    await db.exec("set test.read_only='yes'");
+    await assert.rejects(list('TO-101'),/permission denied/);
+    await assert.rejects(deleteImports(selection),/permission denied/);
+    await db.exec("set test.read_only='no'");
+    await assert.rejects(deleteImports([...selection,{...selection[0],number:'TO-MISSING'}]),/changed since selection/);
+    assert.equal((await list('TO-101')).rows.length,1);
+    assert.equal((await deleteImports(selection)).rows[0].deleted,1);
+    assert.equal((await search('101','SOURCE-2','TO-101')).rows.length,0);
+    assert.equal((await list('','2026-11-16','2026-11-16')).rows.length,59);
+    assert.equal((await listArchives('2025-01-01','2026-12-31')).rows.length,1);
+    assert.deepEqual(await save([imports[1]]),['imported']);
+    await assert.rejects(deleteImports(selection),/changed since selection/);
+    assert.equal((await search('101','SOURCE-2','TO-101')).rows.length,1);
 });

@@ -62,7 +62,7 @@
     <link rel="preload" as="script" href="js/app.js?v=STARTUP_HANDHELD_20261108">
     <link rel="preload" as="script" href="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102">
     <link rel="preload" as="script" href="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028">
-    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY18">
+    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY19">
     <link rel="preload" as="script" href="js/header-account-responsive.js">
     <link rel="preload" as="script" href="js/header-account-menu.js">
     <link rel="preload" as="script" href="js/header-account-popover.js">
@@ -121,7 +121,7 @@
             visibility: hidden !important;
         }
     </style>
-<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI14">
+<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI15">
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
@@ -1131,7 +1131,10 @@ window.PharmFlowDeviceMode = (() => {
                     <header class="pfhHeader">
                         <button id="pfhBack" class="pfhButton pfhBack" type="button"><span aria-hidden="true">←</span> Back to Receiving Report</button>
                         <h2 id="pfhTitle">Receiving History</h2>
-                        <button id="pftOpen" class="pfhButton pfhTransferAction" type="button" hidden>Import Transfers</button>
+                        <div id="pftActions" class="pfhFilterActions pfhTransferAction" hidden>
+                            <button id="pftManage" class="pfhButton" type="button">Manage Imports</button>
+                            <button id="pftOpen" class="pfhButton" type="button">Import Transfers</button>
+                        </div>
                     </header>
                     <div class="pfhTabs" id="pfhTabs" role="tablist" aria-label="Receiving History views">
                         <button class="pfhButton" id="pfhSearchTab" type="button" role="tab" aria-controls="pfhSearchPanel" aria-selected="true">Item Search</button>
@@ -1174,6 +1177,9 @@ window.PharmFlowDeviceMode = (() => {
                                     <button class="pfhControl pfhDateButton" type="button" data-pfh-date="to" aria-labelledby="pfhLabelTo pfhDateTo" aria-haspopup="dialog" aria-expanded="false"><span id="pfhDateTo">Select date</span></button>
                                     <input type="hidden" name="to">
                                 </div>
+                                <label class="pfhField" id="pfhSourceField" hidden><span>From Pharmacy <small>Optional</small></span>
+                                    <input class="pfhControl" name="source" type="search" maxlength="160" placeholder="Enter pharmacy code or name" autocomplete="off">
+                                </label>
                                 <div class="pfhFilterActions" id="pfhDateActions" hidden></div>
                             </div>
                         </form>
@@ -1223,6 +1229,39 @@ window.PharmFlowDeviceMode = (() => {
                             <summary>Files needing review</summary>
                             <ul id="pftIssues"></ul>
                         </details>
+                    </dialog>
+                    <dialog id="pftManageDialog" class="pfhTransferDialog pfhManageDialog" aria-labelledby="pftManageTitle">
+                        <header class="pfhHeader">
+                            <h2 id="pftManageTitle">Manage Imports</h2>
+                            <button id="pftManageClose" class="pfhButton pfhTransferAction" type="button">Close</button>
+                        </header>
+                        <form id="pftManageForm" class="pfhFilterActions">
+                            <label class="pfhField"><span>TO Number</span>
+                                <input class="pfhControl" name="order" type="search" placeholder="Enter TO number" maxlength="100" autocomplete="off">
+                            </label>
+                            <label class="pfhField"><span>From</span><input class="pfhControl" type="date" name="from"></label>
+                            <label class="pfhField"><span>To</span><input class="pfhControl" type="date" name="to"></label>
+                            <button class="pfhButton pfhSearch" type="submit">Search</button>
+                        </form>
+                        <p id="pftManageStatus" role="status">Enter a TO number or a file date range.</p>
+                        <div id="pftManageResults" class="pfhTableWrap" hidden>
+                            <table class="dataTable pfhTable">
+                                <thead><tr><th scope="col">Select</th><th scope="col">TO Number</th><th scope="col">Source</th><th scope="col">File Date</th></tr></thead>
+                                <tbody id="pftManageRows"></tbody>
+                            </table>
+                        </div>
+                        <div class="pfhFilterActions" id="pftManageActions" hidden>
+                            <button id="pftManagePrev" class="pfhButton" type="button" disabled>Previous</button>
+                            <button id="pftManageNext" class="pfhButton" type="button" disabled>Next</button>
+                            <button id="pftManageDelete" class="pfhButton pfhTransferAction pfhDelete" type="button" disabled>Delete Selected</button>
+                        </div>
+                        <div id="pftManageConfirm" class="pfhAddFeedback" hidden>
+                            <p id="pftManageConfirmText"></p>
+                            <div class="pfhFilterActions">
+                                <button id="pftManageCancel" class="pfhButton" type="button">Cancel</button>
+                                <button id="pftManageCommit" class="pfhButton pfhDelete" type="button">Confirm Delete</button>
+                            </div>
+                        </div>
                     </dialog>
                 </section>
 
@@ -2775,8 +2814,8 @@ window.PharmFlowDeviceMode = (() => {
 
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>
-<script src="js/receiving-history.js?v=HISTORY18"></script>
-<script src="js/item-transfer-staging.js?v=3"></script>
+<script src="js/receiving-history.js?v=HISTORY19"></script>
+<script src="js/item-transfer-staging.js?v=4"></script>
 <script src="js/header-account-responsive.js"></script>
 <script src="js/header-account-menu.js"></script>
 <script src="js/header-account-popover.js"></script>
