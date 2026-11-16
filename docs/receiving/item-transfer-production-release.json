@@ -1,0 +1,18 @@
+{
+  "approved_staging": "a2a554af508b945ee7025a51e345c94b5920f3aa",
+  "first_accepted": "5a8dc4a647b6ffca7be3bdfa2bd99de472afe207",
+  "production_base": "3f03b9705661d7cef01a35cbd320e7b54ba5f082",
+  "changes": {
+    "PHARMFLOW_CURRENT_CHECKPOINT.md": "4410053336faef3d41f3e26e83f44a0289f75746",
+    "index.html": "0ddf0773ec2ddd738cd96765b9d60602e687f540",
+    "js/config.js": "4da50bad2e01bfc907ed140e1a02543b60d44347",
+    "js/item-transfer-staging.js": "0cb25dd79824cc42fd395ac3b0880a69feae283d",
+    "js/receiving-history.js": "a80e749b2b5d81984fdf9780930f6e75e64f03a8"
+  },
+  "sql": {
+    "proposals/staging/20261116010000_item_transfer_history.sql": "3572672bcd4b167dcb0c7b7dfc4b993ee1a0f565",
+    "proposals/staging/20261116030000_item_movement_source_and_manage_imports.sql": "2f254437aff0e9ab484cf50ff7e1263964810440",
+    "proposals/staging/20261116040000_transfer_import_upload_date.sql": "7390b26fa118ad669d1872011e9e64db224cccea",
+    "proposals/staging/20261116050000_latest_transfer_import.sql": "704088ef9cce9e03dfad6e794ebf351903787761"
+  }
+}

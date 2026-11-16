@@ -816,7 +816,7 @@ function pfhBoot() {
     const listActions = document.getElementById("pfhListActions");
     const transferActions = document.getElementById("pftActions");
     const sourceField = document.getElementById("pfhSourceField");
-    const movementEnabled = typeof APP_CONFIG !== "undefined" && APP_CONFIG.environment === "staging";
+    const movementEnabled = typeof APP_CONFIG !== "undefined" && APP_CONFIG.receiving?.itemMovementEnabled === true;
     if (movementEnabled) {
         typeOptions.querySelector('[data-pfh-type="item"]').textContent = "Item Movement";
     }

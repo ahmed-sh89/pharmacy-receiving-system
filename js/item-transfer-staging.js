@@ -9,7 +9,7 @@
     function start() {
         const el = id => document.getElementById(id);
         const open = el("pftOpen"), dialog = el("pftDialog");
-        if (!open || !dialog || !scriptUrl || APP_CONFIG.environment !== "staging") return;
+        if (!open || !dialog || !scriptUrl || APP_CONFIG.receiving?.itemMovementEnabled !== true) return;
         const files = el("pftFiles"), issues = el("pftIssues"), status = el("pftImportStatus");
         const save = el("pftSave"), choose = el("pftChoose"), close = el("pftClose"), review = el("pftReview");
         let pending = [], busy = false, generation = 0;
