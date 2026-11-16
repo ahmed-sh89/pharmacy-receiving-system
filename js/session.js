@@ -771,7 +771,8 @@ async function closeAndArchiveAllCurrentOrders(orderNumbers,itemHistory){
             orderFiles:[{
                 documentId:targetOrder,
                 orderNumber:targetOrder,
-                orderDate:targetFile?.orderDate||targetFile?.order_date||targetFile?.documentDate||targetFile?.reportDate||""
+                orderDate:targetFile?.orderDate||targetFile?.order_date||targetFile?.documentDate||targetFile?.reportDate||"",
+                fromWarehouse:targetFile?.fromWarehouse||targetFile?.from_warehouse||""
             }],
             mappingFiles:[],
             items:[],
@@ -907,7 +908,8 @@ async function closeAndArchiveCurrentOrder(targetOrderNumber,itemHistory){
         const minimalOrderFile={
             documentId:targetOrder,
             orderNumber:targetOrder,
-            orderDate:targetFile?.orderDate||targetFile?.order_date||targetFile?.documentDate||targetFile?.reportDate||""
+            orderDate:targetFile?.orderDate||targetFile?.order_date||targetFile?.documentDate||targetFile?.reportDate||"",
+            fromWarehouse:targetFile?.fromWarehouse||targetFile?.from_warehouse||""
         };
 
         const discrepancySnapshot=window.__pfFinalizedDiscrepancyReport

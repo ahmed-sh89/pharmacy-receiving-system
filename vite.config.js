@@ -82,7 +82,7 @@ const pharmacyActivationStagingPreview = process.env.VERCEL_ENV === 'preview'
 const receivingHistoryStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'feature/receiving-history-unified';
 const transferStagingPreview = process.env.VERCEL_ENV === 'preview'
-  && ['feature/item-transfer-bulk-staging','fix/staging-movement-speed-refresh-20261116'].includes(process.env.VERCEL_GIT_COMMIT_REF);
+  && ['feature/item-transfer-bulk-staging','fix/staging-movement-speed-refresh-20261116','fix/staging-movement-source-20261116'].includes(process.env.VERCEL_GIT_COMMIT_REF);
 const stagingPreview = transferStagingPreview || receivingHistoryStagingPreview || pharmacyActivationStagingPreview || pharmacyAdminStagingPreview || startupStagingPreview || dutyStagingPreview || receivingAdminStagingPreview || receivingEmailStagingPreview || receivingArchiveStagingPreview || receivingKpiStagingPreview;
 const stagingRef = 'tovkcakucyagvbzvlnks';
 function startupStagingConfiguration(){

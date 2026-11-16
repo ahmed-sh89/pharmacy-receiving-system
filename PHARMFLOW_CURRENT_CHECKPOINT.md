@@ -1,8 +1,12 @@
 # PharmFlow current checkpoint — 16 November 2026
 
+## Item Movement source column — Staging
+
+Receiving rows display the From Warehouse code from the matching order file. Imported transfers continue to display their saved source code. Single and bulk completion retain the source code in future archives. For older archives, the report reads missing source codes from the authorized order registry. Rows with no accessible saved source show a dash. The owner confirmed the Production search for the previously reported imported item now returns a result.
+
 ## Production transfer import hotfix — 16 November 2026
 
-Production read-only verification found zero saved transfer records for HHP084. The XLSX parser rejected TO fields containing a trailing pharmacy code. The hotfix canonicalizes both workbook formats to the same TO and reads source from From Warehouse. The import dialog now distinguishes files read from transfers saved. Item Movement empty results explain that transfers are searched by the workbook Receiving Date. Manage Imports previews the count of today's uploads before confirmation, uses the existing scoped and version-checked deletion endpoint, and refreshes the day after processing. Deletions across more than 100 records run in batches and report completed progress if a later batch fails. Owner verification remains pending.
+Production read-only verification found zero saved transfer records for HHP084. The XLSX parser rejected TO fields containing a trailing pharmacy code. The hotfix canonicalizes both workbook formats to the same TO and reads source from From Warehouse. The import dialog now distinguishes files read from transfers saved. Item Movement empty results explain that transfers are searched by the workbook Receiving Date. Manage Imports previews the count of today's uploads before confirmation, uses the existing scoped and version-checked deletion endpoint, and refreshes the day after processing. Deletions across more than 100 records run in batches and report completed progress if a later batch fails. The owner confirmed the previously reported imported item appears in Production search.
 
 ## Receiving History — Staging review
 

@@ -1,13 +1,14 @@
 {
   "production_base": "a6ec34f1612a2421ad69af9a3729c9ec8a6e7542",
   "changes": {
-    "PHARMFLOW_CURRENT_CHECKPOINT.md": "3be2b67df91c0ce11ad4ef737781ecfb1b58a42b",
-    "index.html": "c9a7cf46209072c199d7a430e30f3648d7ecfdd3",
+    "PHARMFLOW_CURRENT_CHECKPOINT.md": "e79bde60865b46f88c40125ec83670830ab6476f",
+    "index.html": "92f55c918ac9057076051460e5477a052488f7dc",
     "js/app-version.js": "aa3cb3a6bc60536056a9ba3542b49cd381126fc1",
     "js/item-transfer-parser.js": "e9987c58d0acfcbcd61bff589fd32f3855a5d438",
     "js/item-transfer-staging.js": "2614f884e2aa6f54dcf62c45e190db3388a68030",
     "js/item-transfer-worker.js": "e8b03300cb1cfede24298fff75f310b10e3570e5",
-    "js/receiving-history.js": "bc10a2710dd8a9ec509134c4f2d1d866e083f7ab",
-    "vite.config.js": "9b4becdcb5f239e08033f093ec0ebf5967b0a8b8"
+    "js/receiving-history.js": "82c00b9a9f6090788da9c64eb2b0c7468af6fcec",
+    "js/session.js": "5591eab319879408157b6ae6877be98e9d4d6ec3",
+    "vite.config.js": "74e52914927723fbd0144e3c5ac5d8722c701a3c"
   }
 }
