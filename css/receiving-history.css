@@ -17,10 +17,20 @@
 .pfhHeader h2 { margin: 0; color: #123e69; line-height: 1.2; }
 #pfhForm { padding: 16px; border: 1px solid #c7dced; border-radius: 12px; background: #f7fbff; }
 .pfhFilters { display: grid; align-items: end; gap: 12px; }
-.pfhPrimaryFilters { grid-template-columns: minmax(180px, 230px) minmax(210px, 385px) minmax(150px, 220px); }
+.pfhPrimaryFilters { grid-template-columns: minmax(180px, 230px) minmax(260px, 515px) minmax(150px, 220px); }
 .pfhDateFilters { grid-template-columns: repeat(2, minmax(130px, 180px)) auto; max-width: 540px; margin-top: 10px; }
+.pfhDateFilters:has(#pfhSourceField:not([hidden])) {
+  grid-template-columns: repeat(2, minmax(130px, 180px)) minmax(210px, 260px); max-width: 644px;
+}
 .pfhFilterActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 #pfhItemField { grid-template-columns: minmax(0, 1fr); }
+#pfhItemField label { color: #174f82; font-size: 15px; font-weight: 800; }
+#pfhItemEntry .pfhControl { min-height: 44px; border: 1.5px solid #6a9ac4; background: #fafdff; }
+#pfhItemEntry .pfhControl:focus { border-color: #2569a6; background: #fff; }
+.pfhPage .pfhDiscrepancyItem {
+  padding: 0; border: 0; background: transparent; color: #195d99;
+  font: inherit; text-align: start; text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
 .pfhItemEntry, .pfhStatusActions { display: flex; align-items: center; gap: 6px; }
 .pfhItemEntry input { min-width: 0; flex: 1; }
 .pfhItemEntry .pfhSearch { min-width: 76px; flex: 0 0 auto; }
@@ -97,7 +107,10 @@
 .pfhPeriod p { margin: 0 0 8px; color: #425f78; }
 @media (max-width: 850px) {
   .pfhPrimaryFilters { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-  .pfhDateFilters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pfhDateFilters, .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #pfhSourceField { grid-column: 1 / -1; max-width: 260px; }
   .pfhFilterActions { grid-column: 1 / -1; }
 }
 @media (max-width: 480px) {
@@ -203,3 +216,44 @@
 .pfhAddFeedback p { margin: 0; }
 
 #pfhPrintFrame { position: fixed; width: 1px; height: 1px; inset: 0 auto auto 0; border: 0; opacity: 0; pointer-events: none; }
+
+.pfhTransferAction { margin-inline-start: auto; }
+.pfhTransferActions { display: flex; align-items: center; gap: 10px; }
+.pfhTransferActions .pfhButton { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.pfhPage .pfhTransferActions .pfhButton { min-height: 38px; }
+.pfhTransferActions svg {
+  width: 16px; height: 16px; fill: none; stroke: currentColor;
+  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.pfhTransferActions::before {
+  content: ""; order: 1; height: 22px; border-inline-start: 1px solid #a6bfd4;
+}
+.pfhTransferActions #pftOpen { order: 2; }
+
+.pfhTransferDialog {
+  width: min(560px, calc(100vw - 32px)); box-sizing: border-box; padding: 18px;
+  border: 1px solid #a6bfd4; border-radius: 12px; background: #f7fbff; color: #203b54;
+  box-shadow: 0 18px 48px #153c6033;
+}
+.pfhTransferDialog::backdrop { background: #173b5955; }
+#pftImportStatus { margin: 10px 0 0; }
+#pftReview { margin-top: 8px; }
+#pftIssues { max-height: 150px; overflow: auto; padding-inline-start: 20px; }
+
+.pfhManageDialog { width: min(760px, calc(100vw - 32px)); }
+.pfhLastImport {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  margin: 0 0 12px; padding: 8px 12px; border: 1px solid #c7dced;
+  border-radius: 8px; background: #edf5fc; color: #3c5974;
+}
+.pfhLastImport strong, #pftLastImportOrder { color: #123e69; font-weight: 750; }
+.pfhLastImport :is(time, #pftLastImportOrder, #pftLastImportFile) { white-space: nowrap; }
+#pftManageForm { align-items: end; flex-wrap: wrap; margin-top: 10px; }
+#pftManageForm .pfhField { flex: 1 1 130px; }
+#pftManageStatus { margin: 10px 0; }
+#pftManageResults { max-height: min(340px, 42vh); overflow: auto; }
+#pftManageResults th { position: sticky; top: 0; }
+#pftManageResults input { accent-color: #185b96; }
+#pftManageActions { margin-top: 8px; }
+#pftManageConfirm p { margin-bottom: 8px; }
+.pfhManageDialog .pfhButton.pfhDelete { color: #9c3535; border-color: #b86565; }

@@ -24,7 +24,7 @@
     <!-- Fetch classic scripts in parallel; their execution stays parser-ordered. -->
     <link rel="preload" as="script" href="js/vendor/sheetjs-0.20.3/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT">
     <link rel="preload" as="script" href="js/excel-security.js?v=RECEIVING_RELEASE_20261101">
-    <link rel="preload" as="script" href="js/config.js?v=DUTY_READINESS_20261105">
+    <link rel="preload" as="script" href="js/config.js?v=ITEM_MOVEMENT_MERGE_1">
     <link rel="preload" as="script" href="js/utils.js?v=RECEIVING_U0030_RECOVERY2">
     <link rel="preload" as="script" href="js/state.js?v=RECEIVING_RELEASE_20261101">
     <link rel="preload" as="script" href="js/router.js?v=EXPIRY_EXIT1_EXPIRY_COORDINATED1">
@@ -39,7 +39,7 @@
     <link rel="preload" as="script" href="js/supabase.js?v=B10CLEAN15_15">
     <link rel="preload" as="script" href="js/orders.js?v=RH1_RECEIVING_EMAIL_ITEM_WO_WRAP">
     <link rel="preload" as="script" href="js/auth-viewport.js?v=HANDHELD_VIEWPORT3">
-    <link rel="preload" as="script" href="js/permissions.js?v=RECEIVING_SELECTED_20261110">
+    <link rel="preload" as="script" href="js/permissions.js?v=TRANSFER_STAGING_1">
     <link rel="preload" as="script" href="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028">
     <link rel="preload" as="script" href="js/auth.js?v=RH2_PHARMACY_HISTORY_20261115">
     <link rel="preload" as="script" href="js/dev-isolation.js?v=B10CLEAN15_15">
@@ -62,7 +62,7 @@
     <link rel="preload" as="script" href="js/app.js?v=STARTUP_HANDHELD_20261108">
     <link rel="preload" as="script" href="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102">
     <link rel="preload" as="script" href="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028">
-    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY17">
+    <link rel="preload" as="script" href="js/receiving-history.js?v=HISTORY21">
     <link rel="preload" as="script" href="js/header-account-responsive.js">
     <link rel="preload" as="script" href="js/header-account-menu.js">
     <link rel="preload" as="script" href="js/header-account-popover.js">
@@ -121,7 +121,7 @@
             visibility: hidden !important;
         }
     </style>
-<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI13">
+<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI19">
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
@@ -1131,6 +1131,16 @@ window.PharmFlowDeviceMode = (() => {
                     <header class="pfhHeader">
                         <button id="pfhBack" class="pfhButton pfhBack" type="button"><span aria-hidden="true">←</span> Back to Receiving Report</button>
                         <h2 id="pfhTitle">Receiving History</h2>
+                        <div id="pftActions" class="pfhTransferActions pfhTransferAction" hidden>
+                            <button id="pftManage" class="pfhButton" type="button">
+                                <svg aria-hidden="true" viewBox="0 0 20 20"><path d="M2.5 15.5v-11h5l2 2h8v9z"/></svg>
+                                Manage Imports
+                            </button>
+                            <button id="pftOpen" class="pfhButton pfhSearch" type="button">
+                                <svg aria-hidden="true" viewBox="0 0 20 20"><path d="M10 13V3m-4 4 4-4 4 4M3 12v5h14v-5"/></svg>
+                                Import Transfers
+                            </button>
+                        </div>
                     </header>
                     <div class="pfhTabs" id="pfhTabs" role="tablist" aria-label="Receiving History views">
                         <button class="pfhButton" id="pfhSearchTab" type="button" role="tab" aria-controls="pfhSearchPanel" aria-selected="true">Item Search</button>
@@ -1152,9 +1162,10 @@ window.PharmFlowDeviceMode = (() => {
                                     <input type="hidden" name="reportType" value="item">
                                 </div>
                                 <div class="pfhField" id="pfhItemField">
-                                    <label for="pfhItemInput">Item Code or Name</label>
+                                    <label id="pfhItemLabel" for="pfhItemInput">Item Code or Name <small id="pfhItemOptional" hidden>Optional</small></label>
                                     <div class="pfhItemEntry" id="pfhItemEntry">
                                         <input id="pfhItemInput" class="pfhControl" name="item" type="search" maxlength="160" placeholder="Enter item code or name" autocomplete="off">
+                                        <input id="pfhDiscrepancyItem" class="pfhControl" name="discrepancyItem" type="search" maxlength="160" placeholder="Filter discrepancies by item" autocomplete="off" hidden>
                                         <button class="pfhButton pfhSearch" type="submit">Search</button>
                                     </div>
                                 </div>
@@ -1173,6 +1184,9 @@ window.PharmFlowDeviceMode = (() => {
                                     <button class="pfhControl pfhDateButton" type="button" data-pfh-date="to" aria-labelledby="pfhLabelTo pfhDateTo" aria-haspopup="dialog" aria-expanded="false"><span id="pfhDateTo">Select date</span></button>
                                     <input type="hidden" name="to">
                                 </div>
+                                <label class="pfhField" id="pfhSourceField" hidden><span>From Pharmacy <small>Optional</small></span>
+                                    <input class="pfhControl" name="source" type="search" maxlength="160" placeholder="Pharmacy code or name" autocomplete="off">
+                                </label>
                                 <div class="pfhFilterActions" id="pfhDateActions" hidden></div>
                             </div>
                         </form>
@@ -1207,6 +1221,70 @@ window.PharmFlowDeviceMode = (() => {
                         <p id="pfhEmptyList">Add items from your search results to build the export list.</p>
                         <div id="pfhSelectedItems"></div>
                     </section>
+                    <dialog id="pftDialog" class="pfhTransferDialog" aria-labelledby="pftTitle">
+                        <header class="pfhHeader">
+                            <h2 id="pftTitle">Import Transfers</h2>
+                            <button id="pftClose" class="pfhButton pfhTransferAction" type="button">Close</button>
+                        </header>
+                        <input id="pftFiles" type="file" accept=".xlsx,.xls" multiple hidden>
+                        <div class="pfhFilterActions">
+                            <button id="pftChoose" class="pfhButton" type="button">Choose Excel Files</button>
+                            <button id="pftSave" class="pfhButton pfhSearch" type="button" disabled>Save Transfers</button>
+                        </div>
+                        <p id="pftImportStatus" role="status"></p>
+                        <details id="pftReview" hidden>
+                            <summary>Files needing review</summary>
+                            <ul id="pftIssues"></ul>
+                        </details>
+                    </dialog>
+                    <dialog id="pftManageDialog" class="pfhTransferDialog pfhManageDialog" aria-labelledby="pftManageTitle">
+                        <header class="pfhHeader">
+                            <h2 id="pftManageTitle">Manage Imports</h2>
+                            <button id="pftManageClose" class="pfhButton pfhTransferAction" type="button">Close</button>
+                        </header>
+                        <p class="pfhLastImport" role="status">
+                            <strong>Last import</strong>
+                            <span id="pftLastImportStatus"></span>
+                            <time id="pftLastImportSaved" hidden></time>
+                            <span id="pftLastImportOrder" hidden></span>
+                            <span id="pftLastImportFile" hidden></span>
+                        </p>
+                        <form id="pftManageForm" class="pfhFilterActions">
+                            <label class="pfhField"><span>TO Number</span>
+                                <input class="pfhControl" name="order" type="search" placeholder="Enter TO number" maxlength="100" autocomplete="off">
+                            </label>
+                            <div class="pfhField pfhDateField">
+                                <span id="pftManageLabelFrom">Upload Date From</span>
+                                <button class="pfhControl pfhDateButton" type="button" data-pfh-date="from" aria-labelledby="pftManageLabelFrom pftManageDateFrom" aria-haspopup="dialog" aria-expanded="false"><span id="pftManageDateFrom">Select date</span></button>
+                                <input type="hidden" name="from">
+                            </div>
+                            <div class="pfhField pfhDateField">
+                                <span id="pftManageLabelTo">Upload Date To</span>
+                                <button class="pfhControl pfhDateButton" type="button" data-pfh-date="to" aria-labelledby="pftManageLabelTo pftManageDateTo" aria-haspopup="dialog" aria-expanded="false"><span id="pftManageDateTo">Select date</span></button>
+                                <input type="hidden" name="to">
+                            </div>
+                            <button class="pfhButton pfhSearch" type="submit">Search</button>
+                        </form>
+                        <p id="pftManageStatus" role="status">Enter a TO number or an upload date range.</p>
+                        <div id="pftManageResults" class="pfhTableWrap" hidden>
+                            <table class="dataTable pfhTable">
+                                <thead><tr><th scope="col">Select</th><th scope="col">TO Number</th><th scope="col">Source</th><th scope="col">Upload Date</th><th scope="col">File Date</th></tr></thead>
+                                <tbody id="pftManageRows"></tbody>
+                            </table>
+                        </div>
+                        <div class="pfhFilterActions" id="pftManageActions" hidden>
+                            <button id="pftManagePrev" class="pfhButton" type="button" disabled>Previous</button>
+                            <button id="pftManageNext" class="pfhButton" type="button" disabled>Next</button>
+                            <button id="pftManageDelete" class="pfhButton pfhTransferAction pfhDelete" type="button" disabled>Delete Selected</button>
+                        </div>
+                        <div id="pftManageConfirm" class="pfhAddFeedback" hidden>
+                            <p id="pftManageConfirmText"></p>
+                            <div class="pfhFilterActions">
+                                <button id="pftManageCancel" class="pfhButton" type="button">Cancel</button>
+                                <button id="pftManageCommit" class="pfhButton pfhDelete" type="button">Confirm Delete</button>
+                            </div>
+                        </div>
+                    </dialog>
                 </section>
 
 
@@ -1447,7 +1525,7 @@ window.PharmFlowDeviceMode = (() => {
                  Shared by PC and Zebra. Device CSS changes layout only.
             =================================================== -->
 
-            <section id="page-item-movement" class="appPage"><div class="pfnMovementIntro"><section class="pfnModuleHero"><span class="pfnEyebrow">ITEM MOVEMENT · FOUNDATION</span><h2>Order data in. Movement intelligence out.</h2><p>This module is intentionally independent from Receiving. In the next phase it will read bulk order files, normalize their commercial data, discard the source files and generate item movement analysis from the extracted records.</p></section><section class="pfnModuleGrid"><article class="pfnModuleCard"><span class="pfnPrototypeTag">NEXT PHASE</span><h3>Import Orders</h3><p>Select tens or hundreds of warehouse and pharmacy-transfer order files in one operation. Files will be read locally and only structured order data will be persisted.</p><button class="pfnActionButton secondary" type="button" disabled>Bulk Import Foundation</button></article><article class="pfnModuleCard"><span class="pfnPrototypeTag">NEXT PHASE</span><h3>Movement Report</h3><p>Search by Item Code or Item Name, choose a date range and analyze quantity, source, destination and order history without relying on Receiving results.</p><button class="pfnActionButton secondary" type="button" disabled>Report Foundation</button></article></section></div></section>
+
 
             <section
                 id="zebraExpiryShell"
@@ -2698,7 +2776,7 @@ window.PharmFlowDeviceMode = (() => {
      APPLICATION FILES
 =================================================== -->
 
-<script src="js/config.js?v=DUTY_READINESS_20261105"></script>
+<script src="js/config.js?v=ITEM_MOVEMENT_MERGE_1"></script>
 
 <script src="js/utils.js?v=RECEIVING_U0030_RECOVERY2"></script>
 
@@ -2726,7 +2804,7 @@ window.PharmFlowDeviceMode = (() => {
 <script src="js/orders.js?v=RH1_RECEIVING_EMAIL_ITEM_WO_WRAP"></script>
 
 <script src="js/auth-viewport.js?v=HANDHELD_VIEWPORT3"></script>
-<script src="js/permissions.js?v=RECEIVING_SELECTED_20261110"></script>
+<script src="js/permissions.js?v=TRANSFER_STAGING_1"></script>
 <script src="js/global-items-export.js?v=FINAL_REFINEMENTS_20261028"></script>
 <script src="js/auth.js?v=RH2_PHARMACY_HISTORY_20261115"></script>
 
@@ -2758,7 +2836,8 @@ window.PharmFlowDeviceMode = (() => {
 
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>
-<script src="js/receiving-history.js?v=HISTORY17"></script>
+<script src="js/receiving-history.js?v=HISTORY21"></script>
+<script src="js/item-transfer-staging.js?v=7"></script>
 <script src="js/header-account-responsive.js"></script>
 <script src="js/header-account-menu.js"></script>
 <script src="js/header-account-popover.js"></script>
