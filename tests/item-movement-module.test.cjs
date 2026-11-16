@@ -62,7 +62,7 @@ test("multi-item details stay scoped to their item and remember the open group a
     const result = {type:"item",periods:[{...period,standalone:true,movement:true,rows:[item,second]}]};
     const closed = context.pfhRenderResult(result, () => "");
     assert.equal((closed.match(/aria-expanded="false"/g) || []).length, 2);
-    const html = context.pfhRenderResult(result, () => "", new Set(["102"]));
+    const html = context.pfhRenderResult(result, () => "", "102");
     assert.match(html, /aria-controls="pfhMovementDetails0" aria-expanded="false"/);
     assert.match(html, /aria-controls="pfhMovementDetails1" aria-expanded="true"/);
     const [firstGroup, secondGroup] = html.split("</article>");
@@ -82,4 +82,24 @@ test("compact movement actions preserve dates and export selections when clearin
     assert.match(clear, /\["item", "order", "source"\]/);
     assert.doesNotMatch(clear, /"from"|"to"|selection =|form\.reset/);
     assert.match(source, /result\.type === "item" && !singleMovementItem \? index/);
+});
+
+test("opening a movement card closes the previously expanded card", () => {
+    const context = vm.createContext({window:{}, document:{readyState:"loading", addEventListener(){}}});
+    vm.runInContext(source, context);
+    const card = expanded => {
+        const details = {hidden: !expanded};
+        let value = String(expanded);
+        return {details, getAttribute: () => value, setAttribute: (_, next) => {value = next;},
+            closest: () => ({querySelector: () => details})};
+    };
+    const first = card(true), second = card(false);
+    const list = {querySelector: () => [first,second].find(button => button.getAttribute() === "true")};
+    context.pfhToggleMovementItem(list, second);
+    assert.equal(first.details.hidden, true);
+    assert.equal(first.getAttribute(), "false");
+    assert.equal(second.details.hidden, false);
+    assert.equal(second.getAttribute(), "true");
+    context.pfhToggleMovementItem(list, second);
+    assert.equal(second.details.hidden, true);
 });

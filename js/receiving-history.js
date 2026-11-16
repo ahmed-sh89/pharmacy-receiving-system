@@ -445,7 +445,18 @@ function pfhTable(headings, rows, {className = "", differenceColumn = -1,
         head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
 }
 
-function pfhRenderMovementResults(period, totals, renderItemAction, openItems) {
+function pfhToggleMovementItem(list, toggle) {
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    const previous = list.querySelector('[data-pfh-movement-toggle][aria-expanded="true"]');
+    if (previous && previous !== toggle) {
+        previous.closest(".pfhMovementItem").querySelector(".pfhMovementDetails").hidden = true;
+        previous.setAttribute("aria-expanded", "false");
+    }
+    toggle.closest(".pfhMovementItem").querySelector(".pfhMovementDetails").hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+}
+
+function pfhRenderMovementResults(period, totals, renderItemAction, openItem) {
     if (!totals.length) return "";
     const single = totals.length === 1;
     const groups = new Map();
@@ -458,7 +469,7 @@ function pfhRenderMovementResults(period, totals, renderItemAction, openItems) {
         totals.map(([code, name, quantity], index) => {
             const key = String(code).toLowerCase();
             const members = groups.get(key);
-            const open = single || openItems.has(key);
+            const open = single || openItem === key;
             const id = "pfhMovementDetails" + index;
             const identity = '<span class="pfhMovementIdentity"><strong>' + pfhEsc(name || code) +
                 '</strong><span class="pfhMovementCode">' + pfhEsc(code) + "</span></span>";
@@ -482,10 +493,10 @@ function pfhRenderMovementResults(period, totals, renderItemAction, openItems) {
         }).join("") + "</div>";
 }
 
-function pfhRenderResult({type, periods}, renderItemAction, openItems = new Set()) {
+function pfhRenderResult({type, periods}, renderItemAction, openItem) {
     return periods.map(period => {
         const totals = type === "item" ? pfhItemTotals(period.rows, period.movement) : [];
-        if (period.standalone && type === "item") return pfhRenderMovementResults(period, totals, renderItemAction, openItems);
+        if (period.standalone && type === "item") return pfhRenderMovementResults(period, totals, renderItemAction, openItem);
         const summary = pfhTable(period.movement ? PFH_MOVEMENT_SUMMARY_COLUMNS : PFH_ITEM_SUMMARY_COLUMNS, totals, {
             className: "pfhItemSummary", quantityColumns: period.movement ? [2] : [2, 3],
             emphasizeColumn: totals.length === 1 ? 2 : -1, renderAction: renderItemAction
@@ -1095,7 +1106,9 @@ function pfhBoot() {
         itemLabel.htmlFor = useDiscrepancy ? discrepancyInput.id : field("item").id;
         sourceField.hidden = !useItem || !movementEnabled();
         dateActions.hidden = useItem || useDiscrepancy;
-        (useItem || useDiscrepancy ? document.getElementById("pfhItemEntry") : dateActions).append(submit);
+        const itemEntry = document.getElementById("pfhItemEntry");
+        if (movementMode) itemEntry.insertBefore(submit, movementClear);
+        else (useItem || useDiscrepancy ? itemEntry : dateActions).append(submit);
         tabs.hidden = !useItem || movementMode;
         showListView(false);
         datePicker.sync();
@@ -1173,8 +1186,8 @@ function pfhBoot() {
             searchPanel.setAttribute("aria-labelledby", "pfhTitle");
             exportListPanel.setAttribute("role", "region");
             exportListPanel.setAttribute("aria-labelledby", "pfhExportListTitle");
-            sourceLabel.textContent = "Source";
-            field("source").placeholder = "Warehouse or pharmacy code";
+            sourceLabel.textContent = "Pharmacy Code";
+            field("source").placeholder = "Pharmacy or warehouse code";
             form.reset();
             field("reportType").value = "item";
             const today = PFH_DAY.format(new Date());
@@ -1226,7 +1239,7 @@ function pfhBoot() {
         const showMovementHeader = period.standalone && totals.length > 0;
         resultsHeading.hidden = resultsPeriod.hidden = !showMovementHeader;
         if (showMovementHeader) {
-            resultsPeriod.textContent = pfhCalendarDateText(period.from) + " – " + pfhCalendarDateText(period.to);
+            resultsPeriod.textContent = "From " + pfhCalendarDateText(period.from) + " to " + pfhCalendarDateText(period.to);
             status.textContent = totals.length + (totals.length === 1 ? " item" : " items");
         }
         const alreadyAdded = index => selection?.items.has(String(totals[index][0]).toLowerCase()) &&
@@ -1235,14 +1248,16 @@ function pfhBoot() {
         movementAdd.hidden = !singleMovementItem;
         movementAdd.disabled = singleMovementItem && Boolean(alreadyAdded(0));
         movementAdd.textContent = movementAdd.disabled ? "Added to list" : "Add to Export List";
-        const openItems = period.standalone
-            ? new Set([...list.querySelectorAll("[data-pfh-movement-item]:not([hidden])")].map(el => el.dataset.pfhMovementItem))
+        const openItem = period.standalone
+            ? list.querySelector("[data-pfh-movement-item]:not([hidden])")?.dataset.pfhMovementItem
             : undefined;
+        const scrollTop = list.scrollTop;
         list.innerHTML = pfhRenderResult(result, result.type === "item" && !singleMovementItem ? index => {
             const added = alreadyAdded(index);
             return '<button class="pfhButton pfhRowAction" type="button" data-pfh-save="' + index + '"' +
                 (added ? (period.standalone ? " disabled>Added to list" : " disabled>Added") : period.standalone ? ">Add to Export List" : ">Add Item") + "</button>";
-        } : undefined, openItems);
+        } : undefined, openItem);
+        if (period.standalone) list.scrollTop = scrollTop;
         more.hidden = nextOffset == null;
         exports.hidden = !period.rows.length;
         retry.hidden = true;
@@ -1250,9 +1265,8 @@ function pfhBoot() {
     list.addEventListener("click", event => {
         const toggle = event.target.closest("[data-pfh-movement-toggle]");
         if (toggle) {
-            const details = document.getElementById(toggle.getAttribute("aria-controls"));
-            details.hidden = !details.hidden;
-            toggle.setAttribute("aria-expanded", String(!details.hidden));
+            pfhToggleMovementItem(list, toggle);
+            if (toggle.getAttribute("aria-expanded") === "true") toggle.scrollIntoView({block: "nearest"});
             return;
         }
         const itemCode = event.target.closest("[data-pfh-discrepancy-item]");

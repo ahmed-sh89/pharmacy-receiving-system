@@ -258,6 +258,30 @@
 #pftManageConfirm p { margin-bottom: 8px; }
 .pfhManageDialog .pfhButton.pfhDelete { color: #9c3535; border-color: #b86565; }
 
+/* Keep the Item Movement controls in view and scroll within the results. */
+html:has(#page-item-movement.active), body:has(#page-item-movement.active) { overflow: hidden; }
+body:has(#page-item-movement.active) .mainApplication {
+  display: flex; flex-direction: column; box-sizing: border-box;
+  height: 100dvh; min-height: 0; overflow: hidden;
+}
+body:has(#page-item-movement.active) .mainContent,
+#page-item-movement.active,
+#page-item-movement .pfhStandalone,
+.pfhStandalone #pfhSearchPanel:not([hidden]),
+.pfhStandalone #pfhExportList:not([hidden]) {
+  display: flex; flex: 1; flex-direction: column; min-height: 0; min-width: 0;
+}
+body:has(#page-item-movement.active) .mainContent { width: 100%; box-sizing: border-box; }
+#page-item-movement.active { overflow: hidden; }
+.pfhStandalone > .pfhHeader, .pfhStandalone #pfhSearchPanel > :not(#pfhResults),
+.pfhStandalone #pfhExportList > :not(#pfhSelectedItems) { flex: 0 0 auto; }
+.pfhStandalone :is(#pfhResults, #pfhSelectedItems) {
+  min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable;
+}
+.pfhStandalone #pfhExportList { margin-bottom: 0; }
+.pfhMovementTable { max-height: min(250px, 33dvh); }
+.pfhMovementTable th { position: sticky; top: 0; z-index: 1; }
+
 /* Item Movement */
 .pfhHeaderActions { display: flex; align-items: center; gap: 8px; }
 .pfhHeaderActions:not(:has(> :not([hidden]))) { display: none; }
@@ -289,7 +313,7 @@
 .pfhStandalone #pfhItemField label { font-size: 13px; }
 .pfhStandalone #pfhItemEntry .pfhControl { min-height: 33px; }
 .pfhStandalone .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
-  grid-template-columns: repeat(2, minmax(110px, 8.25rem)) minmax(140px, 12rem) minmax(150px, 14rem);
+  grid-template-columns: repeat(2, minmax(114px, 10rem)) minmax(140px, 12rem) minmax(150px, 14rem);
   gap: 8px; max-width: none; margin-top: 7px;
 }
 .pfhStandalone .pfhDateFilters .pfhControl { min-height: 31px; }
@@ -302,7 +326,7 @@
 .pfhStandalone #pfhResultsHeading { margin: 0; color: #123e69; font-size: 14px; line-height: 1.3; }
 .pfhStandalone #pfhResultsPeriod {
   padding-inline-start: 10px; border-inline-start: 1px solid #adc5dc;
-  color: #2b567b; font-size: 12px; font-variant-numeric: tabular-nums;
+  color: #214f77; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .pfhStandalone #pfhStatus { color: #4c647b; font-size: 12px; }
 .pfhStandalone #pfhExports .pfhButton { min-height: 27px; font-size: 12px; }
@@ -313,6 +337,9 @@
 }
 .pfhMovementItemHeader {
   display: flex; align-items: center; gap: 9px; padding: 5px 9px;
+}
+.pfhStandalone #pfhMovementAdd, .pfhMovementItemHeader > .pfhRowAction {
+  flex: 0 0 155px; inline-size: 155px; box-sizing: border-box; justify-content: center;
 }
 .pfhMovementOverview {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
