@@ -225,9 +225,13 @@ test('the report picker defaults to Item Receiving History and retains both exis
     assert.deepEqual([...section.matchAll(/data-pfh-type="([^"]+)"/g)].map(match => match[1]),
         ['item', 'new', 'discrepancy']);
     assert.match(section, /name="reportType" value="item"/);
-    assert.deepEqual([...section.matchAll(/data-pfh-date="([^"]+)"/g)].map(match => match[1]),
-        ['from', 'to']);
-    assert.doesNotMatch(section.slice(0, section.indexOf('id="pftManageDialog"')), /type="date"|<textarea/);
+    const modal = section.slice(section.indexOf('id="pftManageDialog"'));
+    const report = section.slice(0, section.indexOf('id="pftManageDialog"'));
+    for (const fragment of [report, modal]) {
+        assert.deepEqual([...fragment.matchAll(/data-pfh-date="([^"]+)"/g)].map(match => match[1]), ['from', 'to']);
+        assert.doesNotMatch(fragment, /type="date"|<textarea/);
+    }
+    assert.match(report, /name="source"[^>]*placeholder="Pharmacy code or name"/);
     assert.match(section, /id="pfhItemEntry"[\s\S]*?name="item" type="search"[^>]*>[\s\S]*?<button[^>]*type="submit">Search<\/button>/);
 });
 
@@ -241,6 +245,9 @@ test('the restored calendar handles month days, selected dates and the Today sho
     assert.match(popover.innerHTML, /class="pfhCalDay selected" data-date="2028-02-29"/);
     assert.equal((popover.innerHTML.match(/class="pfhCalDay/g) || []).length, 29);
     assert.match(popover.innerHTML, /data-date="2028-03-01">Today/);
+    assert.doesNotMatch(popover.innerHTML, />Clear</);
+    context.pfhRenderCalendar(popover, new Date('2028-02-01T00:00:00Z'), '2028-02-29', '2028-03-01', true);
+    assert.match(popover.innerHTML, /data-date="">Clear/);
 });
 
 test('report and date pickers use the top layer and open where the viewport has room', () => {

@@ -660,7 +660,7 @@ const PFH_CALENDAR_DATE = new Intl.DateTimeFormat("en-GB", {
 const pfhCalendarDateText = value => value
     ? PFH_CALENDAR_DATE.format(new Date(value + "T00:00:00Z")) : "Select date";
 
-function pfhRenderCalendar(popover, month, selected, today) {
+function pfhRenderCalendar(popover, month, selected, today, allowClear = false) {
     const year = month.getUTCFullYear();
     const index = month.getUTCMonth();
     const title = PFH_CALENDAR_MONTH.format(month);
@@ -679,7 +679,8 @@ function pfhRenderCalendar(popover, month, selected, today) {
         '<div class="pfhCalWeek" aria-hidden="true">' +
         ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => "<span>" + day + "</span>").join("") +
         '</div><div class="pfhCalGrid">' + blanks + dates + '</div>' +
-        '<div class="pfhCalFoot"><button type="button" data-date="' + today + '">Today</button></div>';
+        '<div class="pfhCalFoot">' + (allowClear && selected ? '<button type="button" data-date="">Clear</button>' : '') +
+        '<button type="button" data-date="' + today + '">Today</button></div>';
 }
 
 function pfhPositionPicker(picker, anchor, matchWidth = false) {
@@ -701,7 +702,7 @@ function pfhPositionPicker(picker, anchor, matchWidth = false) {
     picker.style.top = Math.max(edge, top) / scale + "px";
 }
 
-function pfhDatePicker(form, onChange, closeType) {
+function pfhDatePicker(form, onChange, {beforeOpen = () => {}, allowClear = false} = {}) {
     const buttons = [...form.querySelectorAll("[data-pfh-date]")];
     const fieldFor = name => form.elements.namedItem(name);
     let activeButton;
@@ -721,7 +722,7 @@ function pfhDatePicker(form, onChange, closeType) {
     for (const button of buttons) {
         button.addEventListener("click", () => {
             if (button === activeButton) { close(true); return; }
-            closeType();
+            beforeOpen();
             close();
             activeButton = button;
             const field = fieldFor(button.dataset.pfhDate);
@@ -734,7 +735,7 @@ function pfhDatePicker(form, onChange, closeType) {
             popover.setAttribute("aria-label", "Choose a date");
             button.parentElement.append(popover);
             button.setAttribute("aria-expanded", "true");
-            pfhRenderCalendar(popover, month, field.value, today);
+            pfhRenderCalendar(popover, month, field.value, today, allowClear);
             popover.showPopover();
             pfhPositionPicker(popover, button);
             const initial = popover.querySelector(".selected") || popover.querySelector(".today") || popover.querySelector(".pfhCalDay");
@@ -742,7 +743,7 @@ function pfhDatePicker(form, onChange, closeType) {
             popover.addEventListener("click", event => {
                 const control = event.target.closest("button");
                 if (!control) return;
-                if (control.dataset.date) {
+                if (Object.hasOwn(control.dataset, "date")) {
                     field.value = control.dataset.date;
                     sync();
                     close(true);
@@ -751,7 +752,7 @@ function pfhDatePicker(form, onChange, closeType) {
                 }
                 const direction = control.dataset.month;
                 month.setUTCMonth(month.getUTCMonth() + Number(direction));
-                pfhRenderCalendar(popover, month, field.value, today);
+                pfhRenderCalendar(popover, month, field.value, today, allowClear);
                 pfhPositionPicker(popover, button);
                 popover.querySelector('[data-month="' + direction + '"]').focus();
             });
@@ -836,7 +837,7 @@ function pfhBoot() {
         typeOptions.hidePopover();
         typeTrigger.setAttribute("aria-expanded", "false");
     };
-    const datePicker = pfhDatePicker(form, clear, closeType);
+    const datePicker = pfhDatePicker(form, clear, {beforeOpen: closeType});
     const reposition = () => {
         if (typeIsOpen()) pfhPositionPicker(typeOptions, typeTrigger, true);
         datePicker.reposition();

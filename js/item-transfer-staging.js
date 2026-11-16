@@ -194,16 +194,27 @@
             body.replaceChildren();
         }
 
+        function filtersChanged() {
+            clearResults();
+            status.textContent = prompt;
+            refresh();
+        }
+
+        const datePicker = pfhDatePicker(form, filtersChanged, {allowClear: true});
+        window.addEventListener("resize", datePicker.reposition);
+        window.addEventListener("scroll", datePicker.reposition, true);
+
         function reset() {
+            datePicker.close();
             generation++;
             busy = false;
             query = undefined;
             page = 0;
             hasMore = false;
             form.reset();
-            clearResults();
-            status.textContent = prompt;
-            refresh();
+            for (const name of ["from", "to"]) form.elements.namedItem(name).value = "";
+            datePicker.sync();
+            filtersChanged();
         }
 
         function requestCurrent() {
@@ -262,15 +273,17 @@
             }
         });
         close.addEventListener("click", () => { if (!busy) dialog.close(); });
+        dialog.addEventListener("close", () => { if (!dialog.open) datePicker.close(); });
         dialog.addEventListener("cancel", event => { if (busy) event.preventDefault(); });
         const closeForScope = () => { if (dialog.open) { dialog.close(); reset(); } };
         window.addEventListener("auth:context-ready", event => {
             if (event.detail?.changed || !event.detail?.currentScope) closeForScope();
         });
         window.addEventListener("pharmflow:receiving-history-closed", closeForScope);
-        form.addEventListener("input", () => { clearResults(); refresh(); });
+        form.addEventListener("input", filtersChanged);
         form.addEventListener("submit", event => {
             event.preventDefault();
+            datePicker.close();
             const field = name => form.elements.namedItem(name).value;
             const order = field("order").trim().toUpperCase().replace(/\s+/g, "");
             const from = field("from"), to = field("to");
