@@ -471,25 +471,33 @@ function pfhRenderMovementResults(period, totals, renderItemAction, openItem) {
             const members = groups.get(key);
             const open = single || openItem === key;
             const id = "pfhMovementDetails" + index;
-            const identity = '<span class="pfhMovementIdentity"><strong>' + pfhEsc(name || code) +
-                '</strong><span class="pfhMovementCode">' + pfhEsc(code) + "</span></span>";
+            const itemName = pfhEsc(name || code);
+            const escapedCode = pfhEsc(code);
+            const identity = '<span class="pfhMovementIdentity"><strong>' + itemName +
+                '</strong><span class="pfhMovementCodeLine"><span class="pfhMovementCode">' + escapedCode + '</span>' +
+                '<button class="pfhCopyItemCode" type="button" data-pfh-copy-code="' + escapedCode +
+                '" title="Copy item code" aria-label="Copy item code ' + escapedCode + '">' +
+                '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor">' +
+                '<rect x="5" y="5" width="8" height="8" rx="1.25"/><path d="M10 3H4a1 1 0 0 0-1 1v6"/></svg>' +
+                '</button></span></span>';
             const count = members.length + (members.length === 1 ? " movement" : " movements");
             const metric = '<span class="pfhMovementMetric"><span>Total quantity</span><strong>' +
                 pfhEsc(quantity) + '</strong><span>' + count + "</span></span>";
-            const overview = single
-                ? '<div class="pfhMovementOverview">' + identity + metric + "</div>"
-                : '<button class="pfhMovementOverview pfhMovementToggle" type="button" data-pfh-movement-toggle aria-controls="' +
-                    id + '" aria-expanded="' + open + '">' + identity + metric + '<span class="pfhMovementChevron" aria-hidden="true"></span></button>';
+            const detailControl = single ? metric
+                : '<button class="pfhMovementToggle" type="button" data-pfh-movement-toggle aria-controls="' +
+                    id + '" aria-expanded="' + open + '" aria-label="Movement details for ' + itemName + '">' + metric +
+                    '<span class="pfhMovementChevron" aria-hidden="true"></span></button>';
+            const overview = '<div class="pfhMovementOverview">' + identity + detailControl + "</div>";
             const cells = members.map(row => [
                 row.order_number, row.movement_date ? pfhCalendarDateText(row.movement_date) : "—",
-                row.movement_quantity ?? "Not available", row.movement_source, row.movement_origin
+                row.item_name || name || code, row.movement_quantity ?? "Not available", row.movement_source, row.movement_origin
             ]);
             return '<article class="pfhMovementItem' + (single ? " pfhMovementSingle" : "") + '">' +
                 '<div class="pfhMovementItemHeader">' + overview + (renderItemAction ? renderItemAction(index) : "") +
                 '</div><div id="' + id + '" class="pfhMovementDetails" data-pfh-movement-item="' + pfhEsc(key) + '"' +
                 (open ? "" : " hidden") + '><h4>Movement Details</h4>' +
-                pfhTable(["TO Number", "Date", "Quantity", "Source", "Recorded via"], cells,
-                    {className: "pfhMovementTable", quantityColumns: [2]}) + "</div></article>";
+                pfhTable(["TO Number", "Date", "Item Name", "Quantity", "Source", "Recorded via"], cells,
+                    {className: "pfhMovementTable", quantityColumns: [3]}) + "</div></article>";
         }).join("") + "</div>";
 }
 
@@ -1262,8 +1270,20 @@ function pfhBoot() {
         exports.hidden = !period.rows.length;
         retry.hidden = true;
     };
-    list.addEventListener("click", event => {
-        const toggle = event.target.closest("[data-pfh-movement-toggle]");
+    list.addEventListener("click", async event => {
+        const copy = event.target.closest("[data-pfh-copy-code]");
+        if (copy) {
+            try {
+                await navigator.clipboard.writeText(copy.dataset.pfhCopyCode);
+                showToast("Item code copied.", "success");
+            } catch {
+                showToast("Could not copy the item code. You can select and copy it manually.", "warning");
+            }
+            return;
+        }
+        if (event.target.closest(".pfhMovementCode")) return;
+        const toggle = event.target.closest("[data-pfh-movement-toggle]") ||
+            event.target.closest(".pfhMovementOverview")?.querySelector("[data-pfh-movement-toggle]");
         if (toggle) {
             pfhToggleMovementItem(list, toggle);
             if (toggle.getAttribute("aria-expanded") === "true") toggle.scrollIntoView({block: "nearest"});

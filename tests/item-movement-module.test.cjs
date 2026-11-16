@@ -40,7 +40,7 @@ test("standalone route and staged configuration are distinct from legacy Receivi
     assert.match(source, /standaloneMovement \? "discrepancy" : "item"/);
 });
 
-test("one item has a total card and an open details table without redundant item columns", () => {
+test("one item shows the original item name in details and a copyable code in the card", () => {
     const context = vm.createContext({window:{}, document:{readyState:"loading", addEventListener(){}}});
     vm.runInContext(source, context);
     const item = {item_code:"1013239", item_name:"Klavox & Co.", movement_date:"2026-09-14",
@@ -48,9 +48,12 @@ test("one item has a total card and an open details table without redundant item
     const other = {...item, order_number:"TO-000471830", movement_quantity:13};
     const html = context.pfhRenderResult({type:"item",periods:[{...period,standalone:true,movement:true,rows:[item,other]}]});
     assert.match(html, /Total quantity<\/span><strong>30<\/strong><span>2 movements/);
-    assert.equal((html.match(/Klavox &amp; Co\./g) || []).length, 1);
+    assert.equal((html.match(/Klavox &amp; Co\./g) || []).length, 3);
+    assert.match(html, /data-pfh-copy-code="1013239"[^>]*aria-label="Copy item code 1013239"/);
+    assert.match(html, />Item Name<\/th>/);
+    assert.match(html, />Klavox &amp; Co\.<\/td>/);
     assert.match(html, /data-pfh-movement-item="1013239"><h4>Movement Details/);
-    assert.doesNotMatch(html, />Item Code<|>Item Name<|data-pfh-movement-toggle/);
+    assert.doesNotMatch(html, />Item Code<|data-pfh-movement-toggle/);
 });
 
 test("multi-item details stay scoped to their item and remember the open group after a render", () => {
