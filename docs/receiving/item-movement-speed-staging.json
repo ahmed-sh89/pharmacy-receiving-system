@@ -1,7 +1,6 @@
 {
   "production_base": "a6ec34f1612a2421ad69af9a3729c9ec8a6e7542",
   "changes": {
-    ".github/workflows/deploy.yml": "81c4945be0a9b15d2a4bbb52e15b059fabca367d",
     "PHARMFLOW_CURRENT_CHECKPOINT.md": "d27ad866b0128cf07aea2439efbe0a2dedae295c",
     "css/receiving-history.css": "b055bd9c3d66eb5535843972cb107cc7ecf91851",
     "index.html": "2bbedf675f17a6cc25756c7b29e40994bfcfbc80",
@@ -15,6 +14,7 @@
     "js/router.js": "86678d1ec5327b925b90e0aade2feb58f84121ec",
     "js/session.js": "5591eab319879408157b6ae6877be98e9d4d6ec3",
     "js/settings-workspace.js": "1d63d3b4c4b6f94e97e2976ac114a99d95a7cf2d",
-    "vite.config.js": "f3ad462b7a9ab1d2a589dd5ca4eab07f354ffaad"
+    "vite.config.js": "f3ad462b7a9ab1d2a589dd5ca4eab07f354ffaad",
+    ".github/workflows/deploy.yml": "d98315154d337f511f35590aa1ce822afeacf1bd"
   }
 }
