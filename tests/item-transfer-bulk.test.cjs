@@ -45,6 +45,7 @@ async function initializeDatabase(db) {
     `);
     await db.exec(readFileSync(sqlFile, 'utf8'));
     await db.exec(readFileSync('proposals/staging/20261116030000_item_movement_source_and_manage_imports.sql', 'utf8'));
+    await db.exec(readFileSync('proposals/staging/20261116040000_transfer_import_upload_date.sql', 'utf8'));
 }
 
 test('real source layout, pharmacy identity and flexible transfer dates', () => {
@@ -198,4 +199,25 @@ test('roll-forward 50 to 60, source and date filter, atomic selected deletion an
     assert.deepEqual(await save([imports[1]]),['imported']);
     await assert.rejects(deleteImports(selection),/changed since selection/);
     assert.equal((await search('101','SOURCE-2','TO-101')).rows.length,1);
+
+    // The Riyadh day starts at 21:00 UTC on the previous date.
+    await db.exec("reset role");
+    await db.query(`update pharmflow_transfer_private.documents
+        set imported_at = case number
+            when 'TO-100' then '2026-11-14 20:59:59+00'::timestamptz
+            when 'TO-101' then '2026-11-14 21:00:00+00'::timestamptz
+            when 'TO-102' then '2026-11-15 20:59:59+00'::timestamptz
+            else '2026-11-15 21:00:00+00'::timestamptz end
+        where pharmacy_id = $1`, [scope]);
+    await db.exec("set role authenticated");
+    const byUpload = (order = '',from = null,to = null,pharmacy = scope) => db.query(
+        'select * from public.list_pharmflow_transfer_imports_v2($1,$2,$3,$4)',[pharmacy,order,from,to]);
+    const uploadRows = (await byUpload('','2026-11-15','2026-11-15')).rows;
+    assert.deepEqual(uploadRows.map(row => row.number), ['TO-102','TO-101']);
+    assert.equal(uploadRows[0].received_date.toISOString().slice(0,10),'2026-11-16');
+    assert.equal((await byUpload('TO-100')).rows.length,1);
+    assert.equal((await byUpload('TO-100','2026-11-15','2026-11-15')).rows.length,0);
+    await assert.rejects(byUpload('TO-100',null,null,outside),/permission denied/);
+    await db.exec("set test.read_only='yes'");
+    await assert.rejects(byUpload('TO-100'),/permission denied/);
 });

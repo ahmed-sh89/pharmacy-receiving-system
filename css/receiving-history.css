@@ -205,6 +205,18 @@
 #pfhPrintFrame { position: fixed; width: 1px; height: 1px; inset: 0 auto auto 0; border: 0; opacity: 0; pointer-events: none; }
 
 .pfhTransferAction { margin-inline-start: auto; }
+.pfhTransferActions { display: flex; align-items: center; gap: 10px; }
+.pfhTransferActions .pfhButton { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.pfhPage .pfhTransferActions .pfhButton { min-height: 38px; }
+.pfhTransferActions svg {
+  width: 16px; height: 16px; fill: none; stroke: currentColor;
+  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.pfhTransferActions::before {
+  content: ""; order: 1; height: 22px; border-inline-start: 1px solid #a6bfd4;
+}
+.pfhTransferActions #pftOpen { order: 2; }
+
 .pfhTransferDialog {
   width: min(560px, calc(100vw - 32px)); box-sizing: border-box; padding: 18px;
   border: 1px solid #a6bfd4; border-radius: 12px; background: #f7fbff; color: #203b54;

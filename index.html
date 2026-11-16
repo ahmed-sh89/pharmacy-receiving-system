@@ -121,7 +121,7 @@
             visibility: hidden !important;
         }
     </style>
-<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI15">
+<link rel="stylesheet" href="css/receiving-history.css?v=HISTORYKPI16">
 <link rel="stylesheet" href="css/receiving-approved-visuals.css?v=20261023-1">
 <link rel="stylesheet" href="css/production-header-polish.css?v=20261023-1">
 <link rel="stylesheet" href="css/header-account-shell.css">
@@ -1131,9 +1131,15 @@ window.PharmFlowDeviceMode = (() => {
                     <header class="pfhHeader">
                         <button id="pfhBack" class="pfhButton pfhBack" type="button"><span aria-hidden="true">←</span> Back to Receiving Report</button>
                         <h2 id="pfhTitle">Receiving History</h2>
-                        <div id="pftActions" class="pfhFilterActions pfhTransferAction" hidden>
-                            <button id="pftManage" class="pfhButton" type="button">Manage Imports</button>
-                            <button id="pftOpen" class="pfhButton" type="button">Import Transfers</button>
+                        <div id="pftActions" class="pfhTransferActions pfhTransferAction" hidden>
+                            <button id="pftManage" class="pfhButton" type="button">
+                                <svg aria-hidden="true" viewBox="0 0 20 20"><path d="M2.5 15.5v-11h5l2 2h8v9z"/></svg>
+                                Manage Imports
+                            </button>
+                            <button id="pftOpen" class="pfhButton pfhSearch" type="button">
+                                <svg aria-hidden="true" viewBox="0 0 20 20"><path d="M10 13V3m-4 4 4-4 4 4M3 12v5h14v-5"/></svg>
+                                Import Transfers
+                            </button>
                         </div>
                     </header>
                     <div class="pfhTabs" id="pfhTabs" role="tablist" aria-label="Receiving History views">
@@ -1239,14 +1245,14 @@ window.PharmFlowDeviceMode = (() => {
                             <label class="pfhField"><span>TO Number</span>
                                 <input class="pfhControl" name="order" type="search" placeholder="Enter TO number" maxlength="100" autocomplete="off">
                             </label>
-                            <label class="pfhField"><span>From</span><input class="pfhControl" type="date" name="from"></label>
-                            <label class="pfhField"><span>To</span><input class="pfhControl" type="date" name="to"></label>
+                            <label class="pfhField"><span>Upload Date From</span><input class="pfhControl" type="date" name="from"></label>
+                            <label class="pfhField"><span>Upload Date To</span><input class="pfhControl" type="date" name="to"></label>
                             <button class="pfhButton pfhSearch" type="submit">Search</button>
                         </form>
-                        <p id="pftManageStatus" role="status">Enter a TO number or a file date range.</p>
+                        <p id="pftManageStatus" role="status">Enter a TO number or an upload date range.</p>
                         <div id="pftManageResults" class="pfhTableWrap" hidden>
                             <table class="dataTable pfhTable">
-                                <thead><tr><th scope="col">Select</th><th scope="col">TO Number</th><th scope="col">Source</th><th scope="col">File Date</th></tr></thead>
+                                <thead><tr><th scope="col">Select</th><th scope="col">TO Number</th><th scope="col">Source</th><th scope="col">Upload Date</th><th scope="col">File Date</th></tr></thead>
                                 <tbody id="pftManageRows"></tbody>
                             </table>
                         </div>
@@ -2815,7 +2821,7 @@ window.PharmFlowDeviceMode = (() => {
 <script src="js/handheld-runtime.js?v=P1_HANDHELD_AUTH_20261102"></script>
 <script src="js/receiving-release.js?v=RECEIVING_GROUP_UI_20261028"></script>
 <script src="js/receiving-history.js?v=HISTORY19"></script>
-<script src="js/item-transfer-staging.js?v=4"></script>
+<script src="js/item-transfer-staging.js?v=5"></script>
 <script src="js/header-account-responsive.js"></script>
 <script src="js/header-account-menu.js"></script>
 <script src="js/header-account-popover.js"></script>

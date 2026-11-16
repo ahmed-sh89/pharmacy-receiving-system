@@ -170,7 +170,9 @@
         const prev = el("pftManagePrev"), next = el("pftManageNext"), remove = el("pftManageDelete");
         const confirmation = el("pftManageConfirm"), commit = el("pftManageCommit"), cancel = el("pftManageCancel");
         const pageSize = 100;
-        const prompt = "Enter a TO number or a file date range.";
+        const prompt = "Enter a TO number or an upload date range.";
+        const uploadDate = new Intl.DateTimeFormat("sv-SE",
+            {timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit"});
         const selected = new Map();
         let query, page = 0, hasMore = false, busy = false, generation = 0;
 
@@ -218,7 +220,7 @@
             status.textContent = notice + "Searching…";
             try {
                 const context = access();
-                const rows = await authRpc("list_pharmflow_transfer_imports_v1",
+                const rows = await authRpc("list_pharmflow_transfer_imports_v2",
                     {...query, p_pharmacy_id: context.pharmacy_id, p_offset: offset});
                 if (!current()) return;
                 if (!Array.isArray(rows)) throw new Error("Unexpected import search response.");
@@ -235,7 +237,9 @@
                         refresh();
                     });
                     tr.insertCell().append(checkbox);
-                    for (const value of [row.number, row.source, row.received_date]) tr.insertCell().textContent = value;
+                    for (const value of [row.number, row.source, uploadDate.format(new Date(row.imported_at)), row.received_date]) {
+                        tr.insertCell().textContent = value;
+                    }
                     body.append(tr);
                 }
                 status.textContent = notice + (rows.length ? "Select transfers to delete from this page." : "No imported transfers found.");
