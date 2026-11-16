@@ -105,9 +105,7 @@ function startupStagingConfiguration(){
       if(source.includes('zznoshzcyxmtwfbznjyr')) throw new Error('Production backend in Staging artifact');
       writeFileSync(file,source);
       const config=resolve('dist/js/config.js');
-      let stagingConfig = readFileSync(config,'utf8').replace('"production"','"staging"');
-      if(standaloneMovementStaging)stagingConfig = stagingConfig.replace('standaloneMovement: false','standaloneMovement: true');
-      writeFileSync(config,stagingConfig);
+      writeFileSync(config,readFileSync(config,'utf8').replace('"production"','"staging"'));
       writeFileSync(resolve('dist/version.json'),JSON.stringify({
         sha:process.env.VERCEL_GIT_COMMIT_SHA||'local-startup-staging',
         environment:'staging',supabaseRef:stagingRef

@@ -36,7 +36,7 @@ test("standalone route and staged configuration are distinct from legacy Receivi
     const config = fs.readFileSync("js/config.js", "utf8");
     assert.match(html, /data-page="receiving"[\s\S]+?data-page="item-movement"/);
     assert.match(html, /id="page-item-movement"/);
-    assert.match(config, /standaloneMovement: false/);
+    assert.match(config, /standaloneMovement: true/);
     assert.match(source, /standaloneMovement \? "discrepancy" : "item"/);
 });
 

@@ -94,7 +94,7 @@ const APP_CONFIG = Object.freeze({
     receiving:{
 
         itemMovementEnabled: true,
-        standaloneMovement: false,
+        standaloneMovement: true,
 
         allowOverReceiving:
             true,

@@ -1,11 +1,11 @@
 {
   "production_base": "a6ec34f1612a2421ad69af9a3729c9ec8a6e7542",
   "changes": {
-    "PHARMFLOW_CURRENT_CHECKPOINT.md": "1f617fc8144cd5a2b52a9d32b8b619f0e3f66ff3",
+    "PHARMFLOW_CURRENT_CHECKPOINT.md": "d27ad866b0128cf07aea2439efbe0a2dedae295c",
     "css/receiving-history.css": "b055bd9c3d66eb5535843972cb107cc7ecf91851",
-    "index.html": "071760c4325f9ee1137c76b8555168aafcac7997",
+    "index.html": "2bbedf675f17a6cc25756c7b29e40994bfcfbc80",
     "js/app-version.js": "aa3cb3a6bc60536056a9ba3542b49cd381126fc1",
-    "js/config.js": "655d6d2b11599bc1911ace7a61ff7d64d3b64d28",
+    "js/config.js": "96377dbd3efbec4aadd8a2f94a41f0c1e9e1a1ba",
     "js/item-transfer-parser.js": "e9987c58d0acfcbcd61bff589fd32f3855a5d438",
     "js/item-transfer-staging.js": "c796b0ccaa6b76cc7259c05ac4b5c6bff416d833",
     "js/item-transfer-worker.js": "e8b03300cb1cfede24298fff75f310b10e3570e5",
@@ -14,6 +14,6 @@
     "js/router.js": "86678d1ec5327b925b90e0aade2feb58f84121ec",
     "js/session.js": "5591eab319879408157b6ae6877be98e9d4d6ec3",
     "js/settings-workspace.js": "1d63d3b4c4b6f94e97e2976ac114a99d95a7cf2d",
-    "vite.config.js": "3f2282b314358ccf4e718d35ec92bf386259aed2"
+    "vite.config.js": "f3ad462b7a9ab1d2a589dd5ca4eab07f354ffaad"
   }
 }

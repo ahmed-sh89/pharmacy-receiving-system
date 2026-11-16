@@ -1,8 +1,8 @@
 # PharmFlow current checkpoint — 16 November 2026
 
-## Item Movement module — Staging only
+## Item Movement module — Production release candidate
 
-Item Movement is a separate sidebar destination with an independent pharmacy setting. The pharmacy administrator can search, export and manage imports. When Receiving is enabled, successfully uploaded Orders contribute ordered quantities immediately, using the date and warehouse code from the original file. Orders take precedence over repeated imports of the same TO. When Receiving is disabled, the module uses saved imports from warehouses and branches. Receiving History contains New Items and Discrepancies in this preview. Production feature flag and database remain gated.
+Item Movement is a separate sidebar destination with an independent pharmacy setting. The pharmacy administrator can search, export and manage imports. When Receiving is enabled, successfully uploaded Orders contribute ordered quantities immediately, using the date and warehouse code from the original file. Orders take precedence over repeated imports of the same TO. When Receiving is disabled, the module uses saved imports from warehouses and branches. Receiving History contains New Items and Discrepancies in this preview. The owner accepted the Staging layout. The Production candidate enables the same frontend after the reviewed Item Movement permissions migration. Production deployment and database application are pending.
 
 The Staging results layout shows a single item's total alongside an always-open detail table. Multi-item searches group all movements under the relevant item and open each group individually. The page keeps the same totals and exports while reducing repeated identifiers in the visible details.
 
