@@ -99,6 +99,33 @@ test('Discrepancies and NEW items use one joined request per page with dates, or
     assert.equal(new URLSearchParams(calls[2][1]).get('event_type'), 'eq.NEW_ITEM');
 });
 
+test('discrepancy item filtering is applied before paging and used by export', async () => {
+    const calls = [];
+    const row = {order_number: 'TO-1', item_code: 'A&1', item_name: 'Panadol (Extra)', difference: -1,
+        workspace: {completed_at: '2026-10-31T21:00:00Z'}};
+    const context = runtime({readPharmFlowReceivingHistoryRows: async (_, query) => {
+        calls.push(new URLSearchParams(query));
+        return [row];
+    }});
+    const typed = {...period, discrepancyFilter: {item: 'Panadol (Extra)'}};
+    const clicked = {...period, discrepancyFilter: {item: 'A&1', exact: true}};
+    const result = await context.pfhReadHistoryPage('discrepancy', params.p_pharmacy_id, typed, 'TO-1');
+    await context.pfhReadHistoryPage('discrepancy', params.p_pharmacy_id, typed, 'TO-1', 100);
+    await context.pfhReadHistoryPage('discrepancy', params.p_pharmacy_id, clicked, 'TO-1');
+    await context.pfhReadHistoryPage('new', params.p_pharmacy_id, typed, 'TO-1');
+    assert.equal(calls[0].get('or'), String.raw`(item_code.imatch."^Panadol \\(Extra\\)$",item_name.imatch."Panadol \\(Extra\\)")`);
+    assert.equal(calls[1].get('or'), calls[0].get('or'));
+    assert.equal(calls[0].get('difference'), 'neq.0');
+    assert.equal(calls[0].get('order_number'), 'eq.TO-1');
+    assert.equal(calls[2].get('or'), '(item_code.eq."A&1")');
+    assert.equal(calls[3].has('or'), false);
+    assert.match(context.pfhRenderResult({type: 'discrepancy', periods: [{...typed, rows: result.rows}]}),
+        /data-pfh-discrepancy-item="A&amp;1"/);
+    assert.doesNotMatch(context.pfhRenderResult({type: 'discrepancy', periods: [{...clicked, rows: result.rows}]}),
+        /data-pfh-discrepancy-item/);
+    assert.match(context.pfhExportDateLabel(typed), /Item Panadol \(Extra\)$/);
+});
+
 test('RPC pagination reaches the network and scoped history reads require the active pharmacy', async () => {
     const source = readFileSync('js/auth.js', 'utf8');
     const requests = [];

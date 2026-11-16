@@ -150,6 +150,19 @@ async function pfhReadBatches(values, load, current) {
     return rows;
 }
 
+function pfhDiscrepancyItemFilter(query, filter) {
+    const quote = value => '"' + value.replace(/[\\"]/g, '\\$&') + '"';
+    const item = filter?.item;
+    if (!item) return;
+    query.push(["difference", "neq.0"]);
+    if (filter.exact) {
+        query.push(["or", "(item_code.eq." + quote(item) + ")"]);
+        return;
+    }
+    const literal = item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    query.push(["or", "(item_code.imatch." + quote("^" + literal + "$") + ",item_name.imatch." + quote(literal) + ")"]);
+}
+
 async function pfhReadHistoryPage(type, pharmacy, period, order, offset = 0) {
     const [from, to] = pfhPeriodBounds(period);
     const query = [
@@ -161,6 +174,7 @@ async function pfhReadHistoryPage(type, pharmacy, period, order, offset = 0) {
         ["order", "workspace(completed_at).desc,id.desc"], ["limit", PFH_PAGE_SIZE + 1], ["offset", offset]
     ];
     if (order) query.push(["order_number", "eq." + order]);
+    if (type === "discrepancy") pfhDiscrepancyItemFilter(query, period.discrepancyFilter);
     const page = await readPharmFlowReceivingHistoryRows(pharmacy, query);
     if (!Array.isArray(page)) throw new Error("Unexpected Receiving History response");
     return {
@@ -343,7 +357,7 @@ function pfhItemNotes(period, includeReceived = true) {
 }
 
 function pfhTable(headings, rows, {className = "", differenceColumn = -1,
-    renderAction, quantityColumns = [], emphasizeColumn = -1} = {}) {
+    renderAction, quantityColumns = [], emphasizeColumn = -1, itemFilterColumn = -1} = {}) {
     if (!rows.length) return "";
     const cellAlignment = index => quantityColumns.includes(index) ? "pfhQty" : "";
     const head = headings.map((value, index) =>
@@ -356,7 +370,11 @@ function pfhTable(headings, rows, {className = "", differenceColumn = -1,
             (value < 0 ? " pfhShort" : " pfhOver") : "";
         const display = numeric && index === emphasizeColumn
             ? '<strong class="pfhTotalBadge">' + pfhEsc(value) + "</strong>" : pfhEsc(value);
-        return '<td class="' + alignment + difference + '">' + display + "</td>";
+        const cell = index === itemFilterColumn && value
+            ? '<button class="pfhDiscrepancyItem" type="button" data-pfh-discrepancy-item="' + pfhEsc(value) +
+                '" aria-label="Filter discrepancies for ' + pfhEsc(value) + '">' + display + '</button>'
+            : display;
+        return '<td class="' + alignment + difference + '">' + cell + "</td>";
     }).join("") + (renderAction ? "<td>" + renderAction(rowIndex) + "</td>" : "") + "</tr>").join("");
     return '<div class="pfhTableWrap ' + className + '"><table class="dataTable pfhTable"><thead><tr>' +
         head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
@@ -378,7 +396,8 @@ function pfhRenderResult({type, periods}, renderItemAction) {
         return '<section class="pfhPeriod"><h3>' + pfhEsc(pfhPeriodLabel(period)) + "</h3>" +
             sourceTotal + summary + notes + (pfhTable(type === "item" && period.movement ? PFH_MOVEMENT_COLUMNS : PFH_COLUMNS[type], rows, {
                 quantityColumns: period.movement ? [4] : type === "item" ? [5, 6] : [],
-                differenceColumn: type === "discrepancy" ? 7 : -1
+                differenceColumn: type === "discrepancy" ? 7 : -1,
+                itemFilterColumn: type === "discrepancy" && !period.discrepancyFilter?.exact ? 3 : -1
             }) ||
                 "<p>No matching records in this period.</p>") + "</section>";
     }).join("");
@@ -633,7 +652,8 @@ function pfhPrint(table, dateLabel, current) {
 }
 
 function pfhExportDateLabel(period) {
-    return pfhPeriodLabel(period) + " | Riyadh" + (period.order ? " | Order " + period.order : "");
+    return pfhPeriodLabel(period) + " | Riyadh" + (period.order ? " | Order " + period.order : "") +
+        (period.discrepancyFilter ? " | Item " + period.discrepancyFilter.item : "");
 }
 
 function pfhExportResult({type, periods: [period], summaryOnly = false}, format) {
@@ -784,6 +804,10 @@ function pfhBoot() {
     const reportOptions = typePicker.querySelectorAll("[data-pfh-type]");
     const toolbar = document.getElementById("pfhToolbar");
     const itemField = document.getElementById("pfhItemField");
+    const itemLabel = document.getElementById("pfhItemLabel");
+    const itemOptional = document.getElementById("pfhItemOptional");
+    const discrepancyInput = field("discrepancyItem");
+    let selectedDiscrepancyCode = "";
     const exportListPanel = document.getElementById("pfhExportList");
     const tabs = document.getElementById("pfhTabs");
     const searchTab = document.getElementById("pfhSearchTab");
@@ -928,10 +952,14 @@ function pfhBoot() {
         for (const option of reportOptions) {
             option.setAttribute("aria-pressed", String(option.dataset.pfhType === type));
         }
-        itemField.hidden = !useItem;
+        const useDiscrepancy = type === "discrepancy";
+        itemField.hidden = !useItem && !useDiscrepancy;
+        field("item").hidden = !useItem;
+        discrepancyInput.hidden = itemOptional.hidden = !useDiscrepancy;
+        itemLabel.htmlFor = useDiscrepancy ? discrepancyInput.id : field("item").id;
         sourceField.hidden = !useItem || !movementEnabled;
-        dateActions.hidden = useItem;
-        (useItem ? document.getElementById("pfhItemEntry") : dateActions).append(submit);
+        dateActions.hidden = useItem || useDiscrepancy;
+        (useItem || useDiscrepancy ? document.getElementById("pfhItemEntry") : dateActions).append(submit);
         tabs.hidden = !useItem;
         showListView(false);
         datePicker.sync();
@@ -953,6 +981,7 @@ function pfhBoot() {
         catch (error) { showToast(error.message, "warning"); return; }
         if (!AuthState.context?.pharmacy_id) return;
         form.reset();
+        selectedDiscrepancyCode = "";
         if (selectionEpoch !== AuthState.identityEpoch) selection = null;
         selectionEpoch = AuthState.identityEpoch;
         field("reportType").value = "item";
@@ -1000,6 +1029,7 @@ function pfhBoot() {
     document.addEventListener("pointerdown", event => {
         if (typeIsOpen() && !typePicker.contains(event.target)) closeType();
     });
+    discrepancyInput.addEventListener("input", () => { selectedDiscrepancyCode = ""; });
     form.addEventListener("input", () => clear());
     const announce = message => {
         status.textContent = message;
@@ -1022,6 +1052,14 @@ function pfhBoot() {
         retry.hidden = true;
     };
     list.addEventListener("click", event => {
+        const itemCode = event.target.closest("[data-pfh-discrepancy-item]");
+        if (itemCode && !busy && result?.type === "discrepancy" && result.current()) {
+            selectedDiscrepancyCode = itemCode.dataset.pfhDiscrepancyItem;
+            discrepancyInput.value = selectedDiscrepancyCode;
+            discrepancyInput.focus();
+            form.requestSubmit();
+            return;
+        }
         const add = event.target.closest("[data-pfh-save]");
         if (!add || result?.type !== "item" || !result.current()) return;
         const [period] = result.periods;
@@ -1065,6 +1103,10 @@ function pfhBoot() {
         const order = pfhNormalizeOrder(field("order").value);
         const source = movementEnabled && type === "item" ? field("source").value.trim() : "";
         const period = {from: field("from").value, to: field("to").value, order, source};
+        const discrepancyItem = type === "discrepancy" ? discrepancyInput.value.trim() : "";
+        if (discrepancyItem) {
+            period.discrepancyFilter = {item: discrepancyItem, exact: discrepancyItem === selectedDiscrepancyCode};
+        }
         datePicker.close();
         closeType();
         if (!period.from || !period.to) { clear("Select From and To dates."); return; }
