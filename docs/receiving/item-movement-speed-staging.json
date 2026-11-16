@@ -2,8 +2,8 @@
   "production_base": "a6ec34f1612a2421ad69af9a3729c9ec8a6e7542",
   "changes": {
     "PHARMFLOW_CURRENT_CHECKPOINT.md": "1f617fc8144cd5a2b52a9d32b8b619f0e3f66ff3",
-    "css/receiving-history.css": "426df3aa3a5d326caa670630ee2ecbfc05d79ec5",
-    "index.html": "99c3428674abb9c1ad68995e2602f08e1674f615",
+    "css/receiving-history.css": "b055bd9c3d66eb5535843972cb107cc7ecf91851",
+    "index.html": "071760c4325f9ee1137c76b8555168aafcac7997",
     "js/app-version.js": "aa3cb3a6bc60536056a9ba3542b49cd381126fc1",
     "js/config.js": "655d6d2b11599bc1911ace7a61ff7d64d3b64d28",
     "js/item-transfer-parser.js": "e9987c58d0acfcbcd61bff589fd32f3855a5d438",
