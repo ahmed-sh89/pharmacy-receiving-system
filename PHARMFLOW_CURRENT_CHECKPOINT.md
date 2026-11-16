@@ -1,5 +1,11 @@
 # PharmFlow current checkpoint — 16 November 2026
 
+## Item Movement module — Production release candidate
+
+Item Movement is a separate sidebar destination with an independent pharmacy setting. The pharmacy administrator can search, export and manage imports. When Receiving is enabled, successfully uploaded Orders contribute ordered quantities immediately, using the date and warehouse code from the original file. Orders take precedence over repeated imports of the same TO. When Receiving is disabled, the module uses saved imports from warehouses and branches. Receiving History contains New Items and Discrepancies in this preview. The owner accepted the Staging layout. The Production candidate enables the same frontend after the reviewed Item Movement permissions migration. Production deployment and database application are pending.
+
+The Staging results layout shows a single item's total alongside an always-open detail table. Multi-item searches group all movements under the relevant item and open each group individually. The page keeps the same totals and exports while reducing repeated identifiers in the visible details.
+
 ## Item Movement source column — Staging
 
 Receiving rows display the From Warehouse code from the matching order file. Imported transfers continue to display their saved source code. Single and bulk completion retain the source code in future archives. For older archives, the report reads missing source codes from the authorized order registry. Rows with no accessible saved source show a dash. The owner confirmed the Production search for the previously reported imported item now returns a result.

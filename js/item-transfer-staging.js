@@ -10,12 +10,17 @@
         const el = id => document.getElementById(id);
         const open = el("pftOpen"), dialog = el("pftDialog");
         if (!open || !dialog || !scriptUrl || APP_CONFIG.receiving?.itemMovementEnabled !== true) return;
+        if (APP_CONFIG.receiving?.standaloneMovement) {
+            el("pftOpenLabel").textContent = "Import Excel";
+            el("pftTitle").textContent = "Import Excel";
+            el("pftSave").textContent = "Save Imports";
+        }
         const files = el("pftFiles"), issues = el("pftIssues"), status = el("pftImportStatus");
         const save = el("pftSave"), choose = el("pftChoose"), close = el("pftClose"), review = el("pftReview");
         let pending = [], busy = false, generation = 0;
         const scope = () => [AuthState.identityEpoch, AuthState.context?.pharmacy_id].join("|");
         const access = () => {
-            window.PharmFlowPermissions?.require("RECEIVING", true);
+            window.PharmFlowPermissions?.require(APP_CONFIG.receiving?.standaloneMovement ? "ITEM_MOVEMENT" : "RECEIVING", true);
             const context = AuthState.context;
             if (!context?.pharmacy_id || !context.pharmacy_code) throw new Error("Select an active pharmacy.");
             return context;
@@ -108,7 +113,7 @@
                 pending = [...byNumber.values()].map(entry => entry.transfer);
                 status.textContent = pending.length + " ready to save · " + repeats + " repeated in selection · " +
                     (invalid + conflicts.size) + " need review. " +
-                    (pending.length ? "Select Save Transfers to finish importing." : "No transfers saved.");
+                    (pending.length ? (APP_CONFIG.receiving?.standaloneMovement ? "Select Save Imports to finish importing." : "Select Save Transfers to finish importing.") : "No transfers saved.");
             } catch (error) {
                 if (current()) status.textContent = error.message;
             } finally {

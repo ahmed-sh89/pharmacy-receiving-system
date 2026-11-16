@@ -132,7 +132,7 @@ function navigateTo(
 
     const permissionModule=window.PharmFlowPermissions?.routeModule(routeName);
     if(permissionModule && !window.PharmFlowPermissions.allowed(permissionModule)){
-        routeName=window.PharmFlowPermissions.allowed('EXPIRY')?'expiry':'settings';
+        routeName=window.PharmFlowPermissions.allowed('EXPIRY')?'expiry':window.PharmFlowPermissions.allowed('ITEM_MOVEMENT')?'item-movement':'settings';
     }
 
     const route =

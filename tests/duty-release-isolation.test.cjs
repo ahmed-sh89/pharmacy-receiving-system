@@ -100,8 +100,20 @@ test('history and update notice hotfix only changes its declared protected files
 
 test('movement speed preview only changes its declared runtime surfaces',()=>{
  assert.deepEqual(Object.keys(movementSpeed.changes).sort(),[
-  'PHARMFLOW_CURRENT_CHECKPOINT.md','index.html','js/app-version.js','js/item-transfer-parser.js',
-  'js/item-transfer-staging.js','js/item-transfer-worker.js','js/receiving-history.js','js/session.js','vite.config.js'
+   "PHARMFLOW_CURRENT_CHECKPOINT.md",
+   "css/receiving-history.css",
+   "index.html",
+   "js/app-version.js",
+   "js/config.js",
+   "js/item-transfer-parser.js",
+   "js/item-transfer-staging.js",
+   "js/item-transfer-worker.js",
+   "js/permissions.js",
+   "js/receiving-history.js",
+   "js/router.js",
+   "js/session.js",
+   "js/settings-workspace.js",
+   "vite.config.js"
  ]);
  for(const [file, expected] of Object.entries(movementSpeed.changes)){
   assert.equal(blobHash(fs.readFileSync(file)),expected,file);
