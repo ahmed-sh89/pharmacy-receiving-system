@@ -699,15 +699,32 @@ async function recoverPasswordRequirementRejection(session, epoch, allowRefresh 
         AuthState.user?.id===user.id && !AuthState.mustChangePassword;
 }
 
-async function authRpc(functionName, params = {}){
+async function authRpc(functionName, params = {}, query){
     if(typeof window!=="undefined")window.PharmFlowPermissions?.checkRpc?.(functionName,params);
+    const suffix = query ? "?" + new URLSearchParams(query).toString() : "";
+    return authProtectedRequest("/rest/v1/rpc/" + encodeURIComponent(functionName) + suffix, {
+        method:"POST", body:JSON.stringify(params || {})
+    }, functionName);
+}
+
+function readPharmFlowReceivingHistoryRows(pharmacy, query){
+    window.PharmFlowPermissions?.require("RECEIVING",false);
+    if(!pharmacy || AuthState.context?.pharmacy_id !== pharmacy){
+        throw new Error("Pharmacy context is required");
+    }
+    const filters = new URLSearchParams(query);
+    filters.set("pharmacy_id", "eq." + pharmacy);
+    filters.set("workspace.pharmacy_id", "eq." + pharmacy);
+    return authProtectedRequest("/rest/v1/pharmflow_receiving_history_items_v1?" + filters, {method:"GET"});
+}
+
+async function authProtectedRequest(path, options, functionName){
     const execute = async () => {
         const token = getSupabaseAccessToken();
         if(!token){ throw new Error("Please sign in first"); }
-        return authRequest("/rest/v1/rpc/" + encodeURIComponent(functionName), {
-            method:"POST",
-            headers:{"Authorization":"Bearer " + token,"Accept":"application/json"},
-            body:JSON.stringify(params || {})
+        return authRequest(path, {
+            ...options,
+            headers:{"Authorization":"Bearer " + token,"Accept":"application/json"}
         });
     };
 

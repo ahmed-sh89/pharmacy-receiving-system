@@ -7,12 +7,15 @@ const {execFileSync}=require('node:child_process');
 const manifest=JSON.parse(fs.readFileSync('docs/receiving/email-wo-wrap/RELEASE_MANIFEST.json','utf8'));
 const login=JSON.parse(fs.readFileSync('docs/auth/pharmacy-admin-login-release.json','utf8'));
 const activation=JSON.parse(fs.readFileSync('docs/auth/pharmacy-activation-release.json','utf8'));
+const itemHistory=JSON.parse(fs.readFileSync('docs/receiving/item-history-release.json','utf8'));
+const transfer=JSON.parse(fs.readFileSync('docs/receiving/item-transfer-staging-release.json','utf8'));
+const productionTransfer=JSON.parse(fs.readFileSync('docs/receiving/item-transfer-production-release.json','utf8'));
 const historical=JSON.parse(fs.readFileSync('docs/duty/RELEASE_MANIFEST.json','utf8'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const blobHash=bytes=>crypto.createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
 function verifyRelease(read=path=>fs.readFileSync(path)){
  for(const [path,productionBlob] of Object.entries(manifest.protected_files)){
-  const expected=activation.changes[path] ?? login.changes[path] ?? manifest.approved_changes[path] ?? productionBlob;
+  const expected=productionTransfer.changes[path] ?? transfer.changes[path] ?? itemHistory.changes[path] ?? activation.changes[path] ?? login.changes[path] ?? manifest.approved_changes[path] ?? productionBlob;
   assert.equal(blobHash(read(path)),expected,path);
  }
 }
@@ -51,6 +54,36 @@ test('release retains the protected files with only the pinned sign-in updates',
   assert.equal(git('rev-parse',`${activation.production_base}:${file}`),login.changes[file] ?? manifest.approved_changes[file] ?? manifest.protected_files[file]);
  }
  verifyRelease();
+});
+
+test('Receiving History release only changes its declared protected surfaces',()=>{
+ assert.deepEqual(Object.keys(itemHistory.changes).sort(),[
+  'PHARMFLOW_CURRENT_CHECKPOINT.md','css/receiving-history.css','index.html',
+  'js/auth.js','js/orders.js','js/receiving-history.js','js/session.js','vite.config.js'
+ ]);
+ for(const file of Object.keys(itemHistory.changes)){
+  assert.ok(Object.hasOwn(manifest.protected_files,file),file);
+ }
+});
+
+test('transfer pilot only changes its declared protected surfaces',()=>{
+ assert.deepEqual(Object.keys(transfer.changes).sort(),[
+  'PHARMFLOW_CURRENT_CHECKPOINT.md','css/receiving-history.css','index.html','js/config.js',
+  'js/permissions.js','js/receiving-history.js','vite.config.js'
+ ]);
+ for(const [file, expected] of Object.entries(transfer.changes))assert.equal(blobHash(fs.readFileSync(file)),productionTransfer.changes[file] ?? expected,file);
+});
+
+test('production handoff preserves accepted Staging runtime except for declared activation files',()=>{
+ assert.deepEqual(Object.keys(productionTransfer.changes).sort(),[
+  'PHARMFLOW_CURRENT_CHECKPOINT.md','index.html','js/config.js','js/item-transfer-staging.js','js/receiving-history.js'
+ ]);
+ for(const [file, expected] of Object.entries(productionTransfer.changes)){
+  assert.equal(blobHash(fs.readFileSync(file)),expected,file);
+ }
+ for(const [file, expected] of Object.entries(productionTransfer.sql)){
+  assert.equal(blobHash(fs.readFileSync(file)),expected,file);
+ }
 });
 
 test('release isolation rejects mutations to Duty, deployment, and accepted Receiving files',()=>{

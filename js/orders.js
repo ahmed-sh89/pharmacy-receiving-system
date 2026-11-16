@@ -485,7 +485,7 @@ function requestFinalizeReceiving({allOrders=false}={}){
             "Complete receiving for: "+orders+".",
             "This confirms the physical count is finished even when quantities do not match.",
             "Discrepancies: "+summary.discrepancies+" (Shortage "+summary.shortages+", Over "+summary.over+", Manual "+summary.manual+").",
-            "The order number, order date, completion time and any discrepancy report will be retained. The active receiving workspace for this order will then be cleared."
+            "The order number, order date, completion time, item quantities and any discrepancy report will be retained. The active receiving workspace for this order will then be cleared."
         ].join(" ");
         showConfirmModal(allOrders?"Complete All Active Orders":"Complete Receiving",message,function(){
             finalizeCurrentReceiving({allOrders}).catch(()=>{});
@@ -550,13 +550,14 @@ async function finalizeCurrentReceiving({allOrders=false}={}){
         if(typeof finalizeReceivingWorkspaceWithHistory!=="function"){
             throw new Error("Receiving History module is unavailable");
         }
+        const itemHistory = buildPharmFlowItemHistorySnapshots(summary.orderNumbers);
         await finalizeReceivingWorkspaceWithHistory(summary,finalizedDiscrepancyReport);
 
         if(allOrders){
             if(typeof closeAndArchiveAllCurrentOrders!=="function"){
                 throw new Error("Receive All archive module is unavailable");
             }
-            const archived=await closeAndArchiveAllCurrentOrders(summary.orderNumbers);
+            const archived=await closeAndArchiveAllCurrentOrders(summary.orderNumbers,itemHistory);
             if(!archived){
                 throw new Error("Orders were marked Received but the Receive All archive transition could not be completed.");
             }
@@ -565,7 +566,7 @@ async function finalizeCurrentReceiving({allOrders=false}={}){
                 throw new Error("Receiving archive module is unavailable");
             }
             const orderNumber=summary.orderNumbers[0];
-            const archived=await closeAndArchiveCurrentOrder(orderNumber);
+            const archived=await closeAndArchiveCurrentOrder(orderNumber,itemHistory.get(orderNumber));
             if(!archived){
                 throw new Error("Order "+orderNumber+" was marked Received but its receiving archive could not be completed. Do not scan this order again; refresh and retry archive recovery.");
             }

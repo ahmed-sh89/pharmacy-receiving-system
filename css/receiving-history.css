@@ -1,28 +1,124 @@
-/* PharmFlow Receiving History — scoped production UI */
-.pfhHistoryButton{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 14px;border:1px solid var(--border-color,#d9cec6);border-radius:10px;background:var(--card-bg,#fff);color:var(--text-primary,#342d28);font:inherit;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(52,45,40,.04)}
-.pfhHistoryButton:hover{border-color:#9a6246;background:#fbf7f4}.pfhHistoryButton:focus-visible{outline:3px solid rgba(154,98,70,.2);outline-offset:2px}
-.pfhOverlay{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:24px;background:rgba(38,31,27,.48);backdrop-filter:blur(3px)}
-.pfhOverlay[hidden]{display:none}.pfhPanel{width:min(1180px,96vw);max-height:92vh;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #ded3cb;border-radius:18px;box-shadow:0 24px 70px rgba(36,29,25,.22)}
-.pfhHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:22px 24px 16px;border-bottom:1px solid #eee5df}.pfhHeader h2{margin:3px 0 4px;font-size:22px}.pfhHeader p{margin:0;color:#766b63;font-size:13px}
-.pfhClose{width:38px;height:38px;border:1px solid #ded3cb;border-radius:10px;background:#fff;color:#554941;font-size:18px;cursor:pointer}.pfhClose:hover{background:#f8f3ef}
-.pfhBody{overflow:auto;padding:18px 24px 24px}.pfhTabs{display:flex;gap:8px;margin-bottom:16px}.pfhTab{border:1px solid #ddd1c8;border-radius:10px;background:#fff;color:#62564e;padding:9px 14px;font-weight:700;cursor:pointer}.pfhTab.active{background:#9a6246;border-color:#9a6246;color:#fff}
-.pfhFilters{display:grid;grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) auto;gap:12px;align-items:end;padding:16px;border:1px solid #eadfd8;border-radius:14px;background:#fcfaf8}.pfhField{display:grid;gap:6px}.pfhField span{font-size:11px;font-weight:800;letter-spacing:.06em;color:#806f64}.pfhField input{width:100%;height:40px;border:1px solid #d8cbc2;border-radius:10px;background:#fff;color:#342d28;padding:0 11px;font:inherit}.pfhField input:focus{outline:0;border-color:#9a6246;box-shadow:0 0 0 3px rgba(154,98,70,.12)}
-.pfhGenerate{height:40px;padding:0 18px;border:1px solid #9a6246;border-radius:10px;background:#9a6246;color:#fff;font-weight:800;cursor:pointer}.pfhGenerate:hover{filter:brightness(.96)}
-.pfhSummary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}.pfhMetric{padding:13px 14px;border:1px solid #e7dcd5;border-radius:12px;background:#fff}.pfhMetric span{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;color:#8b7b70}.pfhMetric strong{display:block;margin-top:4px;font-size:22px;color:#3b312b}
-.pfhToolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0}.pfhToolbar strong{font-size:13px}.pfhExports{display:flex;gap:8px}.pfhExport{border:1px solid #d8cbc2;border-radius:9px;background:#fff;color:#4e423a;padding:8px 12px;font-weight:700;cursor:pointer}.pfhExport:hover{background:#f8f3ef;border-color:#b89580}
-.pfhWorkspaceList{display:grid;gap:10px}.pfhWorkspace{border:1px solid #e3d8d1;border-radius:13px;background:#fff;overflow:hidden}.pfhWorkspaceHead{width:100%;display:grid;grid-template-columns:1.2fr .8fr .8fr auto;align-items:center;gap:12px;padding:14px 16px;border:0;background:#fff;color:#3d332d;text-align:left;cursor:pointer;font:inherit}.pfhWorkspaceHead:hover{background:#fcf8f5}.pfhWorkspaceHead strong{font-size:14px}.pfhWorkspaceHead span{font-size:12px;color:#75685f}.pfhChevron{font-size:17px!important;color:#9a6246!important}.pfhWorkspace.open .pfhChevron{transform:rotate(180deg)}
-.pfhWorkspaceDetail{padding:0 16px 16px;background:#fdfbf9}.pfhOrder{padding-top:14px}.pfhOrderHeader{display:flex;justify-content:space-between;gap:12px;padding:9px 11px;background:#f3ece7;border-left:3px solid #9a6246;border-radius:8px}.pfhOrderHeader strong{font-size:13px}.pfhOrderHeader span{font-size:11px;color:#74675e}
-.pfhTableWrap{overflow:auto;margin-top:8px;border:1px solid #eadfd8;border-radius:10px}.pfhTable{width:100%;border-collapse:collapse;min-width:760px}.pfhTable th{background:#f8f3ef;color:#66584f;font-size:10px;letter-spacing:.04em;text-align:left;padding:9px;border-bottom:1px solid #e5dad3}.pfhTable td{padding:9px;font-size:12px;border-bottom:1px solid #eee6e1}.pfhTable tr:last-child td{border-bottom:0}.pfhNum{text-align:center}.pfhIssue{font-weight:800}.pfhIssue.short{color:#a54343}.pfhIssue.over{color:#96651f}.pfhIssue.extra{color:#76528c}.pfhNewBadge{display:inline-flex;padding:3px 7px;border-radius:999px;background:#edf5ef;color:#3f7455;font-size:10px;font-weight:900}
-.pfhEmpty{padding:34px 18px;text-align:center;border:1px dashed #d9ccc3;border-radius:12px;color:#7b6e65;background:#fdfbf9}.pfhLoading{padding:26px;text-align:center;color:#75685f}
-@media(max-width:760px){.pfhOverlay{padding:8px}.pfhPanel{width:100%;max-height:96vh;border-radius:14px}.pfhHeader,.pfhBody{padding-left:14px;padding-right:14px}.pfhFilters{grid-template-columns:1fr 1fr}.pfhGenerate{grid-column:1/-1}.pfhSummary{grid-template-columns:1fr 1fr}.pfhWorkspaceHead{grid-template-columns:1fr auto}.pfhWorkspaceHead span:nth-of-type(2){display:none}.pfhToolbar{align-items:flex-start;flex-direction:column}}
+/* Shared Receiving Report colors and geometry. */
+#page-receiving .pfhHistoryButton, .pfhPage .pfhButton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  box-sizing: border-box; min-height: 38px; padding: 0 12px; white-space: nowrap;
+  border: 1px solid #a6bfd4; border-radius: 8px; background: #edf5fc; color: #21577f;
+  font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; line-height: 1.2;
+}
+#page-receiving .pfhHistoryButton:hover, .pfhPage .pfhButton:hover { background: #d8edff; }
+@media (min-width: 769px) {
+  #page-receiving #btnBackToReceivingDashboard { margin-right: 0 !important; }
+  #page-receiving .pfnReceivingReportToolbar > .pfhHistoryButton { margin-inline: auto; }
+}
+.pfhHistoryButton span { font-size: 17px; }
+.pfhPage [hidden], #receivingReportContent[hidden], #receivingHistoryContent[hidden] { display: none !important; }
+#page-receiving #receivingHistoryContent { overflow: visible; }
+.pfhHeader { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 2px 2px 14px; }
+.pfhHeader h2 { margin: 0; color: #123e69; line-height: 1.2; }
+#pfhForm { padding: 16px; border: 1px solid #c7dced; border-radius: 12px; background: #f7fbff; }
+.pfhFilters { display: grid; align-items: end; gap: 12px; }
+.pfhPrimaryFilters { grid-template-columns: minmax(180px, 230px) minmax(260px, 515px) minmax(150px, 220px); }
+.pfhDateFilters { grid-template-columns: repeat(2, minmax(130px, 180px)) auto; max-width: 540px; margin-top: 10px; }
+.pfhDateFilters:has(#pfhSourceField:not([hidden])) {
+  grid-template-columns: repeat(2, minmax(130px, 180px)) minmax(210px, 260px); max-width: 644px;
+}
+.pfhFilterActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#pfhItemField { grid-template-columns: minmax(0, 1fr); }
+#pfhItemField label { color: #174f82; font-size: 15px; font-weight: 800; }
+#pfhItemEntry .pfhControl { min-height: 44px; border: 1.5px solid #6a9ac4; background: #fafdff; }
+#pfhItemEntry .pfhControl:focus { border-color: #2569a6; background: #fff; }
+.pfhPage .pfhDiscrepancyItem {
+  padding: 0; border: 0; background: transparent; color: #195d99;
+  font: inherit; text-align: start; text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.pfhItemEntry, .pfhStatusActions { display: flex; align-items: center; gap: 6px; }
+.pfhItemEntry input { min-width: 0; flex: 1; }
+.pfhItemEntry .pfhSearch { min-width: 76px; flex: 0 0 auto; }
+.pfhTabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.pfhTabs .pfhButton[aria-selected="true"] { color: #fff; background: #195d99; border-color: #195d99; }
+.pfhListHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+#pfhListNotice:empty { display: none; }
+.pfhPage .pfhTable .pfhRowAction { min-height: 30px; padding: 0 10px; font-size: 12px; }
+.pfhItemSummary { margin: 8px 0 12px; }
+.pfhItemSummary .pfhTable { min-width: 420px; }
+#pfhMore { margin: 6px 0 12px; }
+.pfhField { display: grid; gap: 5px; min-width: 0; color: #284e6d; font-size: 13px; font-weight: 750; }
+.pfhField small { margin-left: 4px; color: #59748d; font-size: 11px; font-weight: 600; }
+.pfhPage .pfhControl {
+  box-sizing: border-box; width: 100%; min-height: 40px; padding: 0 11px;
+  border: 1px solid #b5cadd; border-radius: 8px; color: #173b59; background: #fff;
+  font: inherit; font-size: 14px; font-weight: 650;
+}
+.pfhPage .pfhControl::placeholder { color: #61798d; font-weight: 500; }
+.pfhPage .pfhControl:hover { border-color: #77a2c7; }
+.pfhPage :is(button, summary, input):focus-visible { outline: 2px solid #337bb9; outline-offset: 2px; }
+.pfhPage .pfhSearch { min-height: 40px; min-width: 104px; background: #195d99; border-color: #195d99; color: #fff; }
+.pfhPage .pfhSearch:hover { background: #134d81; }
+.pfhPage :is(.pfhDateButton, #pfhTypeTrigger) { display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer; list-style: none; text-align: left; }
+#pfhTypeTrigger::after { content: "⌄"; color: #21577f; font-size: 17px; }
+.pfhDateButton::after {
+  content: ""; flex: 0 0 15px; height: 13px; border: 1.5px solid #3975a6; border-radius: 3px;
+  background: linear-gradient(to bottom, transparent 3px, #3975a6 3px, #3975a6 4.5px, transparent 4.5px);
+}
+.pfhTypePicker, .pfhDateField { position: relative; }
+.pfhTypeOptions, .pfhCalendarPopover {
+  /* The shared Receiving page scrolls internally. Keep both pickers in the browser top layer. */
+  position: fixed; inset: auto; box-sizing: border-box; margin: 0; padding: 6px;
+  max-width: calc(100vw - 16px); overflow: auto; overscroll-behavior: contain;
+  font: inherit;
+  border: 1px solid #b5cadd; border-radius: 10px; background: #fff; box-shadow: 0 10px 28px #153c6026;
+}
+.pfhTypeOptions:popover-open { display: grid; gap: 3px; }
+.pfhTypeOptions button, .pfhCalendarPopover button {
+  border: 1px solid transparent; border-radius: 7px; background: #f1f7fc; color: #214f73;
+  font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
+}
+.pfhTypeOptions button { min-height: 36px; text-align: left; padding: 0 10px; }
+.pfhTypeOptions button[aria-pressed="true"], .pfhCalendarPopover .selected { color: #fff; background: #195d99; }
+.pfhTypeOptions button:not([aria-pressed="true"]):hover, .pfhCalendarPopover button:not(.selected):hover { background: #dceefc; }
+.pfhCalendarPopover { width: min(296px, calc(100vw - 24px)); padding: 10px; }
+.pfhCalHead { display: grid; grid-template-columns: 34px 1fr 34px; gap: 6px; align-items: center; text-align: center; margin-bottom: 8px; }
+.pfhCalHead button { height: 34px; font-size: 22px; line-height: 1; }
+.pfhCalWeek, .pfhCalGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; text-align: center; }
+.pfhCalWeek { margin-bottom: 4px; color: #59748d; font-size: 11px; }
+.pfhCalDay { min-height: 32px; padding: 0; }
+.pfhCalendarPopover .today:not(.selected) { border-color: #77a2c7; }
+.pfhCalFoot { display: flex; justify-content: flex-end; margin-top: 8px; padding-top: 6px; border-top: 1px solid #e0ebf5; }
+.pfhCalFoot button { padding: 5px 9px; }
+.pfhToolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 2px 8px; }
+.pfhToolbar p { margin: 0; color: #425f78; font-size: 13px; }
+#pfhExports { display: flex; gap: 8px; }
+.pfhTableWrap { overflow: auto; border: 1px solid #dce8f1; border-radius: 9px; background: #fff; }
+.pfhTable { min-width: 680px; }
+.pfhTable th, .pfhTable td { text-align: left; }
+.pfhTable .pfhNum { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#page-receiving .pfhTable :is(th, td).pfhQty {
+  text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.pfhTotalBadge {
+  display: inline-block; min-width: 44px; box-sizing: border-box; padding: 4px 10px;
+  border: 1px solid #a9c9e6; border-radius: 7px; background: #dfedfb;
+  color: #164d7c; font-size: 16px; font-weight: 850; line-height: 1.2;
+}
+.pfhTable .pfhShort { color: #a33838; font-weight: 700; }
+.pfhTable .pfhOver { color: #84601a; font-weight: 700; }
+.pfhPeriod { margin: 10px 0 16px; padding: 12px; border: 1px solid #c7dced; border-radius: 12px; background: #f7fbff; }
+.pfhPeriod h3 { margin: 0 0 6px; color: #123e69; font-size: 15px; }
+.pfhPeriod p { margin: 0 0 8px; color: #425f78; }
+@media (max-width: 850px) {
+  .pfhPrimaryFilters { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .pfhDateFilters, .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #pfhSourceField { grid-column: 1 / -1; max-width: 260px; }
+  .pfhFilterActions { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  #pfhForm { padding: 10px; }
+  .pfhHeader { gap: 8px; }
+  .pfhPrimaryFilters { grid-template-columns: 1fr; }
+}
 
-/* RC polish — custom calendar and Receiving toolbar parity */
-.pfhPanel{position:relative}
-.pfhDateButton{box-sizing:border-box;width:100%;height:42px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 12px;border:1px solid #d8cbc2;border-radius:10px;background:#fff;color:#342d28;font:inherit;font-weight:750;cursor:pointer;text-align:left}
-.pfhDateButton:hover,.pfhDateButton:focus-visible{border-color:#9a6246;box-shadow:0 0 0 3px rgba(154,98,70,.11);outline:0}.pfhDateButton b{font-size:17px;color:#9a6246;font-weight:700}
-.pfhCalendarPopover{position:absolute;z-index:13020;width:310px;padding:13px;border:1px solid #ded3cb;border-radius:14px;background:#fff;box-shadow:0 18px 45px rgba(47,37,31,.2)}
-.pfhCalHead{display:grid;grid-template-columns:34px 1fr 34px;align-items:center;gap:8px;margin-bottom:10px}.pfhCalHead strong{text-align:center;font-size:14px;color:#3d332d}.pfhCalHead button{width:34px;height:34px;border:1px solid #e0d5ce;border-radius:9px;background:#fff;color:#6a584d;font-size:22px;line-height:1;cursor:pointer}.pfhCalHead button:hover{background:#f7f1ed;border-color:#b99581}
-.pfhCalWeek,.pfhCalGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.pfhCalWeek{margin-bottom:5px}.pfhCalWeek span{padding:4px 0;text-align:center;color:#938277;font-size:9px;font-weight:850;text-transform:uppercase}.pfhCalDay,.pfhCalBlank{height:34px}.pfhCalDay{border:1px solid transparent;border-radius:8px;background:transparent;color:#463a33;font-size:11px;font-weight:700;cursor:pointer}.pfhCalDay:hover{background:#f6efea;border-color:#e4d4ca}.pfhCalDay.today{border-color:#c7aa98}.pfhCalDay.selected{background:#9a6246;border-color:#9a6246;color:#fff}.pfhCalFoot{display:flex;justify-content:flex-end;margin-top:9px;padding-top:9px;border-top:1px solid #eee5df}.pfhCalFoot button{border:0;background:transparent;color:#8b5b42;font-size:11px;font-weight:850;cursor:pointer;padding:4px 6px}
 @media(min-width:769px){
  body:not(.zebraDevice) #page-receiving #receivingClassificationFilters{position:relative!important;width:112px!important;min-width:112px!important;max-width:112px!important;overflow:visible!important}
  body:not(.zebraDevice) #page-receiving #receivingClassificationFilters .pfnUnifiedMultiSelect{position:relative!important;width:112px!important;min-width:112px!important;max-width:112px!important}
@@ -56,9 +152,6 @@
    border-radius:8px!important;
  }
 }
-
-/* RC polish 4 — compact professional period KPI. */
-.pfhPeriodMetric{min-width:0}.pfhPeriodDates{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin-top:5px}.pfhPeriodDates>div{min-width:0}.pfhPeriodDates small{display:block;margin-bottom:2px;color:#9a897e;font-size:8px;font-weight:900;letter-spacing:.07em}.pfhPeriodDates strong{display:block!important;margin:0!important;color:#3b312b!important;font-size:11px!important;line-height:1.2!important;white-space:nowrap}.pfhPeriodDates i{color:#9a6246;font-style:normal;font-size:13px;font-weight:800}
 
 /* Receiving Report KPI palette + multi-select state. */
 @media(min-width:769px){
@@ -118,3 +211,49 @@
    line-height:1!important;
  }
 }
+
+.pfhAddFeedback { flex-wrap: wrap; margin: 8px 0; padding: 8px 10px; border: 1px solid #c7dced; border-radius: 8px; background: #edf5fc; }
+.pfhAddFeedback p { margin: 0; }
+
+#pfhPrintFrame { position: fixed; width: 1px; height: 1px; inset: 0 auto auto 0; border: 0; opacity: 0; pointer-events: none; }
+
+.pfhTransferAction { margin-inline-start: auto; }
+.pfhTransferActions { display: flex; align-items: center; gap: 10px; }
+.pfhTransferActions .pfhButton { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.pfhPage .pfhTransferActions .pfhButton { min-height: 38px; }
+.pfhTransferActions svg {
+  width: 16px; height: 16px; fill: none; stroke: currentColor;
+  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.pfhTransferActions::before {
+  content: ""; order: 1; height: 22px; border-inline-start: 1px solid #a6bfd4;
+}
+.pfhTransferActions #pftOpen { order: 2; }
+
+.pfhTransferDialog {
+  width: min(560px, calc(100vw - 32px)); box-sizing: border-box; padding: 18px;
+  border: 1px solid #a6bfd4; border-radius: 12px; background: #f7fbff; color: #203b54;
+  box-shadow: 0 18px 48px #153c6033;
+}
+.pfhTransferDialog::backdrop { background: #173b5955; }
+#pftImportStatus { margin: 10px 0 0; }
+#pftReview { margin-top: 8px; }
+#pftIssues { max-height: 150px; overflow: auto; padding-inline-start: 20px; }
+
+.pfhManageDialog { width: min(760px, calc(100vw - 32px)); }
+.pfhLastImport {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  margin: 0 0 12px; padding: 8px 12px; border: 1px solid #c7dced;
+  border-radius: 8px; background: #edf5fc; color: #3c5974;
+}
+.pfhLastImport strong, #pftLastImportOrder { color: #123e69; font-weight: 750; }
+.pfhLastImport :is(time, #pftLastImportOrder, #pftLastImportFile) { white-space: nowrap; }
+#pftManageForm { align-items: end; flex-wrap: wrap; margin-top: 10px; }
+#pftManageForm .pfhField { flex: 1 1 130px; }
+#pftManageStatus { margin: 10px 0; }
+#pftManageResults { max-height: min(340px, 42vh); overflow: auto; }
+#pftManageResults th { position: sticky; top: 0; }
+#pftManageResults input { accent-color: #185b96; }
+#pftManageActions { margin-top: 8px; }
+#pftManageConfirm p { margin-bottom: 8px; }
+.pfhManageDialog .pfhButton.pfhDelete { color: #9c3535; border-color: #b86565; }

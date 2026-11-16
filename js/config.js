@@ -93,6 +93,8 @@ const APP_CONFIG = Object.freeze({
 
     receiving:{
 
+        itemMovementEnabled: true,
+
         allowOverReceiving:
             true,
 
@@ -372,22 +374,6 @@ const APP_CONFIG = Object.freeze({
 
             subtitle:
                 "Import receiving data"
-
-        },
-
-        itemMovement:{
-
-            id:
-                "itemMovement",
-
-            elementId:
-                "page-item-movement",
-
-            title:
-                "Item Movement",
-
-            subtitle:
-                "Import order data and analyze item movement"
 
         },
 

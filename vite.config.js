@@ -79,7 +79,11 @@ const pharmacyAdminStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'feature/pharmacy-admin-login-staging';
 const pharmacyActivationStagingPreview = process.env.VERCEL_ENV === 'preview'
   && process.env.VERCEL_GIT_COMMIT_REF === 'feature/pharmacy-activation-staging';
-const stagingPreview = pharmacyActivationStagingPreview || pharmacyAdminStagingPreview || startupStagingPreview || dutyStagingPreview || receivingAdminStagingPreview || receivingEmailStagingPreview || receivingArchiveStagingPreview || receivingKpiStagingPreview;
+const receivingHistoryStagingPreview = process.env.VERCEL_ENV === 'preview'
+  && process.env.VERCEL_GIT_COMMIT_REF === 'feature/receiving-history-unified';
+const transferStagingPreview = process.env.VERCEL_ENV === 'preview'
+  && process.env.VERCEL_GIT_COMMIT_REF === 'feature/item-transfer-bulk-staging';
+const stagingPreview = transferStagingPreview || receivingHistoryStagingPreview || pharmacyActivationStagingPreview || pharmacyAdminStagingPreview || startupStagingPreview || dutyStagingPreview || receivingAdminStagingPreview || receivingEmailStagingPreview || receivingArchiveStagingPreview || receivingKpiStagingPreview;
 const stagingRef = 'tovkcakucyagvbzvlnks';
 function startupStagingConfiguration(){
   return {
