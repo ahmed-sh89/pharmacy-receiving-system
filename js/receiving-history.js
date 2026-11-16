@@ -270,12 +270,35 @@ async function pfhReadItemHistory(params, period, order, item, current, movement
             (!movement || (row.orderDate >= period.from && row.orderDate <= period.to)));
         const rows = items.filter(row => pfhItemMatches(row, item)).map(row => ({
             ...row, received_qty: pfhQuantity(row.received_qty), order_number: number,
-            order_date: file?.orderDate, completed_at
+            order_date: file?.orderDate, completed_at,
+            from_warehouse: String(file?.fromWarehouse || file?.from_warehouse || "").trim()
         }));
         return {rows, missingSource: !saved && (movement ? !source?.has_source : !uploaded.length)};
     }, current);
-    return {...period, rows: results.flatMap(result => result.rows),
-        missingSource: results.filter(result => result.missingSource).length};
+    const rows = results.flatMap(result => result.rows);
+    if (movement) {
+        const missing = [...new Set(rows.filter(row => !row.from_warehouse).map(row => row.order_number))];
+        const batches = [];
+        for (let i = 0; i < missing.length; i += 100) batches.push(missing.slice(i, i + 100));
+        const pages = await pfhReadBatches(batches, async numbers => {
+            const orderFilter = numbers.map(number => '"' + number.replace(/[\\"]/g, '\\$&') + '"').join(",");
+            try {
+                return await pfhReadRows("list_pharmflow_orders", params, [
+                    ["select", "order_number,from_warehouse"], ["order_number", "in.(" + orderFilter + ")"]
+                ], current);
+            } catch {
+                // Source metadata is optional for older orders, including restricted registry access.
+                return [];
+            }
+        }, current);
+        const sourceByOrder = new Map(pages.flat().map(row => [
+            pfhNormalizeOrder(row.order_number), String(row.from_warehouse || "").trim()
+        ]));
+        for (const row of rows) {
+            if (!row.from_warehouse) row.from_warehouse = sourceByOrder.get(row.order_number) || "";
+        }
+    }
+    return {...period, rows, missingSource: results.filter(result => result.missingSource).length};
 }
 
 async function pfhReadTransfers(params, period, order, item, current) {
@@ -308,7 +331,7 @@ function pfhMergeMovements(receiving, transfers) {
     const rows = receiving
         .filter(row => !incoming.has(identity(row.order_number, row.item_code)))
         .map(row => ({
-            ...row, movement_source: "Warehouse", movement_date: row.order_date,
+            ...row, movement_source: row.from_warehouse || "—", movement_date: row.order_date,
             movement_quantity: pfhQuantity(row.ordered_qty)
         }));
     rows.push(...incoming.values());

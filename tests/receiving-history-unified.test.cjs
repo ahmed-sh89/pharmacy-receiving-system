@@ -32,6 +32,7 @@ test('single and bulk completion use independent order snapshots from the shared
     const session = readFileSync('js/session.js', 'utf8');
     assert.match(session, /itemReceivingHistory:itemHistory\?\.get\(targetOrder\)/);
     assert.match(session, /itemReceivingHistory:itemHistory,/);
+    assert.equal(session.match(/fromWarehouse:targetFile\?\.fromWarehouse/g)?.length, 2);
 });
 
 test('item search uses verified zero, uploaded-only unknown and de-duplicates order archives', async () => {
@@ -323,7 +324,7 @@ test('movement combines source quantities, counts shared TO once and exports cen
     const warehouse = [
         {order_number: 'TO-1', item_code: '101', item_name: 'Panadol', order_date: '2026-11-01', ordered_qty: 12, received_qty: 9},
         {order_number: 'TO-2', item_code: '101', item_name: 'Panadol', order_date: '2026-11-01', ordered_qty: 18, received_qty: null},
-        {order_number: 'TO-3', item_code: '101', item_name: 'Panadol', order_date: '2026-11-01', ordered_qty: 40, received_qty: 2}
+        {order_number: 'TO-3', item_code: '101', item_name: 'Panadol', order_date: '2026-11-01', ordered_qty: 40, received_qty: 2, from_warehouse: 'WAH001'}
     ];
     const transfers = [
         {number: 'TO-1', code: '101', name: 'Panadol', source: 'PHARMACY-1', received_date: '2026-11-01', quantity: 10},
@@ -335,8 +336,12 @@ test('movement combines source quantities, counts shared TO once and exports cen
     assert.equal(rows[1].movement_source, 'PHARMACY-2');
     assert.equal(rows[1].movement_quantity, 15);
     assert.equal(rows[2].movement_quantity, 40);
+    assert.equal(rows[2].movement_source, 'WAH001');
+    assert.equal(context.pfhMergeMovements([warehouse[0]], [])[0].movement_source, '—');
     const data = {...period, movement: true, source: 'PHARMACY', rows};
     const [summary] = context.pfhExportTables('item', data, true);
+    const [, details] = context.pfhExportTables('item', data);
+    assert.equal(details.rows[2].at(-1), 'WAH001');
     assert.deepEqual(Array.from(summary.columns), ['Item Code', 'Item Name', 'Total Quantity']);
     assert.deepEqual(Array.from(summary.quantityColumns), [2]);
     assert.equal(summary.rows[0][2], 65);
@@ -348,6 +353,7 @@ test('movement combines source quantities, counts shared TO once and exports cen
     const result = context.pfhRenderResult({type:'item',periods:[data]});
     assert.match(result, /pfhTotalBadge">65/);
     assert.match(result, /PHARMACY-2/);
+    assert.match(result, /WAH001/);
     assert.match(result, />Date<.*class="pfhQty">Quantity</);
     assert.doesNotMatch(result, /Received|Movement Date|Verification/);
 });
@@ -359,7 +365,10 @@ test('movement uses warehouse file dates and pharmacy-only searches skip warehou
         if (rpc === 'list_pharmflow_movement_archives_v1') {
             if (args.p_from > '2025-02-03') return [];
             return [{order_numbers: ['TO-1'], closed_at: '2026-11-01T00:00:00Z', archive_payload: {
-                orderNumber: 'TO-1', orderFiles: [{documentId:'TO-1',orderDate:'2025-02-03'}],
+                orderNumber: 'TO-1', orderFiles: [
+                    {documentId:'TO-OTHER',orderDate:'2025-02-03',fromWarehouse:'WRONG'},
+                    {documentId:'TO-1',orderDate:'2025-02-03',fromWarehouse:' WAH001 '}
+                ],
                 itemReceivingHistory: [{item_code:'101',item_name:'Panadol',ordered_qty:4,received_qty:0}]
             }}];
         }
@@ -373,6 +382,7 @@ test('movement uses warehouse file dates and pharmacy-only searches skip warehou
     const broad = await context.pfhReadMovement(params,{...period,from:'2025-02-01'},'','101',()=>true);
     assert.equal(context.pfhItemTotals(broad.rows,true)[0][2],24);
     assert.equal(broad.rows[1].movement_date,'2025-02-03');
+    assert.equal(broad.rows[1].movement_source,'WAH001');
     calls.length = 0;
     await context.pfhReadMovement(params,{...period,source:'Test Pharmacy'},'TO-2','',()=>true);
     assert.equal(calls.length,1);
@@ -387,7 +397,7 @@ test('warehouse movement batches legacy order searches and reports actual missin
     const context = runtime({authRpc: async (name,args) => {
         calls.push(name);
         if (name === 'list_pharmflow_movement_archives_v1') return [{order_numbers:numbers,
-            archive_payload:{orderFiles:numbers.map(documentId=>({documentId,orderDate:'2026-11-01'}))}}];
+            archive_payload:{orderFiles:numbers.map(documentId=>({documentId,orderDate:'2026-11-01',from_warehouse:'WAH002'}))}}];
         assert.equal(name,'get_pharmflow_movement_source_batch_v1');
         assert.equal(args.p_orders.length, numbers.length);
         assert.equal(args.p_item,'1017808');
@@ -398,7 +408,36 @@ test('warehouse movement batches legacy order searches and reports actual missin
     assert.equal(calls.length,2);
     assert.equal(data.rows.length,1);
     assert.equal(data.rows[0].ordered_qty,7);
+    assert.equal(context.pfhMergeMovements(data.rows,[])[0].movement_source,'WAH002');
     assert.equal(data.missingSource,1);
+});
+
+test('movement resolves only matched orders with missing source metadata through the scoped registry', async () => {
+    const calls = [];
+    const archive = (number, item_code) => ({
+        order_numbers: [number],
+        archive_payload: {
+            orderNumber: number,
+            orderFiles: [{documentId: number, orderDate: period.from}],
+            itemReceivingHistory: [{item_code, item_name: 'Fixture', ordered_qty: 4}]
+        }
+    });
+    const context = runtime({authRpc: async (name, args, query) => {
+        if (name === 'list_pharmflow_movement_archives_v1') {
+            return [archive('TO-1', '101'), archive('TO-2', '101'), archive('TO-OTHER', '102')];
+        }
+        if (name === 'search_pharmflow_transfer_history_v2') return [];
+        assert.equal(name, 'list_pharmflow_orders');
+        assert.equal(args.p_pharmacy_id, params.p_pharmacy_id);
+        const filters = new URLSearchParams(query);
+        assert.equal(filters.get('order_number'), 'in.("TO-1","TO-2")');
+        assert.equal(filters.get('select'), 'order_number,from_warehouse');
+        calls.push(name);
+        return [{order_number:'TO-1',from_warehouse:'WAH001'}];
+    }});
+    const data = await context.pfhReadMovement(params, period, '', '101', () => true);
+    assert.equal(calls.length, 1);
+    assert.deepEqual(Array.from(data.rows, row => row.movement_source), ['WAH001', '—']);
 });
 
 test('movement carries all transfer pages into the displayed quantity totals without counting the lookahead', async () => {
