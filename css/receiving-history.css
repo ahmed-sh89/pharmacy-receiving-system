@@ -313,14 +313,20 @@ body:has(#page-item-movement.active) .mainContent { width: 100%; box-sizing: bor
 .pfhStandalone #pfhItemField label { font-size: 13px; }
 .pfhStandalone #pfhItemEntry .pfhControl { min-height: 33px; }
 .pfhStandalone #pfhItemEntry #pfhItemInput {
-  padding-inline-start: 34px;
-  border-color: #447ead;
-  background: #eaf3fe url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23315b7f' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.2 15.2 4.3 4.3'/%3E%3C/svg%3E") no-repeat left 11px center / 16px;
+  --pfh-search-fill: #dcecff;
+  --pfh-search-icon-position: left 11px center;
+  --pfn-control-background: var(--pfh-search-fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23315b7f' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.2 15.2 4.3 4.3'/%3E%3C/svg%3E") no-repeat var(--pfh-search-icon-position) / 17px;
+  --pfn-control-border: #2c6b9e;
+
+  min-height: 38px;
+  padding-inline-start: 36px;
+  border-color: var(--pfn-control-border);
+  background: var(--pfn-control-background);
 }
-.pfhStandalone #pfhItemEntry #pfhItemInput:dir(rtl) { background-position: right 11px center; }
+.pfhStandalone #pfhItemEntry #pfhItemInput:dir(rtl) { --pfh-search-icon-position: right 11px center; }
 .pfhStandalone #pfhItemEntry #pfhItemInput:focus {
-  border-color: #195d99;
-  background-color: #e0efff;
+  --pfh-search-fill: #cfe6ff;
+  --pfn-control-border: #195d99;
 }
 .pfhStandalone .pfhDateFilters:has(#pfhSourceField:not([hidden])) {
   grid-template-columns: repeat(2, minmax(114px, 10rem)) minmax(140px, 12rem) minmax(150px, 14rem);
