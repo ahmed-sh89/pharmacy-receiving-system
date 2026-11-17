@@ -4,7 +4,7 @@
 
 Item Movement is a separate sidebar destination with an independent pharmacy setting. The pharmacy administrator can search, export and manage imports. When Receiving is enabled, successfully uploaded Orders contribute ordered quantities immediately, using the date and warehouse code from the original file. Orders take precedence over repeated imports of the same TO. When Receiving is disabled, the module uses saved imports from warehouses and branches. Receiving History contains New Items and Discrepancies in this preview. The Item Movement permissions migration was applied before release. Production deployment succeeded with GitHub Pages run 43978608882, and the owner accepted the live module on 17 November 2026.
 
-The search field uses a light blue fill, blue border and a search icon that remains visible after results load. Focus strengthens the highlight. Search, Clear and the filters keep their existing layout.
+The live build loaded the Item Movement search styles, but the shared desktop control theme overrode their background and border. The search field now supplies its own palette through the shared theme, with a visible blue fill, search icon and stronger focus state.
 
 The Staging results layout shows a single item's total alongside an always-open detail table. Multi-item searches group all movements under the relevant item and open each group individually. The page keeps the same totals and exports while reducing repeated identifiers in the visible details.
 

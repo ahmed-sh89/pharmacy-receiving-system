@@ -323,9 +323,9 @@ body:not(.zebraMode) input,
 body:not(.zebraMode) select,
 body:not(.zebraMode) textarea,
 body:not(.zebraMode) .compactSelect{
-  background:#FFFFFF !important;
+  background:var(--pfn-control-background, #FFFFFF) !important;
   color:var(--pfn-navy) !important;
-  border-color:#C7DAEE !important;
+  border-color:var(--pfn-control-border, #C7DAEE) !important;
 }
 body:not(.zebraMode) table,
 body:not(.zebraMode) thead,
