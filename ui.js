@@ -10177,114 +10177,116 @@ async function openCurrentMissingGTINPanel(){
     }catch(error){message.textContent=error.message||'Unable to verify Global Database.';}
 }
 
+function buildManifestAfterActiveOrderClose(manifest, fileId, orderNumber){
+    const orderFiles=manifest.orderFiles.filter(file=>file.id!==fileId);
+    const remainingOrders=orderFiles
+        .map(file=>normalizeOrderNumber(file.documentId||file.orderNumber||""))
+        .filter(Boolean);
+    const selection=remainingOrders.length===1
+        ? remainingOrders[0]
+        : (remainingOrders.length ? "ALL" : "");
+
+    const orderData=manifest.orderData.map(item=>{
+        const memberships=(Array.isArray(item.orderNumbers)?item.orderNumbers:[])
+            .map(normalizeOrderNumber).filter(Boolean);
+        if(!memberships.includes(orderNumber)) return item;
+        const surviving=memberships.filter(number=>number!==orderNumber);
+        return {
+            ...item,
+            orderNumbers:surviving,
+            orderNumber:normalizeOrderNumber(item.orderNumber||"")===orderNumber
+                ? surviving[0]||""
+                : item.orderNumber
+        };
+    }).filter(item=>item.orderNumbers?.length>0 || item.manual===true);
+
+    return {
+        ...manifest,
+        orderFiles,
+        orderData,
+        active:remainingOrders.length>0,
+        selectedOrderNumbers:remainingOrders,
+        selectedOrderNumber:selection,
+        orderName:remainingOrders.join(" + "),
+        handheldOrderNumbers:(manifest.handheldOrderNumbers||[])
+            .map(normalizeOrderNumber)
+            .filter(number=>remainingOrders.includes(number))
+    };
+}
+
 async function requestRemoveActiveOrderFile(fileId){
-    const files=Array.isArray(AppState?.workspace?.orderFiles)?AppState.workspace.orderFiles:[];
-    const file=files.find(f=>f.id===fileId);
-    if(!file)return;
+    const file=(AppState.workspace?.orderFiles||[]).find(entry=>entry.id===fileId);
+    const orderNumber=normalizeOrderNumber(file?.documentId||file?.orderNumber||"");
+    if(!file || !orderNumber) return;
+    const scope=activeOrderAuthorityScope();
+    const pharmacyId=AuthState.context?.pharmacy_id;
+    const revision=Number(PharmFlowCloudWorkspace.activeManifestRevision||0);
 
-    const orderNumber=typeof normalizeOrderNumber==="function"
-        ? normalizeOrderNumber(file.documentId||file.orderNumber||"")
-        : toSafeString(file.documentId||"");
-    if(!orderNumber){
-        showToast("Unable to identify this active Order Number","error");
-        return;
-    }
-
-    /* Close Order is intentionally NON-DESTRUCTIVE. It removes only the
-       selected Order from the active Receiving structure. Receiving ledger,
-       historical/archive data and Needs Review evidence are preserved. */
     showConfirmModal(
         "Close Order",
         `Close ${orderNumber}?\n\nThis removes the order from Active Receiving and Handheld assignment. Receiving history and historical data are preserved.`,
         async()=>{
             try{
                 showLoading("Closing order...");
-
-                if(typeof authRpc!=="function" || typeof AuthState==="undefined" || !AuthState.context?.pharmacy_id){
-                    throw new Error("Pharmacy cloud context is unavailable. Sign in again before closing the order.");
+                if(!pharmacyId || scope!==activeOrderAuthorityScope()){
+                    throw new Error("The pharmacy session changed. Open Manage Orders again.");
                 }
 
-                const remainingFiles=files.filter(f=>f.id!==fileId);
-                const remainingOrders=remainingFiles
-                    .map(f=>normalizeOrderNumber(f.documentId||f.orderNumber||""))
-                    .filter(Boolean);
-
-                /* Remove only this Order's ACTIVE structural membership.
-                   Never subtract/delete Receiving transactions. */
-                AppState.workspace.orderFiles=remainingFiles;
-                AppState.workspace.orderData=(AppState.workspace.orderData||[])
-                    .map(item=>{
-                        const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
-                            .map(normalizeOrderNumber)
-                            .filter(Boolean);
-                        if(!memberships.includes(orderNumber)) return item;
-                        const surviving=memberships.filter(n=>n!==orderNumber);
-                        item.orderNumbers=surviving;
-                        if(normalizeOrderNumber(item.orderNumber||"")===orderNumber){
-                            item.orderNumber=surviving[0]||"";
-                        }
-                        return item;
-                    })
-                    .filter(item=>{
-                        const memberships=(Array.isArray(item?.orderNumbers)?item.orderNumbers:[])
-                            .map(normalizeOrderNumber).filter(Boolean);
-                        return memberships.length>0 || item.manual===true;
-                    });
-
-                AppState.workspace.selectedOrderNumbers=remainingOrders.slice();
-                AppState.workspace.selectedOrderNumber=remainingOrders.length===1?remainingOrders[0]:(remainingOrders.length?"ALL":"");
-                AppState.workspace.orderName=remainingOrders.length===1?remainingOrders[0]:(remainingOrders.length?remainingOrders.join(" + "):"");
-                AppState.workspace.active=remainingOrders.length>0;
-
-                /* Handheld assignment must never retain a closed Order. */
-                if(Array.isArray(AppState.workspace.handheldOrderNumbers)){
-                    AppState.workspace.handheldOrderNumbers=AppState.workspace.handheldOrderNumbers
-                        .map(normalizeOrderNumber)
-                        .filter(n=>n && n!==orderNumber && remainingOrders.includes(n));
+                const result=await authRpc("get_pharmflow_active_order_manifest_v3",{
+                    p_pharmacy_id:pharmacyId
+                });
+                if(scope!==activeOrderAuthorityScope()) return;
+                const row=Array.isArray(result)?result[0]:result;
+                const currentFile=row?.manifest?.orderFiles?.find(entry=>entry.id===fileId);
+                if(Number(row?.revision||0)!==revision || !row?.updated_at ||
+                   normalizeOrderNumber(currentFile?.documentId||currentFile?.orderNumber||"")!==orderNumber){
+                    throw new Error("Active Orders changed. Review the current list before closing an order.");
                 }
 
-                if(typeof rebuildStateIndexes==="function")rebuildStateIndexes();
-                if(typeof recalculateStatistics==="function")recalculateStatistics();
-                if(typeof saveWorkspaceSnapshot==="function")saveWorkspaceSnapshot();
+                const manifest=buildManifestAfterActiveOrderClose(row.manifest,fileId,orderNumber);
+                const closed=await authRpc("close_pharmflow_active_order_v1",{
+                    p_pharmacy_id:pharmacyId,
+                    p_file_id:fileId,
+                    p_order_number:orderNumber,
+                    p_expected_generation:Number(row.workspace_generation||0),
+                    p_expected_revision:revision,
+                    p_expected_updated_at:row.updated_at,
+                    p_manifest:manifest.orderFiles.length ? manifest : null
+                });
+                if(scope!==activeOrderAuthorityScope()) return;
+                if(closed!==true) throw new Error("The server did not confirm the order closure.");
 
-                if(typeof syncReceivingStructureAfterChange!=="function"){
-                    throw new Error("Structural receiving synchronization is unavailable. Reload and try again.");
-                }
-                const structureSaved=await syncReceivingStructureAfterChange("Order closed");
-                if(structureSaved!==true){
-                    throw new Error("The server did not confirm the closed Active Order state. Reload before continuing.");
-                }
-
-                if(typeof pullActiveOrderManifest==="function"){
-                    await pullActiveOrderManifest({clearIfMissing:remainingOrders.length===0});
-                }
-                if(typeof verifyActiveOrderManifestMatchesLocal==="function"){
-                    const verified=await verifyActiveOrderManifestMatchesLocal();
-                    if(verified!==true){
-                        throw new Error("Close Order verification failed. Reload before continuing.");
-                    }
-                }
-
-                /* Rebuild derived order state after the authoritative manifest
-                   confirms the close. This is especially important for the
-                   final 1 -> 0 transition: the Global Master summary otherwise
-                   retains the last order's matched count until a page reload. */
-                if(typeof applyMasterGTINToCurrentOrder==="function"){
-                    await applyMasterGTINToCurrentOrder({silent:true});
+                await pullActiveOrderManifestAuthority({forceApply:true,clearIfMissing:true});
+                if(scope!==activeOrderAuthorityScope()) return;
+                const verified=await verifyActiveOrderManifestMatchesLocal();
+                if(scope!==activeOrderAuthorityScope()) return;
+                if(!verified || (AppState.workspace?.orderFiles||[])
+                    .some(entry=>entry.id===fileId)){
+                    throw new Error("Order closed on the server. Refresh to verify the current Active Orders.");
                 }
 
-                if(typeof refreshEntireUI==="function")refreshEntireUI();
-                if(typeof window.refreshOpenManageOrders==="function"){
-                    window.refreshOpenManageOrders();
+                const synced=await syncCloudWorkspaceAfterStructuralChange("Order closed");
+                if(scope!==activeOrderAuthorityScope()) return;
+                if(synced!==true){
+                    throw new Error("Order closed on the server. Workspace synchronization is pending.");
                 }
-                showToast(
-                    `${orderNumber} closed. Receiving history preserved.`,
-                    "success",
-                    7000
-                );
+
+                await applyMasterGTINToCurrentOrder?.({silent:true});
+                if(scope!==activeOrderAuthorityScope()) return;
+                refreshEntireUI?.();
+                window.refreshOpenManageOrders?.();
+                showToast(`${orderNumber} closed. Receiving history preserved.`,"success",7000);
             }catch(error){
+                if(scope!==activeOrderAuthorityScope()) return;
                 Logger.error("Close active order failed",error);
-                showToast(error?.message||"Unable to close order","error",10000);
+                const stale=/STALE_ACTIVE_ORDER_CLOSE/.test(String(error?.message||error));
+                if(stale || String(error?.message||"").startsWith("Active Orders changed")){
+                    await pullActiveOrderManifestAuthority({forceApply:true,clearIfMissing:true});
+                }
+                if(scope!==activeOrderAuthorityScope()) return;
+                showToast(stale
+                    ? "Active Orders changed. Review the current list before closing an order."
+                    : error?.message||"Unable to close order","error",10000);
             }finally{
                 hideLoading();
             }
