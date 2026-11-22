@@ -1,0 +1,11 @@
+{
+  "production_base": "a11c72f7e9e04e4556a2ea266b4c15647dcd1fee",
+  "changes": {
+    ".github/workflows/security-production-release.yml": "8c09854369253a7a4588a3d2cd13ac3d5655b4bf",
+    "index.html": "74895e563d2fa94e2d4c4b854825e8e7d318fa48",
+    "ui.js": "3128196a307afbaa7f9c1691de66946534bea05d"
+  },
+  "sql": {
+    "supabase/migrations/20261122223000_guard_active_order_close.sql": "d78e258186e5a7613635c5e24973ed20c19dca9d"
+  }
+}
