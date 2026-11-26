@@ -1,0 +1,10 @@
+{
+  "production_base": "12764f2f4b1de03e10f7c7fed81a9c703001329f",
+  "changes": {
+    "PHARMFLOW_CHANGELOG.md": "7facc131230194cafaba8c33d99abf262508a539",
+    "PHARMFLOW_CURRENT_CHECKPOINT.md": "04e7f2909729ab825a4f38552f63622d2813fa29",
+    "index.html": "597a650a491cf7fdd236fd85be8f4d963108142d",
+    "js/excel.js": "22f22ce1b1753578f6d3e293a24812770564524d",
+    "tests/sec001-excel-security.test.cjs": "aaf57f01ad542acb347e17ceee595c24cd399951"
+  }
+}
