@@ -707,7 +707,42 @@ async function importOrderFile(file, preflightMeta = null){
    READ WORKBOOK
 ===================================================== */
 
-function readExcelWorkbook(file){
+let excelReaderRetry;
+
+function retryExcelReaderLoad(){
+    if(!excelReaderRetry){
+        excelReaderRetry = new Promise((resolve,reject)=>{
+            const unavailable = new Error("The Excel reader could not load. Reload PharmFlow and try uploading the file again.");
+            const source = document.getElementById("pharmflowExcelSecurityScript");
+            if(!source?.src){
+                reject(unavailable);
+                return;
+            }
+
+            const url = new URL(source.src);
+            url.searchParams.set("retry","1");
+            const script = document.createElement("script");
+            script.src = url.href;
+            const finish = ()=>{
+                clearTimeout(timeout);
+                script.remove();
+                const reader = window.PharmFlowExcel;
+                if(typeof reader?.readFile === "function") resolve();
+                else reject(unavailable);
+            };
+            const timeout = setTimeout(finish,8000);
+            script.onload = finish;
+            script.onerror = finish;
+            document.head.appendChild(script);
+        }).finally(()=>{ excelReaderRetry = null; });
+    }
+    return excelReaderRetry;
+}
+
+async function readExcelWorkbook(file){
+    if(typeof window.PharmFlowExcel?.readFile !== "function"){
+        await retryExcelReaderLoad();
+    }
     return window.PharmFlowExcel.readFile(file,{cellDates:true});
 }
 

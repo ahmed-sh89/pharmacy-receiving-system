@@ -1,3 +1,7 @@
+## 26 November 2026 — Manage Orders Excel upload hotfix
+
+Manage Orders retries loading the secure Excel reader when it is missing from the page. The retry keeps the existing workbook validation and reports a clear reload instruction if the reader stays unavailable.
+
 ## Duty KPI / Today polish — READY FOR USER TEST — 9 November 2026
 
 PR #53 only, branch fix/duty-exchange-staging-20261109-v2. Verified start d97d60417f53659d34782953a67c48c3b2a542db; Production main c68a940fecd9d40b57b625769e9a4654991b6010 unchanged. Existing USER VERIFIED acceptance retained.

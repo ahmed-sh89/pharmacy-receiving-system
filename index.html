@@ -23,13 +23,13 @@
 
     <!-- Fetch classic scripts in parallel; their execution stays parser-ordered. -->
     <link rel="preload" as="script" href="js/vendor/sheetjs-0.20.3/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT">
-    <link rel="preload" as="script" href="js/excel-security.js?v=RECEIVING_RELEASE_20261101">
+    <link rel="preload" as="script" href="js/excel-security.js?v=ORDER_EXCEL_READER_20261126">
     <link rel="preload" as="script" href="js/config.js?v=ITEM_MOVEMENT_RELEASE_2">
     <link rel="preload" as="script" href="js/utils.js?v=RECEIVING_U0030_RECOVERY2">
     <link rel="preload" as="script" href="js/state.js?v=RECEIVING_RELEASE_20261101">
     <link rel="preload" as="script" href="js/router.js?v=MOVEMENT_MODULE_1">
     <link rel="preload" as="script" href="ui.js?v=ACTIVE_ORDER_CLOSE_20261122">
-    <link rel="preload" as="script" href="js/excel.js?v=ORDER_IMPORT_PERMISSION_20261027">
+    <link rel="preload" as="script" href="js/excel.js?v=ORDER_EXCEL_READER_20261126">
     <link rel="preload" as="script" href="js/master-gtin.js?v=SEC001_20261027">
     <link rel="preload" as="script" href="js/identifier-service.js?v=RECEIVING_QUICK_ADD_20261022_1">
     <link rel="preload" as="script" href="js/scanner.js?v=HANDHELD_ASSIGN_AUTH3">
@@ -2780,7 +2780,7 @@ window.PharmFlowDeviceMode = (() => {
     defer
 ></script>
 
-<script src="js/excel-security.js?v=RECEIVING_RELEASE_20261101"></script>
+<script id="pharmflowExcelSecurityScript" src="js/excel-security.js?v=ORDER_EXCEL_READER_20261126"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous" async></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" async></script>
@@ -2801,7 +2801,7 @@ window.PharmFlowDeviceMode = (() => {
 
 <script src="ui.js?v=RECEIVING_ORDER_KPI_DETAILS"></script>
 
-<script src="js/excel.js?v=ORDER_IMPORT_PERMISSION_20261027"></script>
+<script src="js/excel.js?v=ORDER_EXCEL_READER_20261126"></script>
 
 <script src="js/master-gtin.js?v=SEC001_20261027"></script>
 <script src="js/identifier-service.js?v=RECEIVING_QUICK_ADD_20261022_1"></script>
