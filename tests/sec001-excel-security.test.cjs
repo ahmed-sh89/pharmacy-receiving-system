@@ -78,6 +78,27 @@ test('legacy binary XLS remains readable in the same worker',async()=>{
     const c=harness(),w=await c.readExcelWorkbook(file(bytes([['Item Code','Quantity'],['000123',8]],'biff8'),'fixture.xls'));
     assert.equal(c.worksheetToMatrix(w.Sheets.Sheet1)[1][0],'000123');
 });
+test('order metadata recovers from a missing reader and shares the retry across uploads',async()=>{
+    const c=harness(),reader=c.PharmFlowExcel;
+    const source='http://offline/js/excel-security.js?v=release';
+    const workbook=file(bytes([['TO Number','TO-000000001'],['Item Code','Quantity'],['123',8]]));
+    const requests=[];
+    c.PharmFlowExcel=undefined;
+    c.document.getElementById=id=>id==='pharmflowExcelSecurityScript'?{src:source}:null;
+    c.document.createElement=()=>({remove(){}});
+    c.document.head={appendChild(script){requests.push(script);}};
+
+    const unavailable=c.inspectOrderFileMetadata(workbook);
+    requests[0].onerror();
+    await assert.rejects(unavailable,/Excel reader could not load/);
+
+    const first=c.inspectOrderFileMetadata(workbook);
+    const second=c.inspectOrderFileMetadata(workbook);
+    assert.deepEqual(requests.map(script=>script.src),Array(2).fill(source+'&retry=1'));
+    c.PharmFlowExcel=reader;
+    requests[1].onload();
+    assert.deepEqual((await Promise.all([first,second])).map(meta=>meta.orderNumber),['TO-000000001','TO-000000001']);
+});
 test('file limits reject before starting a worker, with actionable messages',async()=>{
     const c=harness();let spawned=0;c.Worker=class{constructor(){spawned++;}};
     await assert.rejects(c.PharmFlowExcel.readFile({name:'large.xlsx',size:32*1024*1024+1}),/32 MB/);

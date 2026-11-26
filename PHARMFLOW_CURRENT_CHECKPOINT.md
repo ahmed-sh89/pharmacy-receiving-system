@@ -1,5 +1,9 @@
 # PharmFlow current checkpoint — 16 November 2026
 
+## Manage Orders Excel upload hotfix — 26 November 2026
+
+Production baseline `12764f2f4b1de03e10f7c7fed81a9c703001329f`. The reported upload reached the order preflight without the secure Excel reader in the browser. Read-only Production checks found no matching order, source rows, active manifest entry, or workspace history entry. The Production reader asset was available during investigation. Manage Orders now retries loading the pinned same-site reader before parsing, using the existing worker and workbook limits. Focused tests and the build passed. After Pages publishes the hotfix, retry the original file and confirm the order appears under Current Workspace.
+
 ## Item Movement module — Production
 
 Item Movement is a separate sidebar destination with an independent pharmacy setting. The pharmacy administrator can search, export and manage imports. When Receiving is enabled, successfully uploaded Orders contribute ordered quantities immediately, using the date and warehouse code from the original file. Orders take precedence over repeated imports of the same TO. When Receiving is disabled, the module uses saved imports from warehouses and branches. Receiving History contains New Items and Discrepancies in this preview. The Item Movement permissions migration was applied before release. Production deployment succeeded with GitHub Pages run 43978608882, and the owner accepted the live module on 17 November 2026.
